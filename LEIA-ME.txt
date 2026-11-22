@@ -169,6 +169,14 @@ ele reaproveita a transcrição e fica quase instantâneo — bom pra
 testar outro formato ou outra quantidade de cortes.
 
 
+CARTÃO COM O NOME DO STREAMER
+-----------------------------
+
+No formato rosto + jogo, escreva o nome do streamer em "Cartão com o
+nome do streamer" (no enquadramento). Ele aparece num cartão azul na
+linha entre a webcam e o jogo, em todos os cortes (gravado e ao vivo).
+Deixe vazio pra não usar.
+
 PLACA DE VÍDEO (gerar os cortes mais rápido)
 --------------------------------------------
 

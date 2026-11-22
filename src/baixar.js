@@ -178,6 +178,8 @@ function espiarUma(url, extras) {
         resolve({
           titulo: j.title || 'video',
           duracao: Number(j.duration || 0),
+          // live acontecendo agora (o mesmo pedido ja responde, sem consultar de novo)
+          aoVivo: j.is_live === true || j.live_status === 'is_live',
           canal: j.uploader || j.channel || '',
           largura: j.width || 0,
           altura: j.height || 0,

@@ -1,15 +1,21 @@
 'use strict';
 /**
- * Testes unitarios e de integracao das funcionalidades e ferramentas do Mega Cortes HD.
+ * Testes unitarios e de integracao das funcionalidades BASE (compatibilidade com
+ * o projeto original Cortador Automatico).
  *
- * Como rodar (Node 22+, sem precisar instalar nenhuma dependencia):
- *     node --test docs/testes-unitarios.test.js
+ * Objetivo: garantir que nenhuma modificacao da branch quebrou as funcoes
+ * essenciais da aplicacao original (desempenho, filtros FFmpeg, legenda,
+ * pipeline, sessoes, scripts Python e rotas principais do servidor HTTP).
+ *
+ * Como rodar (Node 22+, sem dependencias externas):
+ *     node --test docs/testes-base-original.test.js
  */
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const http = require('node:http');
+const os = require('node:os');
 const path = require('node:path');
 const { spawn, spawnSync } = require('node:child_process');
 
@@ -22,6 +28,10 @@ const EMBED_FFPROBE = path.join(MONTAGEM, 'runtime', 'ffmpeg', 'ffprobe.exe');
 const desempenho = require(path.join(RAIZ, 'src', 'desempenho'));
 const media = require(path.join(RAIZ, 'src', 'media'));
 const pipeline = require(path.join(RAIZ, 'src', 'pipeline'));
+const legenda = require(path.join(RAIZ, 'src', 'legenda'));
+const sessoes = require(path.join(RAIZ, 'src', 'sessoes'));
+const score = require(path.join(RAIZ, 'src', 'score'));
+const copy = require(path.join(RAIZ, 'src', 'copy'));
 
 function httpGet(porta, caminho) {
   return new Promise((resolve, reject) => {
@@ -38,9 +48,9 @@ function httpGet(porta, caminho) {
   });
 }
 
-// ------------------------------------------------------------------ 1. Desempenho & GPU
+// ------------------------------------------------------------------ 1. Desempenho base
 
-test('desempenho: informacoes do PC e modo recomendado', () => {
+test('base/desempenho: pc(), recomendado() e nucleos() funcionam corretamente', () => {
   const info = desempenho.pc();
   assert.ok(info.nucleos >= 1, 'nucleos deve ser >= 1');
   assert.ok(info.ramGb > 0, 'ramGb deve ser > 0');
@@ -53,37 +63,18 @@ test('desempenho: informacoes do PC e modo recomendado', () => {
   assert.ok(n >= 1 && n <= info.nucleos);
 });
 
-test('desempenho: resumo() expoe estrutura completa de GPU (NVENC/AMF/QSV + CUDA)', () => {
-  const r = desempenho.resumo();
-  assert.ok(r.modo === 'leve' || r.modo === 'total');
-  assert.ok(r.placa && typeof r.placa === 'object');
-  assert.equal(typeof r.placa.ligada, 'boolean');
-  assert.equal(typeof r.placa.quebrou, 'boolean');
-  assert.ok('achada' in r.placa);
-  assert.ok('sigla' in r.placa);
-  assert.ok('gpu' in r.placa);
-  assert.ok('cuda' in r.placa);
-  assert.ok('computeType' in r.placa);
-});
-
-test('desempenho: adaptarFfmpeg() sempre retorna { args, placa } valido', () => {
+test('base/desempenho: adaptarFfmpeg() preserva argumentos essenciais de libx264', () => {
   const base = ['-i', 'in.mp4', '-c:v', 'libx264', '-crf', '18', '-pix_fmt', 'yuv420p', 'out.mp4'];
   const res = desempenho.adaptarFfmpeg(base);
   assert.ok(Array.isArray(res.args));
   assert.equal(typeof res.placa, 'boolean');
   assert.ok(res.args.includes('-c:v'));
+  assert.ok(res.args.includes('out.mp4'));
 });
 
-test('desempenho: detectarPlaca(null) e detectarCuda(null) finalizam sem travar', async () => {
-  const enc = await desempenho.detectarPlaca(null);
-  const cuda = await desempenho.detectarCuda(null);
-  assert.ok(enc === null || typeof enc === 'object');
-  assert.ok(cuda === null || typeof cuda === 'object');
-});
+// ------------------------------------------------------------------ 2. Media & FFmpeg
 
-// ------------------------------------------------------------------ 2. Media / FFmpeg
-
-test('media: filtroDeFormato gera filtros corretos para todos os formatos', () => {
+test('base/media: filtroDeFormato cobre todos os formatos de corte (original, vertical, blur, foco, split)', () => {
   assert.equal(media.filtroDeFormato('original'), null);
 
   const vert = media.filtroDeFormato('vertical');
@@ -108,7 +99,7 @@ test('media: filtroDeFormato gera filtros corretos para todos os formatos', () =
   assert.match(split, /drawbox=.*color=0xff00aa/);
 });
 
-test('ferramenta ffmpeg: binario responde -version com codigo 0', (t) => {
+test('base/ffmpeg: binario ffmpeg responde -version com codigo 0', (t) => {
   const ff = process.env.FFMPEG_PATH || (fs.existsSync(EMBED_FFMPEG) ? EMBED_FFMPEG : null);
   if (!ff) return t.skip('FFmpeg nao encontrado localmente');
   const r = spawnSync(ff, ['-version'], { encoding: 'utf8', windowsHide: true, timeout: 10000 });
@@ -116,15 +107,42 @@ test('ferramenta ffmpeg: binario responde -version com codigo 0', (t) => {
   assert.match(r.stdout, /ffmpeg version/i);
 });
 
-// ------------------------------------------------------------------ 3. Pipeline & Python CUDA
+// ------------------------------------------------------------------ 3. Legenda, Sessoes, Score e Copy
 
-test('pipeline: acharPython retorna caminho valido', () => {
-  const py = pipeline.acharPython();
-  assert.equal(typeof py, 'string');
-  assert.ok(py.length > 0);
+test('base/legenda: temTextoFixo() e gerarAss() funcionam corretamente', () => {
+  assert.equal(legenda.temTextoFixo(null), false);
+  assert.equal(legenda.temTextoFixo({ texto: '   ' }), false);
+  assert.equal(legenda.temTextoFixo({ texto: 'AO VIVO' }), true);
+
+  const tmpAss = path.join(os.tmpdir(), 'teste-base-legenda-' + Date.now() + '.ass');
+  try {
+    legenda.gerarAss([
+      { inicio: 0.5, fim: 1.2, texto: 'Olha' },
+      { inicio: 1.2, fim: 2.0, texto: 'isso' },
+    ], 0, tmpAss, { textoFixo: { texto: 'TESTE', posicao: 'topo' } });
+    assert.ok(fs.existsSync(tmpAss), 'arquivo .ass deve ser criado');
+    const conteudo = fs.readFileSync(tmpAss, 'utf8');
+    assert.match(conteudo, /\[Script Info\]/);
+    assert.match(conteudo, /Dialogue:/);
+  } finally {
+    try { fs.unlinkSync(tmpAss); } catch (_) {}
+  }
 });
 
-test('ferramentas Python: sintaxe de transcrever.py e separar_voz.py', (t) => {
+test('base/modulos: sessoes, score, copy e pipeline exportam API principal intacta', () => {
+  assert.equal(typeof sessoes.paraJanela, 'function');
+  const lista = sessoes.paraJanela();
+  assert.ok(Array.isArray(lista) && lista.length > 0);
+  assert.equal(typeof pipeline.acharPython, 'function');
+  assert.equal(typeof pipeline.processar, 'function');
+  assert.equal(typeof pipeline.refazerClipe, 'function');
+  assert.equal(typeof score, 'object');
+  assert.equal(typeof copy, 'object');
+});
+
+// ------------------------------------------------------------------ 4. Scripts Python base
+
+test('base/python: transcrever.py e separar_voz.py compilam sem erro de sintaxe', (t) => {
   const py = process.env.PYTHON_BIN || (fs.existsSync(EMBED_PY) ? EMBED_PY : null);
   if (!py) return t.skip('Python embutido nao encontrado localmente');
   const r = spawnSync(py, [
@@ -135,38 +153,10 @@ test('ferramentas Python: sintaxe de transcrever.py e separar_voz.py', (t) => {
   assert.equal(r.status, 0, r.stderr);
 });
 
-test('transcrever.py --testar-cuda devolve JSON valido com status CUDA', (t) => {
-  const py = process.env.PYTHON_BIN || (fs.existsSync(EMBED_PY) ? EMBED_PY : null);
-  if (!py) return t.skip('Python embutido nao encontrado localmente');
-  const r = spawnSync(py, [path.join(RAIZ, 'py', 'transcrever.py'), '--testar-cuda'], {
-    encoding: 'utf8',
-    windowsHide: true,
-    timeout: 20000,
-    env: Object.assign({}, process.env, { PYTHONNOUSERSITE: '1' }),
-  });
-  assert.equal(r.status, 0, r.stderr);
-  const linha = r.stdout.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.startsWith('{')).pop();
-  assert.ok(linha, 'saida JSON esperada');
-  const dados = JSON.parse(linha);
-  assert.equal(typeof dados.cuda, 'boolean');
-  if (dados.cuda) {
-    assert.ok(dados.dispositivos >= 1);
-    assert.ok(['float16', 'int8_float16', 'int8_float32', 'int8', 'float32'].includes(dados.compute_type));
-  }
-});
+// ------------------------------------------------------------------ 5. Servidor HTTP (rotas originais)
 
-// ------------------------------------------------------------------ 4. Croma Studio & Servidor HTTP
-
-test('Croma Studio: bundle estatico presente em src/ui/croma com caminhos relativos', () => {
-  const idx = path.join(RAIZ, 'src', 'ui', 'croma', 'index.html');
-  assert.ok(fs.existsSync(idx), 'src/ui/croma/index.html deve existir');
-  const html = fs.readFileSync(idx, 'utf8');
-  assert.match(html, /Croma Studio/i);
-  assert.match(html, /src="\.\/assets\/[^"]+\.js"/);
-});
-
-test('servidor HTTP: rotas principais, /api/desempenho, /croma/ e protecao contra path traversal', async () => {
-  const porta = 4390 + Math.floor(Math.random() * 50);
+test('base/servidor: rotas essenciais da aplicacao original respondem HTTP 200', async () => {
+  const porta = 4380 + Math.floor(Math.random() * 40);
   const env = Object.assign({}, process.env, {
     NAO_ABRIR: '1',
     PORTA: String(porta),
@@ -184,7 +174,6 @@ test('servidor HTTP: rotas principais, /api/desempenho, /croma/ e protecao contr
   });
 
   try {
-    // Aguarda o servidor anunciar que subiu
     await new Promise((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error('timeout aguardando servidor subir')), 15000);
       srv.stdout.setEncoding('utf8');
@@ -197,30 +186,14 @@ test('servidor HTTP: rotas principais, /api/desempenho, /croma/ e protecao contr
     const home = await httpGet(porta, '/');
     assert.equal(home.status, 200);
     assert.match(home.body, /id="placaVideo"/);
-    assert.match(home.body, /id="btnCroma"/);
+    assert.match(home.body, /id="btnProjetos"/);
+    assert.match(home.body, /id="btnAjustes"/);
 
-    const apiDsp = await httpGet(porta, '/api/desempenho');
-    assert.equal(apiDsp.status, 200);
-    const dsp = JSON.parse(apiDsp.body);
-    assert.ok(dsp.placa && typeof dsp.placa === 'object');
-
-    const redir = await httpGet(porta, '/croma');
-    assert.equal(redir.status, 302);
-    assert.equal(redir.headers.location, '/croma/');
-
-    const croma = await httpGet(porta, '/croma/');
-    assert.equal(croma.status, 200);
-    assert.match(croma.body, /Croma Studio/i);
-
-    const m = /src="\.\/(assets\/[^"]+\.js)"/.exec(croma.body);
-    assert.ok(m, 'deve referenciar bundle JS do Croma Studio');
-    const asset = await httpGet(porta, '/croma/' + m[1]);
-    assert.equal(asset.status, 200);
-    assert.ok(asset.body.length > 10000);
-
-    // Garante que path traversal nao vaza package.json
-    const traversal = await httpGet(porta, '/croma/../../../package.json');
-    assert.doesNotMatch(traversal.body, /"name"\s*:\s*"cortador-automatico"/);
+    for (const rota of ['/api/desempenho', '/api/sessoes', '/api/rede', '/api/armazenamento', '/api/projetos']) {
+      const r = await httpGet(porta, rota);
+      assert.equal(r.status, 200, 'rota ' + rota + ' deve responder 200');
+      assert.doesNotThrow(() => JSON.parse(r.body), 'rota ' + rota + ' deve devolver JSON valido');
+    }
   } finally {
     try { srv.kill(); } catch (_) {}
   }

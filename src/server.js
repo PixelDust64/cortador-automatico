@@ -213,11 +213,11 @@ function nomeDeArquivoSeguro(nome) {
  * O texto da tela vira um .ass pra previa mostrar igual ao clipe final.
  * @returns {object|null} o "extra" do media.gerarPrevia
  */
-function textoDaPrevia(textoFixo, sid) {
+function textoDaPrevia(textoFixo, sid, formato, recorte) {
   if (!legenda.temTextoFixo(textoFixo)) return null;
   fs.mkdirSync(pastas.trabalho(), { recursive: true });
   const nome = 'previa-texto-' + idDeSessao(sid) + '.ass';
-  legenda.gerarAss([], 0, path.join(pastas.trabalho(), nome), { incluirPalavras: false, textoFixo });
+  legenda.gerarAss([], 0, path.join(pastas.trabalho(), nome), { incluirPalavras: false, textoFixo, alturaDivisao: legenda.alturaDaDivisao(formato, recorte) });
   return { ass: nome, fontsdir: fontsdirRelativo(), cwd: pastas.trabalho() };
 }
 
@@ -257,51 +257,53 @@ function estadoArmazenamento() {
   };
 }
 
-/** Janela do Windows pra escolher uma pasta (a de salvar os cortes). */
-function escolherPastaNativa() {
+/**
+ * Roda uma janela do Windows (PowerShell + Windows Forms) e devolve o que a
+ * pessoa escolheu. O caminho volta em Base64 (UTF-8): sem isso, acento no nome
+ * ("C:\\Users\\Rômulo\\Vídeos") chegava como "R?mulo" e o arquivo nao era achado.
+ * @returns {Promise<{ caminho: string|null, cancelou?: boolean, falhou?: string }>}
+ */
+function janelaDoWindows(linhasDoDialogo, propriedade) {
   return new Promise((resolve) => {
     const script = [
       'Add-Type -AssemblyName System.Windows.Forms | Out-Null',
-      '$d = New-Object System.Windows.Forms.FolderBrowserDialog',
-      '$d.Description = "Escolha onde o Cortador Automatico vai salvar os cortes"',
-      '$d.ShowNewFolderButton = $true',
+    ].concat(linhasDoDialogo, [
       '$t = New-Object System.Windows.Forms.Form',
       '$t.TopMost = $true',
-      'if ($d.ShowDialog($t) -eq [System.Windows.Forms.DialogResult]::OK) { [Console]::OutputEncoding = [Text.Encoding]::UTF8; Write-Output $d.SelectedPath }',
+      'if ($d.ShowDialog($t) -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output ("OK:" + [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($d.' + propriedade + '))) } else { Write-Output "CANCELOU" }',
       '$t.Dispose()',
-    ].join('; ');
+    ]).join('; ');
     execFile(POWERSHELL, ['-NoProfile', '-STA', '-Command', script],
-      { windowsHide: true, timeout: 300000, encoding: 'utf8' },
+      { windowsHide: true, timeout: 300000 },
       (erro, saida) => {
-        if (erro) return resolve(null);
-        const pasta = String(saida || '').trim();
-        resolve(pasta && fs.existsSync(pasta) ? pasta : null);
+        const texto = String(saida || '').trim();
+        if (/CANCELOU/.test(texto)) return resolve({ caminho: null, cancelou: true });
+        const m = /OK:([A-Za-z0-9+/=]+)/.exec(texto);
+        if (!m) return resolve({ caminho: null, falhou: erro ? String(erro.message).slice(0, 200) : 'a janela do Windows não respondeu' });
+        const caminho = Buffer.from(m[1], 'base64').toString('utf8');
+        if (!fs.existsSync(caminho)) return resolve({ caminho: null, falhou: 'não achei o arquivo escolhido: ' + caminho });
+        resolve({ caminho });
       });
   });
 }
 
-function escolherArquivoNativo() {
-  return new Promise((resolve) => {
-    const script = [
-      'Add-Type -AssemblyName System.Windows.Forms | Out-Null',
-      '$d = New-Object System.Windows.Forms.OpenFileDialog',
-      '$d.Title = "Escolha o video que voce quer cortar"',
-      '$d.Filter = "Videos|*.mp4;*.mkv;*.mov;*.avi;*.webm;*.m4v;*.wmv;*.flv;*.ts|Todos os arquivos|*.*"',
-      '$d.Multiselect = $false',
-      '$t = New-Object System.Windows.Forms.Form',
-      '$t.TopMost = $true',
-      'if ($d.ShowDialog($t) -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output $d.FileName }',
-      '$t.Dispose()',
-    ].join('; ');
+/** Janela do Windows pra escolher uma pasta (a de salvar os cortes). */
+function escolherPastaNativa() {
+  return janelaDoWindows([
+    '$d = New-Object System.Windows.Forms.FolderBrowserDialog',
+    '$d.Description = "Escolha onde o Cortador Automatico vai salvar os cortes"',
+    '$d.ShowNewFolderButton = $true',
+  ], 'SelectedPath').then((r) => r.caminho);
+}
 
-    execFile(POWERSHELL, ['-NoProfile', '-STA', '-Command', script],
-      { windowsHide: true, timeout: 300000 },
-      (erro, saida) => {
-        if (erro) return resolve(null);
-        const caminho = String(saida || '').trim();
-        resolve(caminho && fs.existsSync(caminho) ? caminho : null);
-      });
-  });
+/** Janela do Windows pra escolher o video. */
+function escolherArquivoNativo() {
+  return janelaDoWindows([
+    '$d = New-Object System.Windows.Forms.OpenFileDialog',
+    '$d.Title = "Escolha o video que voce quer cortar"',
+    '$d.Filter = "Videos|*.mp4;*.mkv;*.mov;*.avi;*.webm;*.m4v;*.wmv;*.flv;*.ts|Todos os arquivos|*.*"',
+    '$d.Multiselect = $false',
+  ], 'FileName');
 }
 
 /** Quando o usuario arrasta o arquivo, o navegador so entrega o nome. Procuramos ele. */
@@ -447,8 +449,8 @@ const servidor = http.createServer(async (req, res) => {
     // abre uma janela do Windows Forms. Em servidor/Linux isso nao existe.
     if (rota === '/api/escolher' && req.method === 'POST') {
       if (process.platform !== 'win32') return json(res, 200, { caminho: null });
-      const caminho = await escolherArquivoNativo();
-      return json(res, 200, { caminho });
+      // { caminho } | { cancelou } | { falhou: motivo }
+      return json(res, 200, await escolherArquivoNativo());
     }
 
     if (rota === '/api/localizar' && req.method === 'POST') {
@@ -705,7 +707,7 @@ const servidor = http.createServer(async (req, res) => {
       fs.mkdirSync(pastas.trabalho(), { recursive: true });
       const alvo = path.join(pastas.trabalho(), 'previa-' + idDeSessao(corpo.sid) + '.jpg');
       await media.gerarPrevia(corpo.video, Number(corpo.segundo) || 0,
-        corpo.formato || 'vertical', corpo.recorte, alvo, textoDaPrevia(corpo.textoFixo, corpo.sid));
+        corpo.formato || 'vertical', corpo.recorte, alvo, textoDaPrevia(corpo.textoFixo, corpo.sid, corpo.formato || 'vertical', corpo.recorte));
       return enviarImagem(res, alvo);
     }
 

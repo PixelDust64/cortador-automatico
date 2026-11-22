@@ -79,6 +79,8 @@ function cabecalho(opcoes) {
       '-1,0,0,0,100,100,0,0,3,10,0,' + (opcoes.posicaoGancho === 'meio' ? 5 : 8) + ',60,60,' +
       (opcoes.posicaoGancho === 'meio' ? 0 : margemGancho) + ',1',
     estiloFixo(opcoes.textoFixo, fonte),
+    // cartao do nome: caixa azul (BorderStyle 3 = tarja), texto branco
+    'Style: Nome,' + fonte + ',68,' + BRANCO + ',' + BRANCO + ',&H00F08B3D,&H00000000,-1,0,0,0,100,100,2,0,3,20,0,5,0,0,0,1',
     '',
     '[Events]',
     'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text',
@@ -171,6 +173,12 @@ function gerarAss(palavras, offset, destino, opcoes) {
     linhas.push('Dialogue: 1,' + tempoAss(0) + ',' + tempoAss(duracao) + ',Gancho,,0,0,0,,{\\fad(180,320)}' + texto);
   }
 
+  // cartao com o nome do streamer, centralizado na linha entre a webcam e o jogo
+  const nome = semEmojis(opcoes.textoFixo && opcoes.textoFixo.nome).slice(0, 30);
+  if (nome && opcoes.alturaDivisao) {
+    linhas.push('Dialogue: 3,' + tempoAss(0) + ',' + tempoAss(36000) + ',Nome,,0,0,0,,{\\pos(540,' + Math.round(opcoes.alturaDivisao) + ')}' + escapar(nome).toUpperCase());
+  }
+
   const fixo = linhaFixo(opcoes.textoFixo);
   if (fixo) linhas.push(fixo);
 
@@ -246,4 +254,15 @@ function tempoSrt(s) {
          String(seg).padStart(2, '0') + ',' + String(ms).padStart(3, '0');
 }
 
-module.exports = { gerarAss, gerarSrt, temTextoFixo: (t) => !!semEmojis(t && t.texto) };
+/** Onde fica a linha entre a webcam e o jogo (formato rosto + jogo), em pixels do 1080x1920. */
+function alturaDaDivisao(formato, recorte) {
+  if (formato !== 'split') return null;
+  const fracao = Math.max(0.15, Math.min(0.6, (recorte && recorte.proporcaoTopo) || 0.3));
+  return Math.round(1920 * fracao / 2) * 2;
+}
+
+module.exports = {
+  gerarAss, gerarSrt, alturaDaDivisao,
+  // texto fixo ou cartao com o nome: os dois precisam do .ass
+  temTextoFixo: (t) => !!(semEmojis(t && t.texto) || semEmojis(t && t.nome)),
+};

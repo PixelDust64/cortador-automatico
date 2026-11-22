@@ -191,6 +191,13 @@ async function checarLink(bruto) {
   // Link de VOD (twitch.tv/videos/..., kick.com/canal/videos/..., youtube
   // watch de video ja publicado) nunca e ao vivo - nem pergunta.
   const pareceVod = /twitch\.tv\/videos\/|kick\.com\/[^/]+\/videos\/|kick\.com\/video\/|clips\.twitch|\/clip\//i.test(url);
+  // Link de UM video do YouTube (watch, youtu.be, shorts, live/ID): uma consulta so
+  // responde se e live e qual e o video. Antes eram duas seguidas (uns 12s parado).
+  if (/youtube\.com\/(watch|shorts\/|live\/)|youtu\.be\//i.test(url)) {
+    const info = await baixador.espiar(url);
+    if (info.aoVivo) return { url, plataforma, tipo: 'aovivo', canal: info.canal || canal, titulo: info.titulo };
+    return { url, plataforma, tipo: 'video', canal: info.canal || canal, titulo: info.titulo, duracao: info.duracao };
+  }
   if (!pareceVod) {
     try {
       const r = await resolverAoVivo(url);
@@ -810,7 +817,7 @@ class SessaoAoVivo {
     if (filtro && legenda.temTextoFixo(this.textoFixo)) {
       fs.mkdirSync(pastas.trabalho(), { recursive: true });
       ass = 'aovivo-texto-' + this.id + '.ass';
-      legenda.gerarAss([], 0, path.join(pastas.trabalho(), ass), { incluirPalavras: false, textoFixo: this.textoFixo });
+      legenda.gerarAss([], 0, path.join(pastas.trabalho(), ass), { incluirPalavras: false, textoFixo: this.textoFixo, alturaDivisao: legenda.alturaDaDivisao(this.formato, this.recorte) });
     }
     // Voz atrasada: pular direto pro meio da lista de pedacos (concat + -ss)
     // fazia a imagem so comecar no proximo quadro-chave, 1-2s depois do som -

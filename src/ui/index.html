@@ -278,12 +278,30 @@
   .editor-grade { display: grid; grid-template-columns: 1fr 300px; gap: 14px; align-items: start; }
   @media (max-width: 860px) { .editor-grade { grid-template-columns: 1fr; } }
 
-  #palco { position: relative; border-radius: var(--raio); background: #000; user-select: none; touch-action: none; line-height: 0; }
+  /* overflow hidden: o escurecido da caixa em foco fica so dentro da imagem, sem apagar o resto da tela */
+  #palco { position: relative; border-radius: var(--raio); background: #000; user-select: none; touch-action: none; line-height: 0; overflow: hidden; }
   #palco img { width: 100%; display: block; border-radius: var(--raio); }
 
   .caixa { position: absolute; border: 3px solid; border-radius: 7px; cursor: move; box-sizing: border-box; touch-action: none; }
   /* escurece o resto: fica claro qual area esta sendo marcada agora */
-  .caixa.foco { box-shadow: 0 0 0 9999px rgba(5,7,11,.6); }
+  /* a caixa que esta sendo marcada fica em destaque (contorno grosso e brilho), sem escurecer nada */
+  .caixa { opacity: .8; transition: opacity .2s, box-shadow .2s; }
+  .caixa.foco { opacity: 1; border-width: 4px; box-shadow: 0 0 0 3px rgba(255,255,255,.22), 0 0 26px 2px currentColor; }
+  #caixaRosto { color: var(--azul); } #caixaJogo { color: var(--verde); }
+  .guia-enq { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+  .guia-enq .passo-enq { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--linha); background: rgba(255,255,255,.025); font-size: var(--t5); color: var(--texto2); cursor: pointer; text-align: left; font-family: inherit; }
+  .guia-enq .passo-enq b { display: block; color: var(--texto); font-size: var(--t4); }
+  .guia-enq .num { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; flex: none; font-weight: 800; font-size: 12px; color: #05070b; }
+  .guia-enq .passo-enq.ativo { border-color: currentColor; background: rgba(255,255,255,.05); }
+  .guia-enq .passo-enq[data-passo="topo"] { color: var(--azul); } .guia-enq .passo-enq[data-passo="topo"] .num { background: var(--azul); }
+  .guia-enq .passo-enq[data-passo="baixo"] { color: var(--verde); } .guia-enq .passo-enq[data-passo="baixo"] .num { background: var(--verde); }
+  .guia-enq .passo-enq[data-passo="previa"] { color: var(--marca2); cursor: default; } .guia-enq .passo-enq[data-passo="previa"] .num { background: var(--marca2); }
+  .guia-agora { font-size: var(--t5); color: var(--texto2); margin: -2px 0 10px; display: flex; gap: 7px; align-items: center; }
+  .guia-agora b { color: var(--texto); }
+  @media (max-width: 700px) { .guia-enq { grid-template-columns: 1fr; } }
+  #alvos { display: none !important; } /* os passos 1 e 2 do guia fazem esse papel */
+  .cartao-nome { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--linha); }
+  .cartao-nome input { width: 100%; margin-top: 6px; }
   .caixa .tag {
     position: absolute; top: -2px; left: -2px; padding: 5px 9px;
     border-radius: 6px 0 7px 0; color: #05070b;
@@ -815,6 +833,7 @@
 #resultado > .aviso-ia { margin: 0 0 14px; }
 .av-titulo-clipes + .aviso-ia { margin: 0 0 12px; }
 .assinatura .ia { font-size: var(--t6); color: var(--texto3); margin-top: 4px; }
+  .sel-resolucao { background: var(--superficie2, #131315); color: var(--texto); border: 1px solid var(--linha2); border-radius: 8px; padding: 4px 8px; font: inherit; font-size: var(--t6); cursor: pointer; }
 
 /* ---------- aba isolada do Croma Studio */
 body[data-modo="croma"] { padding-bottom: 0; overflow: hidden; }
@@ -882,8 +901,15 @@ body[data-modo="croma"] #telaCroma { display: block; }
         <button class="btn" id="btnBaixar"><i data-lucide="download" class="i"></i> Baixar</button>
       </div>
       <div style="font-size:var(--t6); color:var(--texto3); margin-top:9px">
-        <span id="dicaResolucao">Vai baixar em 1080p</span> ·
-        <button class="btn p" id="btnResolucao" style="padding:2px 9px; font-size:var(--t6)">mudar</button>
+        <label for="resolucao" style="display:inline-flex; align-items:center; gap:8px">Qualidade do download
+          <select id="resolucao" class="sel-resolucao">
+            <option value="720">720p (mais rápido)</option>
+            <option value="1080">1080p (recomendado)</option>
+            <option value="1440">1440p</option>
+            <option value="2160">4K (2160p)</option>
+            <option value="0">A melhor que tiver</option>
+          </select>
+        </label>
       </div>
 
       <div id="progressoLink" style="display:none; margin-top:13px">
@@ -937,7 +963,13 @@ body[data-modo="croma"] #telaCroma { display: block; }
       <div class="editor-grade">
         <div>
           <div class="cartao" style="padding:12px">
-            <div style="display:flex; gap:6px; margin-bottom:11px" id="alvos">
+            <div class="guia-enq" id="guiaEnq">
+              <button type="button" class="passo-enq" data-passo="topo"><span class="num">1</span><span><b>Marque a webcam</b>a caixa azul vai em cima do rosto</span></button>
+              <button type="button" class="passo-enq" data-passo="baixo"><span class="num">2</span><span><b>Marque o jogo</b>a caixa verde vai na parte do jogo</span></button>
+              <div class="passo-enq" data-passo="previa"><span class="num">3</span><span><b>Confira na prévia</b>ao lado mostra como o corte vai sair</span></div>
+            </div>
+            <div class="guia-agora" id="guiaAgora"></div>
+            <div style="display:none; gap:6px; margin-bottom:11px" id="alvos">
               <button class="btn p" data-alvo="topo" aria-pressed="true"><i data-lucide="user" class="i"></i> Marcar o rosto</button>
               <button class="btn p" data-alvo="baixo" aria-pressed="false"><i data-lucide="gamepad-2" class="i"></i> Marcar o jogo</button>
             </div>
@@ -1001,6 +1033,11 @@ body[data-modo="croma"] #telaCroma { display: block; }
             <div class="faixa">
               <span>Cor da linha</span>
               <input type="color" id="corLinha" value="#ffffff" style="flex:1; height:32px; padding:2px; cursor:pointer">
+            </div>
+            <div class="cartao-nome">
+              <label class="rot" for="nomeStreamer"><i data-lucide="id-card" class="i"></i> Cartão com o nome do streamer</label>
+              <input type="text" id="nomeStreamer" maxlength="30" autocomplete="off" placeholder="Ex.: Gaules (deixe vazio pra não usar)">
+              <div class="dica" style="margin-top:6px">Aparece num cartão azul na linha entre a webcam e o jogo, em todos os cortes.</div>
             </div>
           </div>
         </div>
@@ -1851,8 +1888,13 @@ body[data-modo="croma"] #telaCroma { display: block; }
 
   $('btnArquivo').addEventListener('click', async () => {
     if (temDialogoNativo) {
-      const r = await fetch('/api/escolher', { method: 'POST' }).then((x) => x.json());
+      let r = {};
+      try { r = await fetch('/api/escolher', { method: 'POST' }).then((x) => x.json()); } catch (_) { r = { falhou: 'sem resposta' }; }
       if (r.caminho) return usarVideo(r.caminho);
+      if (r.cancelou) return;
+      // a janela do Windows falhou: daqui pra frente usa o seletor do proprio programa
+      temDialogoNativo = false;
+      return erro('Não consegui abrir o vídeo pela janela do Windows. Clique de novo em "Escolher um vídeo" (vai abrir outro seletor) ou arraste o vídeo pra cá.');
     }
     $('arquivoReal').click();
   });
@@ -1881,19 +1923,12 @@ body[data-modo="croma"] #telaCroma { display: block; }
     });
   }
 
-  const RESOLUCOES = [[1080, '1080p'], [1440, '1440p'], [0, 'a melhor que tiver']];
-  function mostrarResolucao() {
-    const r = RESOLUCOES.find((x) => x[0] === cfg.resolucao) || RESOLUCOES[0];
-    $('dicaResolucao').textContent = 'Vai baixar em ' + r[1];
-  }
-  mostrarResolucao();
-  $('btnResolucao').addEventListener('click', () => {
-    const i = RESOLUCOES.findIndex((r) => r[0] === cfg.resolucao);
-    cfg.resolucao = RESOLUCOES[(i + 1) % RESOLUCOES.length][0];
-    guardar(); mostrarResolucao();
-  });
+  // qualidade do download: escolhe na lista (antes um botao "mudar" ia pulando)
+  const selRes = $('resolucao');
+  selRes.value = String([720, 1080, 1440, 2160, 0].includes(cfg.resolucao) ? cfg.resolucao : 1080);
+  selRes.addEventListener('change', () => { cfg.resolucao = Number(selRes.value); guardar(); });
 
-  async function baixarLink() {
+  async function baixarLink(infoPronta) {
     const url = $('url').value.trim();
     if (!url) return;
     if (!/^https?:\/\//i.test(url)) return erro('Cole o endereço completo, começando com https://');
@@ -1905,7 +1940,8 @@ body[data-modo="croma"] #telaCroma { display: block; }
     $('statusLink').textContent = 'Consultando o link...';
 
     try {
-      const info = await fetch('/api/espiar', {
+      // o link do topo ja consultou o video: nao pergunta de novo (era mais uma espera)
+      const info = infoPronta && infoPronta.titulo ? infoPronta : await fetch('/api/espiar', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }),
       }).then((x) => x.json());
       if (info.erro) throw new Error(info.erro);
@@ -1930,6 +1966,14 @@ body[data-modo="croma"] #telaCroma { display: block; }
   }
   $('btnBaixar').addEventListener('click', baixarLink);
   $('url').addEventListener('keydown', (e) => { if (e.key === 'Enter') baixarLink(); });
+  // colou um link: ja comeca a baixar, sem precisar apertar nada
+  $('url').addEventListener('paste', () => setTimeout(() => {
+    const v = $('url').value.trim();
+    if (/^(https?:\/\/)?(www\.)?[\w.-]+\.[a-z]{2,}\/\S+$/i.test(v) && !$('btnBaixar').disabled) {
+      if (!/^https?:\/\//i.test(v)) $('url').value = 'https://' + v;
+      baixarLink();
+    }
+  }, 30));
 
   async function usarVideo(caminho) {
     arquivo = caminho;
@@ -2022,10 +2066,21 @@ body[data-modo="croma"] #telaCroma { display: block; }
     });
   });
 
-  // uma caixa em destaque por vez, com o resto escurecido
+  document.querySelectorAll('#guiaEnq [data-passo="topo"], #guiaEnq [data-passo="baixo"]').forEach((p) =>
+    p.addEventListener('click', () => { const b = document.querySelector('#alvos [data-alvo="' + p.dataset.passo + '"]'); if (b) b.click(); }));
+
+  // uma caixa em destaque por vez (contorno e brilho, sem escurecer o resto)
   function foco() {
     $('caixaRosto').classList.toggle('foco', alvoAtual === 'topo' && formatoDoEditor() === 'split');
     $('caixaJogo').classList.toggle('foco', alvoAtual === 'baixo');
+    const split = formatoDoEditor() === 'split';
+    $('guiaEnq').style.display = split ? '' : 'none';
+    document.querySelectorAll('#guiaEnq [data-passo]').forEach((p) => p.classList.toggle('ativo', p.dataset.passo === alvoAtual));
+    $('guiaAgora').innerHTML = !split
+      ? '<b>Arraste a caixa verde</b> em cima da parte do vídeo que vai aparecer no corte.'
+      : alvoAtual === 'topo'
+        ? 'Agora: <b>arraste a caixa azul</b> pra cima da webcam e puxe os cantos até pegar o rosto inteiro.'
+        : 'Agora: <b>arraste a caixa verde</b> pra parte do jogo que importa. A prévia ao lado atualiza sozinha.';
   }
 
   // No ao vivo a imagem aparece em qualquer formato: e a prova de que a live
@@ -2257,9 +2312,16 @@ body[data-modo="croma"] #telaCroma { display: block; }
   /** O texto fixo pro programa, ou null quando a caixa esta vazia. */
   function textoAtual() {
     const t = cfg.textoTela;
-    return t && String(t.texto || '').trim() ? Object.assign({}, t, { texto: String(t.texto).trim() }) : null;
+    const texto = String((t && t.texto) || '').trim(), nome = String((t && t.nome) || '').trim();
+    return texto || nome ? Object.assign({}, t, { texto, nome }) : null;
   }
   $('textoTela').value = cfg.textoTela.texto;
+  $('nomeStreamer').value = cfg.textoTela.nome || '';
+  $('nomeStreamer').addEventListener('input', () => {
+    cfg.textoTela.nome = $('nomeStreamer').value;
+    guardar();
+    clearTimeout(esperaTexto); esperaTexto = setTimeout(agendarPrevia, 500);
+  });
   let esperaTexto = null;
   $('textoTela').addEventListener('input', () => {
     cfg.textoTela.texto = $('textoTela').value;
@@ -2601,7 +2663,7 @@ body[data-modo="croma"] #telaCroma { display: block; }
         escolherModo('video');
         irPara(1);
         $('url').value = r.url;
-        baixarLink();
+        baixarLink(r.titulo ? { titulo: r.titulo, duracao: r.duracao } : null);
       }
     } catch (err) {
       erro(err.message || 'Não consegui ler esse link.');

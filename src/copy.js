@@ -19,6 +19,13 @@ function lerContexto(contexto) {
   return { texto: String(contexto || ''), canal: '' };
 }
 
+/** A fala desse trecho nao serve pra titulo (embaralhada pelo som ou com palavrao)? */
+function falaQuebrada(corte) {
+  if (!corte || !(corte.palavras || []).length) return false; // sem palavras com confianca: nao da pra julgar
+  if (jogo.qualidadeDaFala(corte).ruim) return true;
+  return /\b(caralh\w*|porra\w*|fod[ae]\w*|merd\w*|put[ao]\w*|pqp|fdp)\b/i.test(String(corte.texto || ''));
+}
+
 /** Live de jogo (com streamer ou jogo reconhecido, fora o publico infantil)? */
 function infoDeJogo(corte, contexto) {
   const ctx = lerContexto(contexto);
@@ -201,6 +208,7 @@ function escolherVariante(lista, semente) {
  */
 function gerarGanchoDeTela(corte, sessao, nome) {
   if (corte.contextoJogo && infoDeJogo(corte, corte.contextoJogo)) return jogo.ganchoDeJogo(corte);
+  if (falaQuebrada(corte)) return jogo.ganchoDeJogo(corte);
   const texto = String(corte.texto || '');
   const obj = objetoDoTrecho(texto);
   const numeros = extrairNumeros(texto);
@@ -463,6 +471,10 @@ function gerarCopy(corte, contextoDoVideo, sessao, nome) {
     const fortes = frasesFortes(corte.texto || '');
     titulos = jogo.titulosDeJogo(corte, info, { fraseForte: fortes.length ? fortes[0].texto : null, evitar: contextoDoVideo && contextoDoVideo.evitar }).titulos;
     if (!titulos.length) titulos = gerarTitulos(corte);
+  } else if (falaQuebrada(corte)) {
+    // sem jogo nem streamer reconhecido e com a fala embaralhada (ou com palavrao):
+    // os modelos genericos, nunca a frase quebrada
+    titulos = jogo.titulosDeJogo(corte, { streamer: null, jogo: null }, { evitar: contextoDoVideo && contextoDoVideo.evitar }).titulos;
   } else {
     titulos = gerarTitulos(corte);
   }

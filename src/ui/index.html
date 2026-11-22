@@ -1550,11 +1550,11 @@ body[data-modo="croma"] #telaCroma { display: block; }
     <div class="grupo assinatura">
       <img src="/ui/icone.png" alt="">
       <div>
-        <b>Cortador Automático</b>
-        <span>por <b>Gabriel Workspace</b></span>
-        <a href="https://www.instagram.com/gabriel.workspace/" target="_blank" rel="noopener">Instagram @gabriel.workspace</a>
-        <a href="https://gabrielworkspace.github.io/cortador-automatico/" target="_blank" rel="noopener">Site e versão nova</a>
-        <span class="ia">A IA pode cometer falhas. Confira sempre antes de postar.</span>
+        <b>Mega Cortes HD</b>
+        <span>por <b>PixelDust64</b></span>
+        <a href="https://github.com/PixelDust64/cortador-automatico" target="_blank" rel="noopener">GitHub · PixelDust64/cortador-automatico</a>
+        <a href="https://github.com/PixelDust64/cortador-automatico/releases" target="_blank" rel="noopener">Versões e atualizações</a>
+        <span class="ia">Fork independente (MIT) baseado no projeto de Gabriel Workspace.</span>
       </div>
     </div>
 
@@ -1730,8 +1730,8 @@ body[data-modo="croma"] #telaCroma { display: block; }
         return await fetchOriginal(recurso, opcoes);
       } catch (e2) {
         if (e2 && e2.name === 'AbortError') throw e2;
-        throw new Error('A janela perdeu a conexão com o programa. Feche o Cortador Automático e abra de novo. ' +
-          'Se continuar, o antivírus pode estar bloqueando: libere a pasta do Cortador Automático nele.');
+        throw new Error('A janela perdeu a conexão com o programa. Feche o Mega Cortes HD e abra de novo. ' +
+          'Se continuar, o antivírus pode estar bloqueando: libere a pasta do Mega Cortes HD nele.');
       }
     }
   };
@@ -3064,7 +3064,7 @@ body[data-modo="croma"] #telaCroma { display: block; }
   let tituloOriginal = document.title, piscando = null;
   function piscarTitulo() {
     clearTimeout(piscando);
-    document.title = '✂ Clipe pronto! · Cortador Automático';
+    document.title = '⚡ Clipe pronto! · Mega Cortes HD';
     piscando = setTimeout(() => { document.title = tituloOriginal; }, 5000);
   }
 

@@ -24,7 +24,16 @@ Guia de uso detalhado: [LEIA-ME.txt](LEIA-ME.txt).
   - Acelera a **transcrição (`faster-whisper` / `ctranslate2`)** e a **separação de voz (`demucs`)** via **CUDA**, escolhendo automaticamente o `compute_type` suportado pela placa (`float16` em GPUs mais novas, `int8_float32` em arquiteturas Pascal `sm_61` como GTX 10xx), com fallback automático para CPU.
   - **FFmpeg fixado na versão `8.0.1`** (NVENC API `13.0`), mantendo compatibilidade com drivers NVIDIA `570+` / `582.xx` (inclusive série GTX 10xx / Pascal).
   - Nos **Ajustes**, exibe em uma linha direta a GPU detectada e as siglas ativas de transcrição e corte (`CUDA`/`CPU` e `NVENC`/`AMF`/`QSV`/`CPU`).
-- **Croma Studio integrado (aba opcional):** estúdio visual embutido para gerar thumbnails (`2048×1152`), banners (`2560×1440`), marcas d'água (`150×150`) para YouTube, fundos em gradiente e padrões geométricos — carregado sob demanda, sem pesar na abertura do programa.
+- **Croma Studio integrado (aba própria na barra superior):** função simples e direta para criar **thumbnails e banners para YouTube** e **materiais adicionais para criação de canais** (marcas d'água `150×150`, fundos em gradiente, padrões geométricos e tipografia editável) — carregado sob demanda, sem pesar na abertura do programa.
+
+## Croma Studio — Thumbnails, banners e materiais para criação de canais
+
+Além de gerar os cortes verticais, o **Mega Cortes HD** traz o **Croma Studio** embutido como uma segunda aba no topo do programa para agilizar a identidade visual do seu canal sem precisar abrir editores pesados:
+
+- **Thumbnails para YouTube (`2048×1152`)** com tipografia editável, camadas de texto e exportação rápida.
+- **Banners de canal (`2560×1440`)** já no formato recomendado do YouTube.
+- **Marcas d'água (`150×150`)** prontas para aplicar nos vídeos do canal.
+- **Materiais adicionais para criação de canais:** fundos em gradiente em alta resolução, padrões geométricos e presets prontos para Reels, Shorts, TikTok e YouTube (exportação em PNG, JPEG e BMP, 100% offline no próprio PC).
 
 ## Dois modos de corte
 
@@ -62,7 +71,8 @@ Requer Node 22+, `ffmpeg`, `yt-dlp` e Python com `faster-whisper` (`instalar.bat
 | `src/media.js` | integração com o `ffmpeg` |
 | `src/baixar.js` | download por link (`yt-dlp`) |
 | `src/sessoes.js` | perfil de corte |
-| `src/ui/index.html` | interface principal |
+| `src/ui/index.html` | interface principal (incluindo a aba do Croma Studio) |
+| `croma-studio/` / `src/ui/croma/` | Croma Studio: criador de thumbnails, banners e materiais para canais |
 | `py/transcrever.py` | transcrição com `faster-whisper` (CUDA automático + fallback CPU) |
 
 ## Instalador e builds

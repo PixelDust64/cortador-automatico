@@ -251,7 +251,7 @@ function main() {
 
   if (soMontar) return;
   compilarInstalador();
-  const exe = path.join(DIST, 'Instalar-Cortador-Automatico.exe');
+  const exe = path.join(DIST, 'Instalar-Mega-Cortes-HD.exe');
   console.log('\nPronto: ' + exe + ' (' + Math.round(fs.statSync(exe).size / 1048576) + ' MB)');
 }
 

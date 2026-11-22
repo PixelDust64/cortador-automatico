@@ -20,17 +20,17 @@ using System.Threading;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
-[assembly: System.Reflection.AssemblyTitle("Cortador Automático")]
-[assembly: System.Reflection.AssemblyProduct("Cortador Automático")]
-[assembly: System.Reflection.AssemblyDescription("Cortador Automático - Gabriel Workspace")]
-[assembly: System.Reflection.AssemblyCompany("Gabriel Workspace")]
-[assembly: System.Reflection.AssemblyCopyright("© 2026 Gabriel Workspace")]
-[assembly: System.Reflection.AssemblyVersion("2.0.7.0")]
-[assembly: System.Reflection.AssemblyFileVersion("2.0.7.0")]
+[assembly: System.Reflection.AssemblyTitle("Mega Cortes HD")]
+[assembly: System.Reflection.AssemblyProduct("Mega Cortes HD")]
+[assembly: System.Reflection.AssemblyDescription("Mega Cortes HD - Fork independente compatível (MIT)")]
+[assembly: System.Reflection.AssemblyCompany("PixelDust64")]
+[assembly: System.Reflection.AssemblyCopyright("© 2026 PixelDust64 (baseado no projeto MIT de Gabriel Workspace)")]
+[assembly: System.Reflection.AssemblyVersion("2.1.0.0")]
+[assembly: System.Reflection.AssemblyFileVersion("2.1.0.0")]
 
 static class Programa
 {
-    const string NOME = "Cortador Automático";
+    const string NOME = "Mega Cortes HD";
 
     static string pastaApp;       // onde o programa foi instalado
     static string pastaLocal;     // %LOCALAPPDATA%\CortadorAutomatico: registro, perfil da janela, endereco

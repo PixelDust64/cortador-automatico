@@ -2,9 +2,9 @@
 ; Não compile direto: rode  node instalador/montar.js  - ele monta a pasta
 ; "montagem" com tudo que o programa precisa e chama o compilador.
 
-#define Nome "Cortador Automático"
-#define Versao "2.0.7"
-#define Marca "Gabriel Workspace"
+#define Nome "Mega Cortes HD"
+#define Versao "2.1.0"
+#define Marca "PixelDust64"
 #define Exe "CortadorAutomatico.exe"
 #ifndef MONTAGEM
   #define MONTAGEM "montagem"
@@ -19,10 +19,10 @@ AppName={#Nome}
 AppVersion={#Versao}
 AppVerName={#Nome}
 AppPublisher={#Marca}
-AppPublisherURL=https://www.instagram.com/gabriel.workspace/
-AppSupportURL=https://gabrielworkspace.github.io/cortador-automatico/
-AppUpdatesURL=https://gabrielworkspace.github.io/cortador-automatico/
-AppCopyright=© 2026 {#Marca}
+AppPublisherURL=https://github.com/PixelDust64/cortador-automatico
+AppSupportURL=https://github.com/PixelDust64/cortador-automatico/issues
+AppUpdatesURL=https://github.com/PixelDust64/cortador-automatico/releases
+AppCopyright=© 2026 {#Marca} (baseado no projeto MIT de Gabriel Workspace)
 VersionInfoCompany={#Marca}
 VersionInfoDescription=Instalador do {#Nome} - {#Marca}
 VersionInfoProductName={#Nome}
@@ -48,7 +48,7 @@ WizardImageFile=imagens\lateral-0.bmp,imagens\lateral-1.bmp,imagens\lateral-2.bm
 WizardSmallImageFile=imagens\pequena-0.bmp,imagens\pequena-1.bmp,imagens\pequena-2.bmp
 ShowLanguageDialog=no
 OutputDir={#SAIDA}
-OutputBaseFilename=Instalar-Cortador-Automatico
+OutputBaseFilename=Instalar-Mega-Cortes-HD
 Compression=lzma2/max
 SolidCompression=yes
 LZMAUseSeparateProcess=yes
@@ -58,7 +58,7 @@ LZMANumBlockThreads=2
 Name: "ptbr"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
 
 [Messages]
-WelcomeLabel2=Isso vai instalar o [name], do Gabriel Workspace, no seu computador.%n%nEle transforma vídeos e lives da Twitch, Kick e YouTube em cortes verticais prontos pro TikTok, Reels e Shorts - de vídeo gravado ou ao vivo, enquanto a live acontece.%n%nTudo roda no seu PC, de graça. Os cortes ficam na pasta Vídeos > Cortador Automatico.%n%nInstagram: @gabriel.workspace
+WelcomeLabel2=Isso vai instalar o [name] (fork independente mantido por {#Marca}) no seu computador.%n%nEle transforma vídeos e lives da Twitch, Kick e YouTube em cortes verticais (9:16) com IA local, aceleração GPU adaptativa (CUDA/NVENC/AMF/QSV) e Croma Studio integrado para thumbnails, banners e materiais de canal.%n%nTotalmente compatível com os projetos da versão original (MIT, por Gabriel Workspace). Tudo roda no seu PC, de graça.
 FinishedLabel=Pronto! O [name] está instalado.%n%nÉ só abrir pelo atalho na área de trabalho ou no menu Iniciar.
 
 [Tasks]

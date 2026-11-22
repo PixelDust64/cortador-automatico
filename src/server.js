@@ -95,6 +95,9 @@ const TIPOS = {
   '.mkv': 'video/x-matroska',
   '.jpg': 'image/jpeg',
   '.png': 'image/png',
+  '.svg': 'image/svg+xml',
+  '.webp': 'image/webp',
+  '.ico': 'image/x-icon',
   '.woff2': 'font/woff2',
   '.srt': 'text/plain; charset=utf-8',
   '.txt': 'text/plain; charset=utf-8',
@@ -410,6 +413,22 @@ const servidor = http.createServer(async (req, res) => {
     // pasta ui, e so o nome do arquivo - nada de subir diretorio.
     if (/^\/ui\/[\w.-]+$/.test(rota)) {
       return servirArquivo(req, res, path.join(__dirname, 'ui', path.basename(rota)));
+    }
+
+    // Croma Studio (build estatico isolado em src/ui/croma, sem conflito com a UI principal).
+    if (rota === '/croma') {
+      res.writeHead(302, { Location: '/croma/' });
+      return res.end();
+    }
+    if (rota.startsWith('/croma/')) {
+      const raizCroma = path.resolve(__dirname, 'ui', 'croma');
+      const rel = rota.slice('/croma/'.length) || 'index.html';
+      const alvo = path.resolve(raizCroma, rel);
+      if (alvo.startsWith(raizCroma + path.sep) && fs.existsSync(alvo) && fs.statSync(alvo).isFile()) {
+        return servirArquivo(req, res, alvo);
+      }
+      const idx = path.join(raizCroma, 'index.html');
+      if (fs.existsSync(idx)) return servirArquivo(req, res, idx);
     }
 
     // A janela usa isso pra mostrar o endereco do celular e o QR code, e pra

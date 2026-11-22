@@ -1,99 +1,82 @@
-# Cortador Automático
+<p align="center">
+  <img src="docs/mega-cortes-hd-banner.jpg" alt="Mega Cortes HD — Cortes 9:16 com IA · GPU CUDA · Croma Studio" width="100%" />
+</p>
 
-**por Gabriel Workspace** · Instagram [@gabriel.workspace](https://www.instagram.com/gabriel.workspace/) ·
-[Baixar o instalador](https://gabrielworkspace.github.io/cortador-automatico/)
+# Mega Cortes HD
 
-Corta vídeo e live da **Kick, Twitch e YouTube** em clipes verticais (9:16)
-prontos para TikTok, Reels e Shorts — tanto **live que já acabou (VOD)** quanto
-**live acontecendo agora**.
+**Fork independente mantido por [PixelDust64](https://github.com/PixelDust64)** · [Baixar Releases](https://github.com/PixelDust64/cortador-automatico/releases)
 
-Tudo roda na máquina: nenhuma API, chave ou serviço pago. A internet só é usada
-para pegar o vídeo (yt-dlp) e, opcionalmente, ler o chat público da live.
+> **Aviso de independência e créditos:** o **Mega Cortes HD** é uma **versão independente da comunidade**, derivada do código aberto (licença [MIT](LICENSE)) do projeto original criado por **Gabriel Workspace** ([gabrielworkspace/cortador-automatico](https://github.com/gabrielworkspace/cortador-automatico) · [@gabriel.workspace](https://www.instagram.com/gabriel.workspace/)).
+> Este fork **não é oficial** e **não é afiliado, mantido ou endossado por Gabriel Workspace**, mas permanece **100% compatível** com os projetos, pastas e formatos da versão original.
+> Para a versão oficial assinada digitalmente, acesse: [gabrielworkspace.github.io/cortador-automatico](https://gabrielworkspace.github.io/cortador-automatico/).
 
-Guia de uso para quem clipa: [LEIA-ME.txt](LEIA-ME.txt).
+---
 
-## Dois modos
+Corta vídeo e live da **Kick, Twitch e YouTube** em clipes verticais (**9:16**) prontos para TikTok, Reels e Shorts — tanto **live gravada (VOD)** quanto **ao vivo agora** — e inclui o **Croma Studio** integrado para criar thumbnails, banners e marcas d'água no mesmo lugar.
 
-**Vídeo gravado** — baixa o VOD (ou usa um arquivo), transcreve com Whisper
-local, acha os melhores trechos (léxico de games, com GTA: perseguição,
-assalto, morte, bug, reação), corta em 9:16 com gancho e legenda e dá nota a cada clipe.
-Projetos ficam editáveis: ajustar começo/fim, reescrever o gancho, extrair mais.
+Tudo roda localmente no seu PC: nenhuma conta, chave de API ou mensalidade. A internet só é usada para baixar o vídeo (`yt-dlp`) e, opcionalmente, ler o chat público da live.
+
+Guia de uso detalhado: [LEIA-ME.txt](LEIA-ME.txt).
+
+## Diferenciais desta versão (Mega Cortes HD)
+
+- **Uso adaptativo de GPU (CUDA + NVENC / AMF / QSV):** detecta em paralelo e de forma independente todos os recursos de hardware disponíveis no seu PC.
+  - Acelera a **transcrição (`faster-whisper` / `ctranslate2`)** e a **separação de voz (`demucs`)** via **CUDA**, escolhendo automaticamente o `compute_type` suportado pela placa (`float16` em GPUs mais novas, `int8_float32` em arquiteturas Pascal `sm_61` como GTX 10xx), com fallback automático para CPU.
+  - **FFmpeg fixado na versão `8.0.1`** (NVENC API `13.0`), mantendo compatibilidade com drivers NVIDIA `570+` / `582.xx` (inclusive série GTX 10xx / Pascal).
+  - Nos **Ajustes**, exibe em uma linha direta a GPU detectada e as siglas ativas de transcrição e corte (`CUDA`/`CPU` e `NVENC`/`AMF`/`QSV`/`CPU`).
+- **Croma Studio integrado (aba opcional):** estúdio visual embutido para gerar thumbnails (`2048×1152`), banners (`2560×1440`), marcas d'água (`150×150`) para YouTube, fundos em gradiente e padrões geométricos — carregado sob demanda, sem pesar na abertura do programa.
+
+## Dois modos de corte
+
+**Vídeo gravado** — baixa o VOD (ou usa um arquivo local), transcreve com Whisper local (GPU CUDA ou CPU), identifica os melhores trechos, corta em 9:16 com gancho e legenda e dá nota a cada clipe. Projetos ficam editáveis para ajustar começo/fim, reescrever o gancho ou extrair mais cortes.
 
 **Ao vivo agora** — feito para postar primeiro:
 
-1. **Gravação contínua**: o yt-dlp acha a transmissão; o ffmpeg grava em pedaços
-   de 4 s sem recodificar. Na Twitch, a playlist é lida direto e os pedaços de
-   anúncio (marcados como não-`live`) são descartados. Buffer dos últimos
-   20 minutos, apagado ao parar.
-2. **Detecção leve**: taxa de mensagens do chat (Twitch IRC anônimo / Kick) e
-   pico de volume do streamer, comparados com a mediana dos últimos minutos.
-3. **Conectar → configurar → Começar a clipar**: ao conectar, a live já é
-   guardada e a imagem dela aparece no mesmo editor de webcam/foco do modo
-   vídeo, com prévia. **CLIPAR AGORA** (tecla `C`) corta os últimos N segundos.
-4. **Render rápido** (x264 veryfast) direto dos pedaços: clipe de 20–30 s pronto
-   em ~10–20 s. Depois, transcreve só o clipe para sugerir título e hashtags.
+1. **Gravação contínua**: o `yt-dlp` localiza a transmissão e o `ffmpeg` grava em pedaços de 4 s sem recodificar (descartando anúncios na Twitch), mantendo buffer dos últimos 20 minutos.
+2. **Detecção leve**: taxa de mensagens do chat (Twitch IRC anônimo / Kick) e pico de volume comparados com a mediana recente.
+3. **Conectar → configurar → Começar a clipar**: com prévia do enquadramento em tempo real; **CLIPAR AGORA** (tecla `C`) corta os últimos N segundos.
+4. **Render rápido** (`x264 veryfast` ou GPU) direto dos pedaços, seguido de transcrição do clipe para sugerir título e hashtags.
 
 ## Texto fixo na tela
 
-Nos dois modos dá pra escrever um texto que vai em todo clipe (em cima, no meio
-ou embaixo; o clipe todo ou só os 5 primeiros segundos; branco ou amarelo).
-`/` quebra a linha. Aparece na prévia igual ao clipe final.
+Nos dois modos dá para adicionar um texto fixo em todo clipe (topo, meio ou baixo; clipe inteiro ou só os 5 primeiros segundos; branco ou amarelo), usando `/` para quebrar linha e com visualização na prévia.
 
-## Rodar
+## Rodar a partir do código
 
-```
+```bash
 iniciar.bat            # Windows: abre a janela do programa
 node src/server.js     # ou direto (porta 4321)
 ```
 
-Precisa de Node 22+, ffmpeg, yt-dlp e Python com faster-whisper
-(`instalar.bat` cuida disso). Sem `DADOS` definido, os arquivos vão para
-`D:\CortadorAutomatico` quando o D: existe.
+Requer Node 22+, `ffmpeg`, `yt-dlp` e Python com `faster-whisper` (`instalar.bat` configura tudo). Sem `DADOS` definido, os arquivos vão para `D:\CortadorAutomatico` quando o disco `D:` existe.
 
 ## Código
 
 | Arquivo | O que faz |
 |---|---|
-| `src/server.js` | servidor local e rotas (`/api/aovivo/*` para o modo ao vivo) |
+| `src/server.js` | servidor local, rotas `/api/*` e rota estática `/croma/` |
+| `src/desempenho.js` | modos leve/total e detecção paralela de GPU (NVENC/AMF/QSV e CUDA) |
 | `src/aovivo.js` | gravação da live, chat, detecção, corte e título dos clipes ao vivo |
 | `src/pipeline.js` | vídeo gravado: transcrição → escolha → clipes |
-| `src/score.js` / `src/copy.js` | nota dos trechos, títulos e hashtags (#gta6 quando o vídeo é de GTA) |
-| `src/media.js` | tudo que fala com o ffmpeg |
-| `src/baixar.js` | download por link (yt-dlp) |
-| `src/sessoes.js` | o perfil de corte (um só, geral) |
-| `src/ui/index.html` | a janela |
+| `src/score.js` / `src/copy.js` | pontuação dos trechos, títulos e hashtags |
+| `src/media.js` | integração com o `ffmpeg` |
+| `src/baixar.js` | download por link (`yt-dlp`) |
+| `src/sessoes.js` | perfil de corte |
+| `src/ui/index.html` | interface principal |
+| `py/transcrever.py` | transcrição com `faster-whisper` (CUDA automático + fallback CPU) |
 
-## Instalador
+## Instalador e builds
 
-O instalador (`Instalar-Cortador-Automatico.exe`) é montado pelo GitHub
-Actions a partir deste código ([.github/workflows/instalador.yml](.github/workflows/instalador.yml))
-e publicado em [Releases](https://github.com/gabrielworkspace/cortador-automatico/releases).
-Ele traz Node, Python com faster-whisper, ffmpeg, yt-dlp e os modelos de fala:
-quem instala não precisa de mais nada. Pra montar no próprio PC:
-`node instalador/montar.js`.
+Os instaladores desta versão independente são publicados em [Releases deste repositório](https://github.com/PixelDust64/cortador-automatico/releases) e trazem Node, Python com `faster-whisper`, `ffmpeg 8.0.1`, `yt-dlp` e os modelos de fala embutidos. Para montar localmente no Windows: `node instalador/montar.js`.
+
+> **Nota sobre assinatura de código:** as builds publicadas neste fork são **compilações independentes da comunidade** e **não** são assinadas por Gabriel Workspace nem pela SignPath Foundation.
 
 ## Privacidade
 
-Este programa não envia nenhuma informação pra outros sistemas na rede, a não
-ser quando a pessoa pede: baixar um vídeo ou uma live pelo link, ler o chat
-público de uma live (dá pra desligar) e atualizar o baixador de vídeos (yt-dlp)
-quando um download falha. Os vídeos e os cortes ficam só no computador de quem
-usa.
+O programa não envia dados para terceiros, exceto quando você solicita baixar um vídeo/live pelo link, ler o chat público da live (opcional) ou atualizar o `yt-dlp`. Todos os vídeos, transcrições, artes e cortes ficam apenas no seu computador.
 
-## Política de assinatura de código
+## Créditos e Licença
 
-- Autor e aprovador das versões: Gabriel Workspace ([gabrielworkspace](https://github.com/gabrielworkspace) no GitHub, [@gabriel.workspace](https://www.instagram.com/gabriel.workspace/) no Instagram)
-- Os instaladores publicados são montados só pelo GitHub Actions deste
-  repositório, a partir do código público.
-- O instalador usa a SignPath Foundation pra assinatura de código.
-  Free code signing provided by [SignPath.io](https://signpath.io/),
-  certificate by [SignPath Foundation](https://signpath.org/).
-
-## Licença
-
-[MIT](LICENSE). O instalador inclui programas de terceiros, cada um com a sua
-licença: Node.js, Python, faster-whisper, ffmpeg e yt-dlp.
-
-O nome "Cortador Automático", o nome "Gabriel Workspace" e o logo **não fazem
-parte da licença**: versões feitas a partir deste código precisam de outro nome
-e outro logo. Detalhes em [MARCA.md](MARCA.md).
+- **Projeto original e autor base:** **Gabriel Workspace** ([github.com/gabrielworkspace/cortador-automatico](https://github.com/gabrielworkspace/cortador-automatico) · Instagram [@gabriel.workspace](https://www.instagram.com/gabriel.workspace/)).
+- **Licença do código:** [MIT](LICENSE) — mantendo integralmente o aviso de copyright original. O instalador inclui ferramentas de terceiros sob suas respectivas licenças (`Node.js`, `Python`, `faster-whisper`, `ffmpeg` e `yt-dlp`).
+- **Marca:** em conformidade com [MARCA.md](MARCA.md), o nome *"Cortador Automático"*, o nome *"Gabriel Workspace"* e o logo original não pertencem a este fork; esta versão independente utiliza nome próprio (**Mega Cortes HD**) e identidade visual própria.

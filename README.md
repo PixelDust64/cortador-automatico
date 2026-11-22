@@ -2,13 +2,19 @@
   <img src="docs/mega-cortes-hd-banner.jpg" alt="Mega Cortes HD — Cortes 9:16 com IA · GPU CUDA · Croma Studio" width="100%" />
 </p>
 
+<p align="center">
+  <a href="https://github.com/gabrielworkspace/cortador-automatico"><img src="https://img.shields.io/badge/compat%C3%ADvel%20com-cortador--automatico%20v2.0.7-22c55e?style=flat-square" alt="Compatível com cortador-automatico v2.0.7" /></a>
+  <a href="docs/testes-base-original.test.js"><img src="https://img.shields.io/badge/base%20original-100%25%20compat%C3%ADvel-3b82f6?style=flat-square" alt="Base original 100% compatível" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/licen%C3%A7a-MIT-a855f7?style=flat-square" alt="Licença MIT" /></a>
+</p>
+
 # Mega Cortes HD
 
 **Fork independente mantido por [PixelDust64](https://github.com/PixelDust64)** · [Baixar Releases](https://github.com/PixelDust64/cortador-automatico/releases)
 
-> **Aviso de independência e créditos:** o **Mega Cortes HD** é uma **versão independente da comunidade**, derivada do código aberto (licença [MIT](LICENSE)) do projeto original criado por **Gabriel Workspace** ([gabrielworkspace/cortador-automatico](https://github.com/gabrielworkspace/cortador-automatico) · [@gabriel.workspace](https://www.instagram.com/gabriel.workspace/)).
-> Este fork **não é oficial** e **não é afiliado, mantido ou endossado por Gabriel Workspace**, mas permanece **100% compatível** com os projetos, pastas e formatos da versão original.
-> Para a versão oficial assinada digitalmente, acesse: [gabrielworkspace.github.io/cortador-automatico](https://gabrielworkspace.github.io/cortador-automatico/).
+> **Política de compatibilidade e créditos:** o **Mega Cortes HD** é uma **versão independente da comunidade**, derivada do código aberto (licença [MIT](LICENSE)) do projeto original criado por **Gabriel Workspace** ([gabrielworkspace/cortador-automatico](https://github.com/gabrielworkspace/cortador-automatico) · [@gabriel.workspace](https://www.instagram.com/gabriel.workspace/)).
+> - **Compromisso de compatibilidade:** esta branch tem a obrigação de se manter **100% compatível** com a versão original do `cortador-automatico` (projetos, pastas, formatos e funcionalidades base, validados por [docs/testes-base-original.test.js](docs/testes-base-original.test.js)), podendo incluir novas funcionalidades exclusivas sem quebrar a aplicação original.
+> - **Independência:** este fork **não é oficial** e **não é afiliado, mantido ou endossado por Gabriel Workspace**. Para a versão oficial assinada digitalmente, acesse: [gabrielworkspace.github.io/cortador-automatico](https://gabrielworkspace.github.io/cortador-automatico/).
 
 ---
 

@@ -18,28 +18,44 @@
 
 ---
 
-Corta vídeo e live da **Kick, Twitch e YouTube** em clipes verticais (**9:16**) prontos para TikTok, Reels e Shorts — tanto **live gravada (VOD)** quanto **ao vivo agora** — e inclui o **Croma Studio** integrado para criar thumbnails, banners e marcas d'água no mesmo lugar.
+Corta vídeo e live da **Kick, Twitch e YouTube** em clipes verticais (**9:16**) prontos para TikTok, Reels e Shorts — tanto **live gravada (VOD)** quanto **ao vivo agora** — e inclui o **Croma Studio** (thumbnails, banners e vinhetas) e o **Splitter Studio** (estúdio completo de áudio e separação vocal/instrumentos com IA) integrados no mesmo lugar.
 
-Tudo roda localmente no seu PC: nenhuma conta, chave de API ou mensalidade. A internet só é usada para baixar o vídeo (`yt-dlp`) e, opcionalmente, ler o chat público da live.
+Tudo roda localmente no seu PC: nenhuma conta, chave de API ou mensalidade. A internet só é usada para baixar o vídeo (`yt-dlp`), ler o chat público da live (opcional) ou instalar o motor de IA do Splitter Studio sob demanda.
 
 Guia de uso detalhado: [LEIA-ME.txt](LEIA-ME.txt).
 
 ## Diferenciais desta versão (Mega Cortes HD)
 
 - **Uso adaptativo de GPU (CUDA + NVENC / AMF / QSV):** detecta em paralelo e de forma independente todos os recursos de hardware disponíveis no seu PC.
-  - Acelera a **transcrição (`faster-whisper` / `ctranslate2`)** e a **separação de voz (`demucs`)** via **CUDA**, escolhendo automaticamente o `compute_type` suportado pela placa (`float16` em GPUs mais novas, `int8_float32` em arquiteturas Pascal `sm_61` como GTX 10xx), com fallback automático para CPU.
+  - Acelera a **transcrição (`faster-whisper` / `ctranslate2`)** e a **separação de voz/instrumentos (`demucs`)** via **CUDA**, escolhendo automaticamente o `compute_type` e o build PyTorch compatível com a série da placa (`cu126` para Pascal `sm_61` e RTX 20/30/40, `cu128` para Blackwell RTX 50, ou fallback leve para **CPU**).
   - **FFmpeg fixado na versão `8.0.1`** (NVENC API `13.0`), mantendo compatibilidade com drivers NVIDIA `570+` / `582.xx` (inclusive série GTX 10xx / Pascal).
   - Nos **Ajustes**, exibe em uma linha direta a GPU detectada e as siglas ativas de transcrição e corte (`CUDA`/`CPU` e `NVENC`/`AMF`/`QSV`/`CPU`).
-- **Croma Studio integrado (aba própria na barra superior):** função simples e direta para criar **thumbnails e banners para YouTube** e **materiais adicionais para criação de canais** (marcas d'água `150×150`, fundos em gradiente, padrões geométricos e tipografia editável) — carregado sob demanda, sem pesar na abertura do programa.
+- **Croma Studio integrado (aba própria na barra superior):** crie thumbnails, banners, marcas d'água, QR Codes e salve até 10 gradientes e 10 thumbs favoritas (incluindo **`★ Final padrão`** e até 2 vinhetas com silêncio ou jingle nos cortes).
+- **Splitter Studio integrado (aba própria na barra superior):** estúdio completo de manipulação de áudio com **8 ferramentas**, reaproveitamento automático da pasta `baixados/` (sem baixar o mesmo link duas vezes) e instalação adaptativa de IA (GPU CUDA ou CPU).
+- **Fila lateral ao vivo:** acompanhe o progresso de múltiplos vídeos, reordene trabalhos pendentes ou cancele cortes em andamento sem sair da tela principal.
 
-## Croma Studio — Thumbnails, banners e materiais para criação de canais
+## Splitter Studio — Estúdio de Áudio e IA Integrado
 
-Além de gerar os cortes verticais, o **Mega Cortes HD** traz o **Croma Studio** embutido como uma segunda aba no topo do programa para agilizar a identidade visual do seu canal sem precisar abrir editores pesados:
+O **Splitter Studio** funciona tanto integrado ao topo do **Mega Cortes HD** quanto de forma independente na pasta [splitter-studio/](splitter-studio/), reunindo **8 ferramentas de áudio** que aceitam **arquivo local**, **link da web (YouTube, Twitch, Kick, SoundCloud)** ou **vídeos já baixados na biblioteca do Mega Cortes (`baixados/`)**:
 
-- **Thumbnails para YouTube (`2048×1152`)** com tipografia editável, camadas de texto e exportação rápida.
-- **Banners de canal (`2560×1440`)** já no formato recomendado do YouTube.
-- **Marcas d'água (`150×150`)** prontas para aplicar nos vídeos do canal.
-- **Materiais adicionais para criação de canais:** fundos em gradiente em alta resolução, padrões geométricos e presets prontos para Reels, Shorts, TikTok e YouTube (exportação em PNG, JPEG e BMP, 100% offline no próprio PC).
+1. **Removedor Vocal e Isolamento:** separa **Música (Instrumental)** e **Voz** com IA neural (**Demucs**) ou modo rápido (**FFmpeg**), com player sincronizado, waveforms coloridas, volume independente por faixa e exportação em MP3/WAV.
+2. **Splitter de Instrumentos (Stems):** separa a música em **4 faixas** (*Voz, Bateria, Baixo, Outros*) ou **6 faixas** (*+ Guitarra e Piano*), permitindo ajustar o volume de cada instrumento e baixar o mix personalizado.
+3. **Mudar Tom e Velocidade:** altera semitons (`-12` a `+12`) e andamento (`0.5x` a `2.0x`) de forma independente via **FFmpeg Rubberband**.
+4. **Detector de BPM e Tom:** identifica batidas por minuto (**BPM**), tonalidade musical (ex.: `A menor`), código **Camelot** para DJs (ex.: `8A`) e volume médio (`dB`).
+5. **Cortador de Áudio:** seleção interativa na waveform com **Fade In / Fade Out** e modo **Manter seleção** ou **Remover o meio**.
+6. **Juntar Faixas:** concatena múltiplos áudios ou vídeos baixados com reordenação e **crossfade** opcional (`0` a `5s`).
+7. **Gravador de Microfone:** gravação direta no navegador com visualizador em tempo real e exportação em MP3/WAV.
+8. **Modo Karaoke:** toca a base instrumental (vinda do Removedor ou da biblioteca) enquanto grava sua voz em sincronia e mixa tudo com efeito reverb/eco leve opcional.
+
+> **Requisitos variáveis de GPU/CPU:** para manter o instalador do Mega Cortes HD leve (`~765 MB`), o PyTorch/Demucs não vai pré-empacotado para todas as placas. Ao clicar em **Instalar IA** no Splitter Studio, `py/splitter_audio.py` consulta a série da GPU (`nvidia-smi`), baixa o build exato compatível com a arquitetura (ou o pacote leve de CPU se não houver NVIDIA compatível) e mantém fallback automático para CPU.
+
+## Croma Studio — Thumbnails, banners, favoritos e vinhetas
+
+Além de gerar os cortes verticais, o **Mega Cortes HD** traz o **Croma Studio** embutido no topo do programa para agilizar a identidade visual do seu canal sem precisar abrir editores pesados:
+
+- **Thumbnails e presets prontos** para YouTube (`2048×1152`), Shorts/Reels (`1080×1920`), TikTok (`1080×1440`), Instagram (`4:5` e `1:1`), **Banners (`2560×1440`)** e **Marcas d'água (`150×150`)**.
+- **Favoritos e `★ Final padrão`:** salve até 10 gradientes e 10 thumbs favoritas (ou importe uma imagem pronta) para aplicar como tela final padrão em todos os cortes ou como até **2 vinhetas** por clipe no Editor de Cortes (com silêncio ou áudio/jingle MP3/MP4).
+- **QR Code, fotos de fundo e fractais:** gere QR Codes arrastáveis/redimensionáveis direto sobre a arte, importe fotos de fundo e use fundos em gradiente ou fractais 100% offline.
 
 ## Dois modos de corte
 
@@ -69,17 +85,20 @@ Requer Node 22+, `ffmpeg`, `yt-dlp` e Python com `faster-whisper` (`instalar.bat
 
 | Arquivo | O que faz |
 |---|---|
-| `src/server.js` | servidor local, rotas `/api/*` e rota estática `/croma/` |
+| `src/server.js` | servidor local, fila lateral, rotas `/api/*`, `/croma/` e `/splitter/` |
+| `src/splitter.js` | backend do Splitter Studio e cache compartilhado com `baixados/` |
 | `src/desempenho.js` | modos leve/total e detecção paralela de GPU (NVENC/AMF/QSV e CUDA) |
 | `src/aovivo.js` | gravação da live, chat, detecção, corte e título dos clipes ao vivo |
 | `src/pipeline.js` | vídeo gravado: transcrição → escolha → clipes |
 | `src/score.js` / `src/copy.js` | pontuação dos trechos, títulos e hashtags |
-| `src/media.js` | integração com o `ffmpeg` |
+| `src/media.js` | integração com o `ffmpeg` (cortes, sincronia e vinhetas) |
 | `src/baixar.js` | download por link (`yt-dlp`) |
 | `src/sessoes.js` | perfil de corte |
-| `src/ui/index.html` | interface principal (incluindo a aba do Croma Studio) |
-| `croma-studio/` / `src/ui/croma/` | Croma Studio: criador de thumbnails, banners e materiais para canais |
+| `src/ui/index.html` | interface principal (com abas do Croma Studio e Splitter Studio) |
+| `croma-studio/` / `src/ui/croma/` | Croma Studio: thumbnails, banners, favoritos, QR Code e materiais para canais |
+| `splitter-studio/` / `src/ui/splitter/` | Splitter Studio: 8 ferramentas de áudio (versão standalone e integrada) |
 | `py/transcrever.py` | transcrição com `faster-whisper` (CUDA automático + fallback CPU) |
+| `py/splitter_audio.py` | motor Python do Splitter Studio (detecção de GPU, Demucs e Tom/BPM) |
 
 ## Instalador e builds
 

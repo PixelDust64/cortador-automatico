@@ -35,6 +35,8 @@ fontes/
 # Python so do programa (o instalar.bat cria)
 ambiente/
 
-# Sandbox local e config de IDE
-splitter-studio/
+# Sandbox local e config de IDE (mantem o codigo-fonte de splitter-studio/ no GitHub)
+splitter-studio/.venv/
+splitter-studio/runtime/
+splitter-studio/dados/
 .vscode/

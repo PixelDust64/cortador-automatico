@@ -83,6 +83,15 @@
     backdrop-filter: blur(14px) saturate(1.2);
     border-bottom: 1px solid var(--linha);
   }
+  .marca-inicio {
+    display: inline-flex; align-items: center; gap: 11px; flex: 1; min-width: 0;
+    background: transparent; border: 0; padding: 4px 8px 4px 2px; border-radius: 999px;
+    color: inherit; font: inherit; text-align: left; cursor: pointer;
+    transition: opacity .15s, transform .15s;
+  }
+  .marca-inicio:hover { opacity: .92; }
+  .marca-inicio:hover .marca-logo { border-color: var(--marca); box-shadow: 0 0 22px -2px var(--marca-brilho); }
+  .marca-inicio:active { transform: scale(.985); }
   .marca-logo {
     width: 32px; height: 32px; border-radius: 50%; flex: none;
     background: radial-gradient(circle at 50% 30%, rgba(255,255,255,.10), rgba(255,255,255,.02));
@@ -920,8 +929,10 @@ body[data-modo="splitter"] .fila-aba { display: none !important; }
 </head>
 <body data-modo="fluxo">
 <div class="topo">
-  <div class="marca-logo"><i data-lucide="clapperboard" class="i"></i></div>
-  <h1>Mega Cortes HD</h1>
+  <button type="button" class="marca-inicio" id="btnInicio" title="Voltar para a tela inicial">
+    <span class="marca-logo"><i data-lucide="clapperboard" class="i"></i></span>
+    <h1>Mega Cortes HD</h1>
+  </button>
   <form class="link-topo" id="formLinkTopo" autocomplete="off">
     <i data-lucide="link-2" class="i"></i>
     <input type="text" id="linkTopo" placeholder="Cole aqui o link da live ou do vídeo · Kick, Twitch ou YouTube" aria-label="Link da live ou do vídeo">
@@ -4946,6 +4957,18 @@ body[data-modo="splitter"] .fila-aba { display: none !important; }
   fetch('/splitter/').then((r) => { if (r.ok) $('btnSplitter').hidden = false; }).catch(() => {});
   $('btnCroma').addEventListener('click', () => abrirCroma());
   $('btnSplitter').addEventListener('click', () => abrirSplitter());
+  $('btnInicio').addEventListener('click', () => {
+    if (document.body.dataset.modo === 'croma') abrirCroma(false);
+    if (document.body.dataset.modo === 'splitter') abrirSplitter(false);
+    const aj = document.getElementById('ajustes');
+    if (aj && aj.classList.contains('on')) aj.classList.remove('on');
+    if (processandoAgora) mostrarSecao('processando', 'processando');
+    else {
+      escolherModo('video');
+      irPara(1);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
   $('btnProjetos').addEventListener('click', () => {
     if (document.body.dataset.modo === 'croma') abrirCroma(false);
     if (document.body.dataset.modo === 'splitter') abrirSplitter(false);

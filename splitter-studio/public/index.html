@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Audio Studio — Removedor Vocal, Splitter, Tom/BPM &amp; Karaoke</title>
+  <style>
+    :root {
+      --bg: #17171e;
+      --bg-sidebar: #1c1c26;
+      --bg-card: #222230;
+      --bg-input: #14141c;
+      --border: #2e2e40;
+      --accent: #665dc3;
+      --accent-hover: #7b72db;
+      --accent-glow: rgba(102, 93, 195, 0.25);
+      --green: #22c55e;
+      --purple: #8b5cf6;
+      --amber: #f59e0b;
+      --cyan: #06b6d4;
+      --pink: #ec4899;
+      --red: #ef4444;
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Sidebar estilo VocalRemover */
+    .sidebar {
+      width: 96px;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 14px 6px;
+      gap: 4px;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 20;
+      overflow-y: auto;
+    }
+    .brand-dot {
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--green));
+      display: grid; place-items: center;
+      font-weight: 800; font-size: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 18px var(--accent-glow);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      padding: 10px 4px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 11px;
+      line-height: 1.2;
+      text-align: center;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+    .nav-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+    .nav-btn:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+    .nav-btn.active {
+      color: #fff;
+      background: rgba(102, 93, 195, 0.16);
+    }
+    .nav-btn.active::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 8px; bottom: 8px;
+      width: 3px;
+      background: var(--accent);
+      border-radius: 0 4px 4px 0;
+    }
+
+    /* Main */
+    .main {
+      margin-left: 96px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 28px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(23, 23, 30, 0.85);
+      backdrop-filter: blur(8px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .status-pills {
+      display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+    }
+    .pill {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+    .pill.ok { color: #d1fae5; border-color: rgba(34,197,94,0.35); }
+    .pill.ok .dot { background: var(--green); }
+    .pill.warn { color: #fef3c7; border-color: rgba(245,158,11,0.35); }
+    .pill.warn .dot { background: var(--amber); }
+
+    .content {
+      max-width: 1040px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 28px 24px 60px;
+      flex: 1;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 620px;
+      margin: 0 auto;
+    }
+
+    /* Unified Input Card (Arquivo + Link YouTube/Web) */
+    .input-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 22px;
+      transition: border-color 0.15s;
+    }
+    .input-card.dragover {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .input-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 11px 20px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .btn:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid var(--accent);
+      color: #e0deff;
+    }
+    .btn-outline:hover:not(:disabled) { background: rgba(102, 93, 195, 0.18); }
+    .btn-secondary {
+      background: #2b2b3d;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover:not(:disabled) { background: #36364d; }
+    .btn-danger { background: var(--red); }
+    .btn-danger:hover:not(:disabled) { background: #dc2626; }
+    .btn-green { background: #16a34a; }
+    .btn-green:hover:not(:disabled) { background: #15803d; }
+    .btn-sm { padding: 7px 14px; font-size: 12.5px; }
+
+    .link-box {
+      flex: 1;
+      min-width: 260px;
+      display: flex;
+      gap: 8px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 4px 4px 16px;
+      align-items: center;
+    }
+    .link-box input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      min-width: 120px;
+    }
+    .link-box input::placeholder { color: #6b7280; }
+
+    .active-media-bar {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      font-size: 13px;
+    }
+    .active-media-info {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .tag {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(102, 93, 195, 0.2);
+      color: #c4b5fd;
+      font-weight: 600;
+    }
+
+    /* Tool Panels */
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px;
+      margin-bottom: 20px;
+    }
+    .panel h3 {
+      font-size: 16px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .controls-row {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 150px;
+    }
+    .field label { font-size: 12px; color: var(--muted); font-weight: 600; }
+    select, input[type="number"], input[type="text"] {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 9px 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      outline: none;
+    }
+    input[type="range"] {
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    /* Multi-track waveform player */
+    .track-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 14px 0;
+    }
+    .track-row {
+      display: grid;
+      grid-template-columns: 165px 1fr auto;
+      gap: 14px;
+      align-items: center;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 14px;
+    }
+    @media (max-width: 720px) {
+      .track-row { grid-template-columns: 1fr; }
+    }
+    .track-meta { display: flex; flex-direction: column; gap: 6px; }
+    .track-name { font-weight: 600; font-size: 13.5px; display: flex; align-items: center; gap: 8px; }
+    .track-vol { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+    .track-vol input { width: 100%; }
+    .wave-wrap {
+      position: relative;
+      height: 62px;
+      background: #101017;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .wave-canvas { width: 100%; height: 100%; display: block; }
+    .playhead {
+      position: absolute;
+      top: 0; bottom: 0; left: 0;
+      width: 2px;
+      background: #fff;
+      pointer-events: none;
+      box-shadow: 0 0 8px #fff;
+    }
+
+    /* Cutter region */
+    .cutter-wrap {
+      position: relative;
+      height: 110px;
+      background: #101017;
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 14px 0;
+      border: 1px solid var(--border);
+      cursor: crosshair;
+    }
+    .cutter-region {
+      position: absolute;
+      top: 0; bottom: 0;
+      background: rgba(102, 93, 195, 0.28);
+      border-left: 3px solid var(--accent);
+      border-right: 3px solid var(--green);
+      pointer-events: none;
+    }
+
+    /* Key & BPM cards */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .metric-card {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      text-align: center;
+    }
+    .metric-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .metric-val { font-size: 30px; font-weight: 800; margin-top: 6px; color: #fff; }
+    .metric-sub { font-size: 12px; color: #a5b4fc; margin-top: 4px; }
+
+    /* Joiner list */
+    .join-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+    }
+
+    /* Progress / Toast */
+    .progress-box {
+      background: rgba(102, 93, 195, 0.12);
+      border: 1px solid rgba(102, 93, 195, 0.35);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin: 14px 0;
+      display: none;
+    }
+    .progress-box.show { display: block; }
+    .progress-bar {
+      height: 6px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 15%;
+      background: linear-gradient(90deg, var(--accent), var(--green));
+      transition: width 0.25s ease;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #232334;
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-size: 13.5px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      transition: all 0.2s;
+      z-index: 99;
+      max-width: 420px;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.err { border-color: rgba(239,68,68,0.6); background: #2d181c; }
+
+    .tool-section { display: none; }
+    .tool-section.active { display: block; }
+
+    .rec-meter {
+      width: 100%;
+      height: 90px;
+      background: #101017;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      display: block;
+      margin: 14px 0;
+    }
+    .rec-timer {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .hidden { display: none !important; }
+    audio { width: 100%; margin-top: 10px; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <!-- Sidebar com as 8 ferramentas do VocalRemover -->
+  <aside class="sidebar">
+    <div class="brand-dot" title="Audio Studio Local">AS</div>
+
+    <button class="nav-btn active" data-tool="removedor">
+      <svg viewBox="0 0 24 24"><circle cx="7" cy="9" r="2.5"/><circle cx="7" cy="15" r="2.5"/><path d="M13 12h7m-3-3 3 3-3 3"/></svg>
+      Removedor
+    </button>
+    <button class="nav-btn" data-tool="splitter">
+      <svg viewBox="0 0 24 24"><path d="M4 18h16M12 4v14M7 10l5-6 5 6"/></svg>
+      Splitter
+    </button>
+    <button class="nav-btn" data-tool="tom">
+      <svg viewBox="0 0 24 24"><path d="M9 4v10a3 3 0 0 0 6 0V4M12 17v3"/></svg>
+      Mudar de tom
+    </button>
+    <button class="nav-btn" data-tool="bpm">
+      <svg viewBox="0 0 24 24"><path d="M12 3l6 17H6L12 3z"/><path d="M12 13l4-4"/></svg>
+      Tom e BPM
+    </button>
+    <button class="nav-btn" data-tool="cortador">
+      <svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><path d="M8.5 7.5 20 18M8.5 16.5 20 6"/></svg>
+      Cortador
+    </button>
+    <button class="nav-btn" data-tool="juntar">
+      <svg viewBox="0 0 24 24"><path d="M4 8h6v8H4zM14 8h6v8h-6zM10 12h4"/></svg>
+      Juntar
+    </button>
+    <button class="nav-btn" data-tool="gravador">
+      <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3m-3 0h6"/></svg>
+      Gravador
+    </button>
+    <button class="nav-btn" data-tool="karaoke">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/></svg>
+      Karaoke
+    </button>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div style="font-weight:700; font-size:15px;">Audio Studio Local <span style="color:var(--muted); font-weight:400;">· ambiente isolado</span></div>
+      <div class="status-pills" id="statusPills">
+        <span class="pill"><span class="dot"></span>Verificando ferramentas...</span>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- Barra Unificada de Entrada: Arquivo Local OU Link (YouTube, Twitch, Kick, SoundCloud...) -->
+      <div class="input-card" id="dropZone">
+        <div class="input-row">
+          <input type="file" id="fileInput" accept="audio/*,video/*" class="hidden" />
+          <button class="btn btn-outline" id="btnEscolherArquivo">Selecionar arquivo</button>
+          <span style="color:var(--muted); font-size:13px;">ou</span>
+          <div class="link-box">
+            <input type="url" id="linkInput" placeholder="Cole um link do YouTube, Twitch, Kick, SoundCloud, TikTok..." />
+            <button class="btn btn-sm" id="btnBaixarLink">Baixar áudio</button>
+          </div>
+        </div>
+        <div id="inputProgress" class="progress-box">
+          <div id="inputProgressText" style="font-size:13px;">Processando...</div>
+          <div class="progress-bar"><div class="progress-fill" id="inputProgressFill"></div></div>
+        </div>
+        <div class="active-media-bar hidden" id="activeMediaBar">
+          <div class="active-media-info">
+            <span class="tag" id="mediaTag">ARQUIVO</span>
+            <strong id="mediaNome">Sem áudio</strong>
+            <span style="color:var(--muted);" id="mediaDetalhes"></span>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <a class="btn btn-secondary btn-sm" id="btnBaixarOriginalMp3" href="#">Baixar MP3</a>
+            <button class="btn btn-secondary btn-sm" id="btnAddJoiner">+ Enviar p/ Juntar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 1. REMOVEDOR VOCAL -->
+      <section class="tool-section active" id="tool-removedor">
+        <div class="hero">
+          <h1>Removedor Vocal e Isolamento</h1>
+          <p>Separe a voz da música a partir de qualquer arquivo ou link do YouTube usando IA (Demucs) ou modo rápido (FFmpeg).</p>
+        </div>
+        <div class="panel">
+          <h3>
+            <span>Configuração da Separação</span>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <select id="remMotor">
+                <option value="ia">IA Demucs (Alta Qualidade)</option>
+                <option value="ffmpeg">Rápido (FFmpeg — instantâneo)</option>
+              </select>
+              <button class="btn" id="btnSepararVocal">Separar Voz e Música</button>
+            </div>
+          </h3>
+          <div id="remProgress" class="progress-box">
+            <div id="remProgressText">Separando...</div>
+            <div class="progress-bar"><div class="progress-fill" id="remProgressFill"></div></div>
+          </div>
+          <div id="remResultado" class="hidden">
+            <div class="controls-row">
+              <button class="btn btn-sm" id="remPlayBtn">▶ Tocar sincronizado</button>
+              <button class="btn btn-secondary btn-sm" id="remStopBtn">⏹ Parar</button>
+              <span id="remTime" style="font-family:monospace; color:var(--muted);">00:00 / 00:00</span>
+              <div style="margin-left:auto; display:flex; gap:8px;">
+                <button class="btn btn-green btn-sm" id="remMixMp3">Baixar Mix (MP3)</button>
+                <button class="btn btn-secondary btn-sm" id="remEnviarKaraoke">Usar no Karaoke</button>
+              </div>
+            </div>
+            <div class="track-list" id="remTracks"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. SPLITTER (4 ou 6 instrumentos) -->
+      <section class="tool-section" id="tool-splitter">
+        <div class="hero">
+          <h1>Splitter de Instrumentos</h1>
+          <p>Isole Voz, Bateria, Baixo e Outros (ou 6 faixas com Guitarra e Piano) em pistas independentes.</p>
+        </div>
+        <div class="panel">
+          <h3>
+            <span>Separar em Múltiplas Faixas</span>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <select id="splitModo">
+                <option value="stems4">4 faixas (Voz, Bateria, Baixo, Outros)</option>
+                <option value="stems6">6 faixas (+ Guitarra e Piano)</option>
+              </select>
+              <select id="splitMotor">
+                <option value="ia">IA Demucs (Alta Qualidade)</option>
+                <option value="ffmpeg">Rápido (FFmpeg)</option>
+              </select>
+              <button class="btn" id="btnSplitter">Separar Instrumentos</button>
+            </div>
+          </h3>
+          <div id="splitProgress" class="progress-box">
+            <div id="splitProgressText">Separando...</div>
+            <div class="progress-bar"><div class="progress-fill" id="splitProgressFill"></div></div>
+          </div>
+          <div id="splitResultado" class="hidden">
+            <div class="controls-row">
+              <button class="btn btn-sm" id="splitPlayBtn">▶ Tocar sincronizado</button>
+              <button class="btn btn-secondary btn-sm" id="splitStopBtn">⏹ Parar</button>
+              <span id="splitTime" style="font-family:monospace; color:var(--muted);">00:00 / 00:00</span>
+              <button class="btn btn-green btn-sm" style="margin-left:auto;" id="splitMixMp3">Baixar Mix Personalizado (MP3)</button>
+            </div>
+            <div class="track-list" id="splitTracks"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. MUDAR DE TOM E VELOCIDADE -->
+      <section class="tool-section" id="tool-tom">
+        <div class="hero">
+          <h1>Mudar de Tom e Velocidade</h1>
+          <p>Altere a tonalidade (semitons) e o andamento (BPM / velocidade) de forma independente com FFmpeg Rubberband.</p>
+        </div>
+        <div class="panel">
+          <div class="controls-row" style="align-items:flex-end;">
+            <div class="field" style="flex:1; min-width:220px;">
+              <label>Tom (Semitons): <strong id="pitchVal">0</strong></label>
+              <input type="range" id="pitchRange" min="-12" max="12" step="1" value="0" />
+            </div>
+            <div class="field" style="flex:1; min-width:220px;">
+              <label>Velocidade: <strong id="speedVal">100% (1.00x)</strong></label>
+              <input type="range" id="speedRange" min="0.5" max="2.0" step="0.05" value="1.0" />
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btnResetPitch">Resetar</button>
+            <button class="btn" id="btnAplicarPitch">Aplicar Tom / Velocidade</button>
+          </div>
+          <div id="pitchResultado" class="hidden">
+            <audio id="pitchAudio" controls></audio>
+            <div style="margin-top:12px; display:flex; gap:10px;">
+              <a class="btn btn-green btn-sm" id="pitchDownMp3" href="#">Baixar MP3</a>
+              <a class="btn btn-secondary btn-sm" id="pitchDownWav" href="#">Baixar WAV</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. DETERMINAR TOM E BPM -->
+      <section class="tool-section" id="tool-bpm">
+        <div class="hero">
+          <h1>Determinar Tom e BPM</h1>
+          <p>Analisa a música carregada para identificar a tonalidade musical, código Camelot (DJ) e batidas por minuto (BPM).</p>
+        </div>
+        <div class="panel">
+          <div class="controls-row">
+            <button class="btn" id="btnAnalisarBpm">Analisar Tom e BPM</button>
+            <span style="color:var(--muted); font-size:13px;">Usa análise espectral + perfis harmônicos Krumhansl-Schmuckler.</span>
+          </div>
+          <div class="metrics-grid hidden" id="bpmGrid">
+            <div class="metric-card">
+              <div class="metric-label">BPM</div>
+              <div class="metric-val" id="resBpm">--</div>
+              <div class="metric-sub" id="resBpmConf"></div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Tonalidade</div>
+              <div class="metric-val" id="resTom">--</div>
+              <div class="metric-sub" id="resTomConf"></div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Camelot (DJ)</div>
+              <div class="metric-val" id="resCamelot">--</div>
+              <div class="metric-sub">Mixagem harmônica</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Volume Médio</div>
+              <div class="metric-val" id="resDb">--</div>
+              <div class="metric-sub" id="resDur"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. CORTADOR DE AUDIO -->
+      <section class="tool-section" id="tool-cortador">
+        <div class="hero">
+          <h1>Cortador de Áudio</h1>
+          <p>Selecione o trecho exato na forma de onda, aplique Fade In / Fade Out e salve em MP3 ou WAV.</p>
+        </div>
+        <div class="panel">
+          <div class="cutter-wrap" id="cutterWrap">
+            <canvas id="cutterCanvas" class="wave-canvas"></canvas>
+            <div class="cutter-region" id="cutterRegion"></div>
+          </div>
+          <div class="controls-row">
+            <div class="field">
+              <label>Início (segundos)</label>
+              <input type="number" id="cutInicio" min="0" step="0.1" value="0" />
+            </div>
+            <div class="field">
+              <label>Fim (segundos)</label>
+              <input type="number" id="cutFim" min="0.1" step="0.1" value="10" />
+            </div>
+            <div class="field">
+              <label>Fade In (s)</label>
+              <input type="number" id="cutFadeIn" min="0" max="10" step="0.5" value="0" />
+            </div>
+            <div class="field">
+              <label>Fade Out (s)</label>
+              <input type="number" id="cutFadeOut" min="0" max="10" step="0.5" value="0" />
+            </div>
+            <div class="field">
+              <label>Ação</label>
+              <select id="cutModo">
+                <option value="manter">Manter seleção</option>
+                <option value="remover">Remover seleção (cortar meio)</option>
+              </select>
+            </div>
+          </div>
+          <div class="controls-row">
+            <button class="btn btn-secondary btn-sm" id="btnPreviewCut">▶ Ouvir trecho</button>
+            <button class="btn" id="btnCortar">Cortar e Gerar Áudio</button>
+          </div>
+          <div id="cutResultado" class="hidden">
+            <audio id="cutAudio" controls></audio>
+            <div style="margin-top:12px; display:flex; gap:10px;">
+              <a class="btn btn-green btn-sm" id="cutDownMp3" href="#">Baixar MP3</a>
+              <a class="btn btn-secondary btn-sm" id="cutDownWav" href="#">Baixar WAV</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. JUNTAR AUDIOS -->
+      <section class="tool-section" id="tool-juntar">
+        <div class="hero">
+          <h1>Juntar Áudios</h1>
+          <p>Combine vários arquivos ou links do YouTube em uma única faixa contínua, com transição suave (crossfade) opcional.</p>
+        </div>
+        <div class="panel">
+          <h3>
+            <span>Faixas na fila (<span id="joinCount">0</span>)</span>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <label style="font-size:13px; color:var(--muted);">Crossfade (s):
+                <input type="number" id="joinCrossfade" min="0" max="5" step="0.5" value="0" style="width:72px; margin-left:6px;" />
+              </label>
+              <button class="btn btn-secondary btn-sm" id="btnJoinAddAtual">+ Adicionar áudio atual</button>
+              <button class="btn" id="btnJuntar">Juntar Faixas</button>
+            </div>
+          </h3>
+          <div id="joinList" style="margin-bottom:14px;">
+            <p style="color:var(--muted); font-size:13px;">Carregue arquivos ou cole links acima e clique em "+ Adicionar áudio atual" para montar a sequência.</p>
+          </div>
+          <div id="joinResultado" class="hidden">
+            <audio id="joinAudio" controls></audio>
+            <div style="margin-top:12px; display:flex; gap:10px;">
+              <a class="btn btn-green btn-sm" id="joinDownMp3" href="#">Baixar MP3</a>
+              <a class="btn btn-secondary btn-sm" id="joinDownWav" href="#">Baixar WAV</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. GRAVADOR DE VOZ -->
+      <section class="tool-section" id="tool-gravador">
+        <div class="hero">
+          <h1>Gravador de Voz</h1>
+          <p>Grave áudio direto do seu microfone com visualizador em tempo real, salve em MP3/WAV ou envie para editar.</p>
+        </div>
+        <div class="panel" style="text-align:center;">
+          <div class="rec-timer" id="recTimer">00:00.0</div>
+          <canvas id="recCanvas" class="rec-meter"></canvas>
+          <div class="controls-row" style="justify-content:center;">
+            <button class="btn btn-danger" id="btnRecStart">● Iniciar Gravação</button>
+            <button class="btn btn-secondary hidden" id="btnRecStop">⏹ Parar Gravação</button>
+          </div>
+          <div id="recResultado" class="hidden" style="text-align:left; margin-top:16px;">
+            <audio id="recAudio" controls></audio>
+            <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+              <a class="btn btn-green btn-sm" id="recDownMp3" href="#">Baixar MP3</a>
+              <a class="btn btn-secondary btn-sm" id="recDownWav" href="#">Baixar WAV</a>
+              <button class="btn btn-secondary btn-sm" id="recUsarComoAtual">Usar como áudio principal</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8. KARAOKE -->
+      <section class="tool-section" id="tool-karaoke">
+        <div class="hero">
+          <h1>Karaoke Studio</h1>
+          <p>Toque a base instrumental (sem voz) enquanto grava sua voz pelo microfone e mixe tudo em uma música final!</p>
+        </div>
+        <div class="panel">
+          <h3>
+            <span>1. Base Instrumental</span>
+            <span id="karBaseNome" style="font-size:13px; color:#a5b4fc;">Usando áudio carregado acima (ou envie do Removedor)</span>
+          </h3>
+          <div class="controls-row">
+            <button class="btn btn-danger" id="btnKarStart">● Gravar Voz sobre a Base</button>
+            <button class="btn btn-secondary hidden" id="btnKarStop">⏹ Parar Gravação</button>
+            <span id="karTimer" style="font-family:monospace; font-size:18px;">00:00</span>
+          </div>
+          <div class="controls-row" style="margin-top:12px;">
+            <div class="field" style="flex:1;">
+              <label>Volume da Base Instrumental: <strong id="karVolBaseTxt">85%</strong></label>
+              <input type="range" id="karVolBase" min="0" max="1.5" step="0.05" value="0.85" />
+            </div>
+            <div class="field" style="flex:1;">
+              <label>Volume da Sua Voz: <strong id="karVolVozTxt">100%</strong></label>
+              <input type="range" id="karVolVoz" min="0" max="2.0" step="0.05" value="1.0" />
+            </div>
+            <label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;">
+              <input type="checkbox" id="karEco" checked /> Efeito Reverb/Eco leve na voz
+            </label>
+          </div>
+          <div id="karResultado" class="hidden" style="margin-top:14px;">
+            <div class="controls-row">
+              <button class="btn btn-green" id="btnKarMixar">Mixar Base + Minha Voz</button>
+            </div>
+            <audio id="karAudio" controls class="hidden"></audio>
+            <div id="karDownloads" class="hidden" style="margin-top:12px; display:flex; gap:10px;">
+              <a class="btn btn-green btn-sm" id="karDownMp3" href="#">Baixar Karaoke (MP3)</a>
+              <a class="btn btn-secondary btn-sm" id="karDownWav" href="#">Baixar WAV</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // Estado global
+    const state = {
+      midiaAtual: null,
+      joinQueue: [],
+      remStems: [],
+      splitStems: [],
+      karaokeBase: null,
+      karaokeVoz: null,
+      players: {},
+    };
+
+    const $ = id => document.getElementById(id);
+
+    function toast(msg, erro = false) {
+      const t = $('toast');
+      t.textContent = msg;
+      t.className = 'toast show' + (erro ? ' err' : '');
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => t.classList.remove('show'), 4000);
+    }
+
+    function fmtTime(s) {
+      s = Math.max(0, Number(s) || 0);
+      const m = Math.floor(s / 60);
+      const r = Math.floor(s % 60);
+      return `${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`;
+    }
+
+    // Navegacao entre as 8 ferramentas
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tool-section').forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+        $('tool-' + btn.dataset.tool).classList.add('active');
+        if (btn.dataset.tool === 'cortador' && state.midiaAtual) renderCutterWave();
+      });
+    });
+
+    // Checa status do servidor (FFmpeg, yt-dlp, Python, Demucs, GPU)
+    async function carregarStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const st = await res.json();
+        const pills = [];
+        pills.push(`<span class="pill ${st.ffmpeg ? 'ok' : 'warn'}"><span class="dot"></span>FFmpeg</span>`);
+        pills.push(`<span class="pill ${st.ytdlp ? 'ok' : 'warn'}"><span class="dot"></span>yt-dlp (Links)</span>`);
+        pills.push(`<span class="pill ${st.python?.numpy ? 'ok' : 'warn'}"><span class="dot"></span>Tom/BPM</span>`);
+        if (st.python?.demucs) {
+          const dev = st.python.cuda ? `IA Demucs (CUDA)` : `IA Demucs (CPU)`;
+          pills.push(`<span class="pill ok"><span class="dot"></span>${dev}</span>`);
+        } else {
+          pills.push(`<span class="pill warn" title="Instale demucs no .venv para separacao neural"><span class="dot"></span>Demucs pendente (FFmpeg ativo)</span>`);
+          $('remMotor').value = 'ffmpeg';
+          $('splitMotor').value = 'ffmpeg';
+        }
+        $('statusPills').innerHTML = pills.join('');
+      } catch {
+        $('statusPills').innerHTML = `<span class="pill warn"><span class="dot"></span>Servidor desconectado</span>`;
+      }
+    }
+    carregarStatus();
+
+    // Definir midia ativa
+    function setMidiaAtual(m) {
+      state.midiaAtual = m;
+      $('activeMediaBar').classList.remove('hidden');
+      $('mediaTag').textContent = m.origem === 'link' ? 'LINK WEB' : (m.origem === 'gravacao' ? 'GRAVAÇÃO' : 'ARQUIVO');
+      $('mediaNome').textContent = m.nome;
+      $('mediaDetalhes').textContent = `${fmtTime(m.duracao)} · ${Math.round(m.sampleRate / 1000)} kHz · ${m.canais}ch`;
+      $('btnBaixarOriginalMp3').href = `${m.downloadUrl}?formato=mp3`;
+
+      // Atualiza cortador
+      $('cutInicio').value = 0;
+      $('cutFim').value = (m.duracao || 10).toFixed(1);
+      $('cutFim').max = (m.duracao || 10).toFixed(1);
+      renderCutterWave();
+
+      // Se Karaoke nao tiver base especifica, usa esta
+      if (!state.karaokeBase) {
+        $('karBaseNome').textContent = `Base atual: ${m.nome}`;
+      }
+    }
+
+    // Upload de arquivo
+    async function enviarArquivo(file) {
+      if (!file) return;
+      $('inputProgress').classList.add('show');
+      $('inputProgressText').textContent = `Enviando e preparando "${file.name}"...`;
+      $('inputProgressFill').style.width = '45%';
+      try {
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/octet-stream',
+            'X-File-Name': encodeURIComponent(file.name),
+          },
+          body: file,
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.erro || 'Falha no upload');
+        $('inputProgressFill').style.width = '100%';
+        setMidiaAtual(data);
+        toast(`Áudio "${data.nome}" carregado!`);
+      } catch (e) {
+        toast(e.message, true);
+      } finally {
+        setTimeout(() => $('inputProgress').classList.remove('show'), 500);
+      }
+    }
+
+    $('btnEscolherArquivo').addEventListener('click', () => $('fileInput').click());
+    $('fileInput').addEventListener('change', e => {
+      if (e.target.files[0]) enviarArquivo(e.target.files[0]);
+      e.target.value = '';
+    });
+
+    // Drag & drop
+    const dz = $('dropZone');
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+    dz.addEventListener('drop', e => {
+      e.preventDefault();
+      dz.classList.remove('dragover');
+      if (e.dataTransfer.files[0]) enviarArquivo(e.dataTransfer.files[0]);
+    });
+
+    // Baixar link (YouTube, Twitch, Kick, SoundCloud, etc.)
+    async function baixarLink() {
+      const url = $('linkInput').value.trim();
+      if (!url) return toast('Cole um link primeiro.', true);
+      $('btnBaixarLink').disabled = true;
+      $('inputProgress').classList.add('show');
+      $('inputProgressText').textContent = 'Baixando áudio do link via yt-dlp...';
+      $('inputProgressFill').style.width = '35%';
+      try {
+        const res = await fetch('/api/baixar-link', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.erro || 'Erro ao baixar link');
+        $('inputProgressFill').style.width = '100%';
+        setMidiaAtual(data);
+        toast(`Baixado: ${data.nome}`);
+      } catch (e) {
+        toast(e.message, true);
+      } finally {
+        $('btnBaixarLink').disabled = false;
+        setTimeout(() => $('inputProgress').classList.remove('show'), 500);
+      }
+    }
+    $('btnBaixarLink').addEventListener('click', baixarLink);
+    $('linkInput').addEventListener('keydown', e => { if (e.key === 'Enter') baixarLink(); });
+
+    // Desenha waveform em um canvas
+    function desenharWave(canvas, peaks, cor) {
+      const dpr = window.devicePixelRatio || 1;
+      const w = canvas.clientWidth || 500;
+      const h = canvas.clientHeight || 62;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, w, h);
+
+      const n = peaks.length || 1;
+      const barW = Math.max(1.5, w / n - 1);
+      ctx.fillStyle = cor;
+      for (let i = 0; i < n; i++) {
+        const v = Math.max(0.05, peaks[i] || 0.05);
+        const bh = v * (h - 8);
+        const x = (i / n) * w;
+        const y = (h - bh) / 2;
+        ctx.fillRect(x, y, barW, bh);
+      }
+    }
+
+    // Player multi-faixas sincronizado (usado no Removedor e no Splitter)
+    function montarPlayerMultiFaixas(grupo, faixas, containerEl, playBtn, stopBtn, timeEl) {
+      // Para player anterior se existir
+      if (state.players[grupo]) state.players[grupo].stop();
+      containerEl.innerHTML = '';
+
+      const audios = [];
+      const playheads = [];
+      const volumes = [];
+      const duracao = faixas[0]?.duracao || 0;
+
+      faixas.forEach((f, idx) => {
+        const audio = new Audio(f.url);
+        audio.preload = 'auto';
+        audios.push(audio);
+        volumes.push(1.0);
+
+        const row = document.createElement('div');
+        row.className = 'track-row';
+        row.innerHTML = `
+          <div class="track-meta">
+            <div class="track-name"><span style="width:10px;height:10px;border-radius:50%;background:${f.cor};display:inline-block;"></span>${f.rotulo}</div>
+            <div class="track-vol">
+              <span>Vol</span>
+              <input type="range" min="0" max="1.5" step="0.05" value="1" data-idx="${idx}" />
+              <span class="vol-pct">100%</span>
+            </div>
+          </div>
+          <div class="wave-wrap" data-idx="${idx}">
+            <canvas class="wave-canvas"></canvas>
+            <div class="playhead"></div>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <a class="btn btn-secondary btn-sm" href="${f.downloadUrl}?formato=mp3">MP3</a>
+            <a class="btn btn-secondary btn-sm" href="${f.downloadUrl}?formato=wav">WAV</a>
+          </div>
+        `;
+        containerEl.appendChild(row);
+
+        const canvas = row.querySelector('canvas');
+        const ph = row.querySelector('.playhead');
+        playheads.push(ph);
+        requestAnimationFrame(() => desenharWave(canvas, f.peaks, f.cor));
+
+        const slider = row.querySelector('input[type="range"]');
+        const pct = row.querySelector('.vol-pct');
+        slider.addEventListener('input', () => {
+          const v = Number(slider.value);
+          volumes[idx] = v;
+          audio.volume = Math.min(1, v);
+          pct.textContent = `${Math.round(v * 100)}%`;
+        });
+
+        row.querySelector('.wave-wrap').addEventListener('click', e => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+          const t = ratio * (audios[0].duration || duracao);
+          audios.forEach(a => { a.currentTime = t; });
+          atualizarPlayhead();
+        });
+      });
+
+      let tocando = false;
+      let rafId = null;
+
+      function atualizarPlayhead() {
+        const cur = audios[0]?.currentTime || 0;
+        const tot = audios[0]?.duration || duracao || 1;
+        const pct = Math.min(100, (cur / tot) * 100);
+        playheads.forEach(p => { p.style.left = pct + '%'; });
+        timeEl.textContent = `${fmtTime(cur)} / ${fmtTime(tot)}`;
+        if (tocando) rafId = requestAnimationFrame(atualizarPlayhead);
+      }
+
+      const api = {
+        getVolumes: () => faixas.map((f, i) => ({ mediaId: f.id, volume: volumes[i] })),
+        stop() {
+          tocando = false;
+          cancelAnimationFrame(rafId);
+          audios.forEach(a => { a.pause(); a.currentTime = 0; });
+          playBtn.textContent = '▶ Tocar sincronizado';
+          atualizarPlayhead();
+        },
+        toggle() {
+          if (tocando) {
+            tocando = false;
+            cancelAnimationFrame(rafId);
+            audios.forEach(a => a.pause());
+            playBtn.textContent = '▶ Tocar sincronizado';
+          } else {
+            tocando = true;
+            const t = audios[0].currentTime;
+            audios.forEach(a => { a.currentTime = t; a.play().catch(() => {}); });
+            playBtn.textContent = '⏸ Pausar';
+            atualizarPlayhead();
+          }
+        },
+      };
+
+      audios[0].addEventListener('ended', () => api.stop());
+      playBtn.onclick = () => api.toggle();
+      stopBtn.onclick = () => api.stop();
+      state.players[grupo] = api;
+      atualizarPlayhead();
+    }
+
+    // Polling generico de job de separacao
+    async function executarSeparacao(endpoint, body, progBox, progText, progFill, onDone) {
+      progBox.classList.add('show');
+      progText.textContent = 'Iniciando separação...';
+      progFill.style.width = '10%';
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.erro || 'Erro ao iniciar');
+
+        while (true) {
+          await new Promise(r => setTimeout(r, 900));
+          const jr = await fetch('/api/job/' + data.jobId);
+          const job = await jr.json();
+          progText.textContent = job.etapa || 'Processando...';
+          progFill.style.width = `${job.progresso || 20}%`;
+          if (job.status === 'concluido') {
+            progBox.classList.remove('show');
+            onDone(job.resultado);
+            return;
+          }
+          if (job.status === 'erro') {
+            throw new Error(job.erro || 'Erro na separação');
+          }
+        }
+      } catch (e) {
+        progBox.classList.remove('show');
+        toast(e.message, true);
+      }
+    }
+
+    // 1. REMOVEDOR VOCAL
+    $('btnSepararVocal').addEventListener('click', () => {
+      if (!state.midiaAtual) return toast('Carregue um arquivo ou baixe um link primeiro.', true);
+      executarSeparacao(
+        '/api/remover-voz',
+        { mediaId: state.midiaAtual.id, motor: $('remMotor').value },
+        $('remProgress'), $('remProgressText'), $('remProgressFill'),
+        res => {
+          state.remStems = res.faixas;
+          $('remResultado').classList.remove('hidden');
+          montarPlayerMultiFaixas('rem', res.faixas, $('remTracks'), $('remPlayBtn'), $('remStopBtn'), $('remTime'));
+          toast(`Separação concluída (${res.motor.toUpperCase()})!`);
+        }
+      );
+    });
+
+    $('remMixMp3').addEventListener('click', async () => {
+      if (!state.players.rem) return;
+      try {
+        const res = await fetch('/api/mixar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ faixas: state.players.rem.getVolumes(), nome: `${state.midiaAtual.nome}_mix` }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.erro);
+        window.location.href = `${data.downloadUrl}?formato=mp3`;
+      } catch (e) { toast(e.message, true); }
+    });
+
+    $('remEnviarKaraoke').addEventListener('click', () => {
+      const inst = state.remStems.find(f => f.stemKey === 'no_vocals') || state.remStems[0];
+      if (!inst) return;
+      state.karaokeBase = inst;
+      $('karBaseNome').textContent = `Base instrumental pronta: ${inst.nome}`;
+      document.querySelector('[data-tool="karaoke"]').click();
+      toast('Base instrumental enviada para o Karaoke!');
+    });
+
+    // 2. SPLITTER
+    $('btnSplitter').addEventListener('click', () => {
+      if (!state.midiaAtual) return toast('Carregue um arquivo ou baixe um link primeiro.', true);
+      executarSeparacao(
+        '/api/splitter',
+        { mediaId: state.midiaAtual.id, modo: $('splitModo').value, motor: $('splitMotor').value },
+        $('splitProgress'), $('splitProgressText'), $('splitProgressFill'),
+        res => {
+          state.splitStems = res.faixas;
+          $('splitResultado').classList.remove('hidden');
+          montarPlayerMultiFaixas('split', res.faixas, $('splitTracks'), $('splitPlayBtn'), $('splitStopBtn'), $('splitTime'));
+          toast(`Splitter concluído (${res.faixas.length} faixas)!`);
+        }
+      );
+    });
+
+    $('splitMixMp3').addEventListener('click', async () => {
+      if (!state.players.split) return;
+      try {
+        const res = await fetch('/api/mixar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ faixas: state.players.split.getVolumes(), nome: `${state.midiaAtual.nome}_stems_mix` }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.erro);
+        window.location.href = `${data.downloadUrl}?formato=mp3`;
+      } catch (e) { toast(e.message, true); }
+    });
+
+    // 3. MUDAR DE TOM E VELOCIDADE
+    $('pitchRange').addEventListener('input', e => {
+      const v = Number(e.target.value);
+      $('pitchVal').textContent = v > 0 ? `+${v}` : `${v}`;
+    });
+    $('speedRange').addEventListener('input', e => {
+      const v = Number(e.target.value);
+      $('speedVal').textContent = `${Math.round(v * 100)}% (${v.toFixed(2)}x)`;
+    });
+    $('btnResetPitch').addEventListener('click', () => {
+      $('pitchRange').value = 0; $('pitchVal').textContent = '0';
+      $('speedRange').value = 1; $('speedVal').textContent = '100% (1.00x)';
+    });
+    $('btnAplicarPitch').addEventListener('click', async () => {
+      if (!state.midiaAtual) return toast('Carregue um áudio primeiro.', true);
+      $('btnAplicarPitch').disabled = true;
+      try {
+        const res = await fetch('/api/mudar-tom', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mediaId: state.midiaAtual.id,
+            semitons: Number($('pitchRange').value),
+            velocidade: Number($('speedRange').value),
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.erro);
+        $('pitchResultado').classList.remove('hidden');
+        $('pitchAudio').src = data.url;
+        $('pitchDownMp3').href = `${data.downloadUrl}?formato=mp3`;
+        $('pitchDownWav').href = `${data.downloadUrl}?formato=wav`;
+        toast('Tom e velocidade aplicados!');
+      } catch (e) { toast(e.message, true); }
+      finally { $('btnAplicarPitch').disabled = false; }
+    });
+
+    // 4. DETERMINAR TOM E BPM
+    $('btnAnalisarBpm').addEventListener('click', async () => {
+      if (!state.midiaAtual) return toast('Carregue um áudio primeiro.', true);
+      $('btnAnalisarBpm').disabled = true;
+      try {
+        const res = await fetch('/api/tom-bpm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mediaId: state.midiaAtual.id }),
+        });
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.erro);
+        $('bpmGrid').classList.remove('hidden');
+        $('resBpm').textContent = d.bpm;
+        $('resBpmConf').textContent = `Confiança: ${Math.round((d.bpmConfianca || 0) * 100)}%`;
+        $('resTom').textContent = d.tom;
+        $('resTomConf').textContent = `Confiança: ${Math.round((d.tomConfianca || 0) * 100)}%`;
+        $('resCamelot').textContent = d.camelot;
+        $('resDb').textContent = `${d.loudnessDb} dB`;
+        $('resDur').textContent = `Duração: ${fmtTime(d.duracao)}`;
+        toast(`Detectado: ${d.tom} · ${d.bpm} BPM`);
+      } catch (e) { toast(e.message, true); }
+      finally { $('btnAnalisarBpm').disabled = false; }
+    });
+
+    // 5. CORTADOR
+    function renderCutterWave() {
+      if (!state.midiaAtual) return;
+      desenharWave($('cutterCanvas'), state.midiaAtual.peaks, '#665dc3');
+      atualizarRegiaoCorte();
+    }
+    function atualizarRegiaoCorte() {
+      if (!state.midiaAtual) return;
+      const dur = state.midiaAtual.duracao || 1;
+      const i = Math.max(0, Math.min(dur, Number($('cutInicio').value) || 0));
+      const f = Math.max(i, Math.min(dur, Number($('cutFim').value) || dur));
+      const reg = $('cutterRegion');
+      reg.style.left = `${(i / dur) * 100}%`;
+      reg.style.width = `${((f - i) / dur) * 100}%`;
+    }
+    $('cutInicio').addEventListener('input', atualizarRegiaoCorte);
+    $('cutFim').addEventListener('input', atualizarRegiaoCorte);
+
+    // Arrastar selecao no waveform do cortador
+    let draggingCut = false, dragStartSec = 0;
+    $('cutterWrap').addEventListener('mousedown', e => {
+      if (!state.midiaAtual) return;
+      draggingCut = true;
+      const rect = e.currentTarget.getBoundingClientRect();
+      dragStartSec = ((e.clientX - rect.left) / rect.width) * state.midiaAtual.duracao;
+      $('cutInicio').value = dragStartSec.toFixed(1);
+      $('cutFim').value = dragStartSec.toFixed(1);
+      atualizarRegiaoCorte();
+    });
+    window.addEventListener('mousemove', e => {
+      if (!draggingCut || !state.midiaAtual) return;
+      const rect = $('cutterWrap').getBoundingClientRect();
+      const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      const cur = ratio * state.midiaAtual.duracao;
+      $('cutInicio').value = Math.min(dragStartSec, cur).toFixed(1);
+      $('cutFim').value = Math.max(dragStartSec, cur).toFixed(1);
+      atualizarRegiaoCorte();
+    });
+    window.addEventListener('mouseup', () => { draggingCut = false; });
+
+    let previewAudio = null;
+    $('btnPreviewCut').addEventListener('click', () => {
+      if (!state.midiaAtual) return toast('Carregue um áudio primeiro.', true);
+      if (previewAudio) { previewAudio.pause(); previewAudio = null; }
+      const i = Number($('cutInicio').value) || 0;
+      const f = Number($('cutFim').value) || state.midiaAtual.duracao;
+      previewAudio = new Audio(state.midiaAtual.url);
+      previewAudio.currentTime = i;
+      previewAudio.play();
+      const stopCheck = setInterval(() => {
+        if (!previewAudio || previewAudio.paused || previewAudio.currentTime >= f) {
+          if (previewAudio) previewAudio.pause();
+          clearInterval(stopCheck);
+        }
+      }, 100);
+    });
+
+    $('btnCortar').addEventListener('click', async () => {
+      if (!state.midiaAtual) return toast('Carregue um áudio primeiro.', true);
+      $('btnCortar').disabled = true;
+      try {
+        const res = await fetch('/api/cortar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mediaId: state.midiaAtual.id,
+            inicio: Number($('cutInicio').value),
+            fim: Number($('cutFim').value),
+            fadeIn: Number($('cutFadeIn').value),
+            fadeOut: Number($('cutFadeOut').value),
+            inverter: $('cutModo').value === 'remover',
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.erro);
+        $('cutResultado').classList.remove('hidden');
+        $('cutAudio').src = data.url;
+        $('cutDownMp3').href = `${data.downloadUrl}?formato=mp3`;
+        $('cutDownWav').href = `${data.downloadUrl}?formato=wav`;
+        toast(`Corte pronto (${fmtTime(data.duracao)})!`);
+      } catch (e) { toast(e.message, true); }
+      finally { $('btnCortar').disabled = false; }
+    });
+
+    // 6. JUNTAR AUDIOS
+    function renderJoinList() {
+      $('joinCount').textContent = state.joinQueue.length;
+      if (!state.joinQueue.length) {
+        $('joinList').innerHTML = `<p style="color:var(--muted); font-size:13px;">Nenhuma faixa adicionada ainda.</p>`;
+        return;
+      }
+      $('joinList').innerHTML = state.joinQueue.map((m, idx) => `
+        <div class="join-item">
+          <div><strong>${idx + 1}.</strong> ${m.nome} <span style="color:var(--muted); font-size:12px;">(${fmtTime(m.duracao)})</span></div>
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-secondary btn-sm" onclick="moverJoin(${idx}, -1)">↑</button>
+            <button class="btn btn-secondary btn-sm" onclick="moverJoin(${idx}, 1)">↓</button>
+            <button class="btn btn-danger btn-sm" onclick="removerJoin(${idx})">✕</button>
+          </div>
+        </div>
+      `).join('');
+    }
+    window.moverJoin = (i, dir) => {
+      const j = i + dir;
+      if (j < 0 || j >= state.joinQueue.length) return;
+      [state.joinQueue[i], state.joinQueue[j]] = [state.joinQueue[j], state.joinQueue[i]];
+      renderJoinList();
+    };
+    window.removerJoin = i => { state.joinQueue.splice(i, 1); renderJoinList(); };
+
+    function addAoJoiner() {
+      if (!state.midiaAtual) return toast('Carregue um áudio primeiro.', true);
+      state.joinQueue.push(state.midiaAtual);
+      renderJoinList();
+      toast(`"${state.midiaAtual.nome}" adicionado à fila de Juntar!`);
+    }
+    $('btnAddJoiner').addEventListener('click', addAoJoiner);
+    $('btnJoinAddAtual').addEventListener('click', addAoJoiner);
+
+    $('btnJuntar').addEventListener('click', async () => {
+      if (state.joinQueue.length < 2) return toast('Adicione pelo menos 2 áudios para juntar.', true);
+      $('btnJuntar').disabled = true;
+      try {
+        const res = await fetch('/api/juntar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mediaIds: state.joinQueue.map(m => m.id),
+            crossfade: Number($('joinCrossfade').value) || 0,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.erro);
+        $('joinResultado').classList.remove('hidden');
+        $('joinAudio').src = data.url;
+        $('joinDownMp3').href = `${data.downloadUrl}?formato=mp3`;
+        $('joinDownWav').href = `${data.downloadUrl}?formato=wav`;
+        toast(`Faixas unidas (${fmtTime(data.duracao)})!`);
+      } catch (e) { toast(e.message, true); }
+      finally { $('btnJuntar').disabled = false; }
+    });
+
+    // 7. GRAVADOR DE VOZ (MediaRecorder + visualizador)
+    let mediaRecorder = null, recChunks = [], recStart = 0, recInt = null, recAnim = null, recMidia = null;
+    $('btnRecStart').addEventListener('click', async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const src = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 256;
+        src.connect(analyser);
+        const dataArr = new Uint8Array(analyser.frequencyBinCount);
+
+        const canvas = $('recCanvas');
+        const cctx = canvas.getContext('2d');
+        function drawRec() {
+          canvas.width = canvas.clientWidth;
+          canvas.height = canvas.clientHeight;
+          analyser.getByteTimeDomainData(dataArr);
+          cctx.fillStyle = '#101017';
+          cctx.fillRect(0, 0, canvas.width, canvas.height);
+          cctx.lineWidth = 2;
+          cctx.strokeStyle = '#22c55e';
+          cctx.beginPath();
+          const slice = canvas.width / dataArr.length;
+          for (let i = 0; i < dataArr.length; i++) {
+            const v = dataArr[i] / 128.0;
+            const y = (v * canvas.height) / 2;
+            if (i === 0) cctx.moveTo(0, y); else cctx.lineTo(i * slice, y);
+          }
+          cctx.stroke();
+          recAnim = requestAnimationFrame(drawRec);
+        }
+        drawRec();
+
+        recChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = e => { if (e.data.size) recChunks.push(e.data); };
+        mediaRecorder.onstop = async () => {
+          cancelAnimationFrame(recAnim);
+          clearInterval(recInt);
+          stream.getTracks().forEach(t => t.stop());
+          ctx.close();
+          const blob = new Blob(recChunks, { type: 'audio/webm' });
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/octet-stream', 'X-File-Name': encodeURIComponent('gravacao_microfone.webm') },
+            body: blob,
+          });
+          const data = await res.json();
+          if (res.ok) {
+            recMidia = data;
+            $('recResultado').classList.remove('hidden');
+            $('recAudio').src = data.url;
+            $('recDownMp3').href = `${data.downloadUrl}?formato=mp3`;
+            $('recDownWav').href = `${data.downloadUrl}?formato=wav`;
+            toast('Gravação salva!');
+          }
+        };
+
+        mediaRecorder.start();
+        recStart = Date.now();
+        recInt = setInterval(() => {
+          const s = (Date.now() - recStart) / 1000;
+          $('recTimer').textContent = `${fmtTime(s)}.${Math.floor((s % 1) * 10)}`;
+        }, 100);
+        $('btnRecStart').classList.add('hidden');
+        $('btnRecStop').classList.remove('hidden');
+      } catch (e) {
+        toast('Permita o acesso ao microfone no navegador.', true);
+      }
+    });
+
+    $('btnRecStop').addEventListener('click', () => {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+      $('btnRecStop').classList.add('hidden');
+      $('btnRecStart').classList.remove('hidden');
+    });
+
+    $('recUsarComoAtual').addEventListener('click', () => {
+      if (recMidia) { setMidiaAtual(recMidia); toast('Gravação definida como áudio principal!'); }
+    });
+
+    // 8. KARAOKE (toca base + grava microfone em sincronia + mixa via FFmpeg)
+    let karRecorder = null, karBaseAudio = null, karChunks = [], karTimerInt = null;
+    $('karVolBase').addEventListener('input', e => $('karVolBaseTxt').textContent = `${Math.round(e.target.value * 100)}%`);
+    $('karVolVoz').addEventListener('input', e => $('karVolVozTxt').textContent = `${Math.round(e.target.value * 100)}%`);
+
+    $('btnKarStart').addEventListener('click', async () => {
+      const base = state.karaokeBase || state.midiaAtual;
+      if (!base) return toast('Carregue uma música (ou separe a voz no Removedor) primeiro.', true);
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        karChunks = [];
+        karRecorder = new MediaRecorder(stream);
+        karRecorder.ondataavailable = e => { if (e.data.size) karChunks.push(e.data); };
+        karRecorder.onstop = async () => {
+          clearInterval(karTimerInt);
+          if (karBaseAudio) { karBaseAudio.pause(); karBaseAudio = null; }
+          stream.getTracks().forEach(t => t.stop());
+          const blob = new Blob(karChunks, { type: 'audio/webm' });
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/octet-stream', 'X-File-Name': encodeURIComponent('voz_karaoke.webm') },
+            body: blob,
+          });
+          const data = await res.json();
+          if (res.ok) {
+            state.karaokeVoz = data;
+            $('karResultado').classList.remove('hidden');
+            toast('Voz gravada! Clique em "Mixar Base + Minha Voz".');
+          }
+        };
+
+        karBaseAudio = new Audio(base.url);
+        karBaseAudio.volume = Math.min(1, Number($('karVolBase').value));
+        karRecorder.start();
+        await karBaseAudio.play();
+        const t0 = Date.now();
+        karTimerInt = setInterval(() => { $('karTimer').textContent = fmtTime((Date.now() - t0) / 1000); }, 250);
+        karBaseAudio.onended = () => $('btnKarStop').click();
+
+        $('btnKarStart').classList.add('hidden');
+        $('btnKarStop').classList.remove('hidden');
+      } catch {
+        toast('Permita o acesso ao microfone para usar o Karaoke.', true);
+      }
+    });
+
+    $('btnKarStop').addEventListener('click', () => {
+      if (karRecorder && karRecorder.state !== 'inactive') karRecorder.stop();
+      $('btnKarStop').classList.add('hidden');
+      $('btnKarStart').classList.remove('hidden');
+    });
+
+    $('btnKarMixar').addEventListener('click', async () => {
+      const base = state.karaokeBase || state.midiaAtual;
+      if (!base || !state.karaokeVoz) return toast('Grave sua voz primeiro.', true);
+      $('btnKarMixar').disabled = true;
+      try {
+        const res = await fetch('/api/mixar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nome: `${base.nome}_karaoke`,
+            faixas: [
+              { mediaId: base.id, volume: Number($('karVolBase').value), eco: false },
+              { mediaId: state.karaokeVoz.id, volume: Number($('karVolVoz').value), eco: $('karEco').checked },
+            ],
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.erro);
+        $('karAudio').src = data.url;
+        $('karAudio').classList.remove('hidden');
+        $('karDownloads').classList.remove('hidden');
+        $('karDownMp3').href = `${data.downloadUrl}?formato=mp3`;
+        $('karDownWav').href = `${data.downloadUrl}?formato=wav`;
+        toast('Mix de Karaoke pronto!');
+      } catch (e) { toast(e.message, true); }
+      finally { $('btnKarMixar').disabled = false; }
+    });
+  </script>
+</body>
+</html>

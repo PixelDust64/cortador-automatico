@@ -1,0 +1,10 @@
+{
+  "name": "audio-studio-local",
+  "version": "1.0.0",
+  "description": "Aplicacao independente de manipulacao de audio (Removedor Vocal, Splitter, Tom/BPM, Cortador, Juntar, Gravador e Karaoke) com suporte a arquivos locais e links web.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test.js"
+  }
+}

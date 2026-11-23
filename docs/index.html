@@ -311,13 +311,28 @@
   }
 
   /* ---------------------------------------------------------- numeros */
-  .numeros .largura { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; border-radius: 20px; overflow: hidden; border: 1px solid var(--linha); background: var(--linha); padding: 0; max-width: 1156px; }
-  .numeros div { background: var(--superficie); padding: 22px 24px; display: flex; gap: 14px; align-items: center; }
-  .numeros div > svg { width: 22px; height: 22px; color: var(--marca2); flex: none; }
-  .numeros b { display: block; font-size: 24px; font-weight: 650; letter-spacing: -.03em; line-height: 1.1; }
-  .numeros span { font-size: 13px; color: var(--texto2); }
-  @media (max-width: 860px) { .numeros .largura { grid-template-columns: 1fr 1fr; margin: 0 22px; } }
-  @media (max-width: 480px) { .numeros div { padding: 16px; } .numeros b { font-size: 20px; } }
+  .numeros .largura { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; max-width: 1180px; }
+  .numeros .num-card {
+    background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.018));
+    border: 1px solid var(--linha2);
+    border-radius: 20px;
+    padding: 20px 22px;
+    display: flex; gap: 14px; align-items: center;
+    transition: transform .25s var(--suave), border-color .25s var(--suave), background .25s var(--suave);
+  }
+  .numeros .num-card:hover { transform: translateY(-3px); border-color: rgba(127,178,255,.38); background: rgba(61,139,255,.07); }
+  .numeros .n-ic {
+    width: 44px; height: 44px; border-radius: 13px; flex: none;
+    display: grid; place-items: center;
+    background: var(--marca-fundo); border: 1px solid rgba(127,178,255,.28); color: var(--marca-claro);
+    box-shadow: 0 10px 24px -10px var(--marca-brilho);
+  }
+  .numeros .n-ic svg { width: 20px; height: 20px; }
+  .numeros .n-txt { min-width: 0; }
+  .numeros b { display: block; font-size: 22px; font-weight: 750; letter-spacing: -.03em; line-height: 1.15; color: var(--texto); white-space: nowrap; }
+  .numeros span.n-sub { display: block; font-size: 13px; color: var(--texto2); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  @media (max-width: 980px) { .numeros .largura { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 520px) { .numeros .largura { grid-template-columns: 1fr; } .numeros .num-card { padding: 16px 18px; } }
 
   /* ---------------------------------------------------------- computacao local */
   #local { padding-bottom: 40px; }
@@ -749,10 +764,10 @@
 
   <div class="numeros">
     <div class="largura" data-escalonar>
-      <div><i data-lucide="download"></i><span><b data-downloads>+100 downloads</b>clipadores já usando no PC</span></div>
-      <div><i data-lucide="timer"></i><span><b>~15 s</b>do lance ao clipe pronto, ao vivo</span></div>
-      <div><i data-lucide="gamepad-2"></i><span><b>Qualquer jogo</b>Twitch, Kick, YouTube e PC</span></div>
-      <div><i data-lucide="shield-check"></i><span><b>R$ 0</b>sem conta, sem assinatura, sem API</span></div>
+      <div class="num-card"><span class="n-ic"><i data-lucide="download"></i></span><div class="n-txt"><b data-downloads>+1.200 downloads</b><span class="n-sub">clipadores já usando no PC</span></div></div>
+      <div class="num-card"><span class="n-ic"><i data-lucide="timer"></i></span><div class="n-txt"><b>~15 segundos</b><span class="n-sub">do lance ao clipe ao vivo</span></div></div>
+      <div class="num-card"><span class="n-ic"><i data-lucide="gamepad-2"></i></span><div class="n-txt"><b>Qualquer jogo</b><span class="n-sub">Twitch, Kick, YouTube e PC</span></div></div>
+      <div class="num-card"><span class="n-ic"><i data-lucide="shield-check"></i></span><div class="n-txt"><b>100% Grátis</b><span class="n-sub">sem conta, assinatura ou API</span></div></div>
     </div>
   </div>
 

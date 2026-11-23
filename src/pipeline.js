@@ -23,25 +23,27 @@ const RAIZ = path.join(__dirname, '..');
 const pastas = require('./pastas');
 const desempenho = require('./desempenho');
 const MODELOS = process.env.MODELOS_DIR || path.join(RAIZ, 'modelos');
-// Fontes que vem com o programa (usadas no gancho e na legenda queimada)
-const FONTES = path.join(RAIZ, 'fontes');
+// Fontes que vem com o programa (usadas no gancho e na legenda queimada).
+// Olha tanto em src/fontes (fontes portateis embutidas no instalador) quanto em fontes/.
+const FONTES_DIRS = [path.join(__dirname, 'fontes'), path.join(RAIZ, 'fontes')];
 
 /** A pasta de fontes vista da pasta de trabalho, do jeito que o filtro do ffmpeg aceita. */
 function fontsdirRelativo() {
-  if (!fs.existsSync(FONTES)) return null;
-  const rel = path.relative(pastas.trabalho(), FONTES).split(path.sep).join('/');
-  if (!/[:\s']/.test(rel)) return rel;
-  // Outro disco ("D:...") ou caminho com espaco - como no programa instalado,
-  // com os dados em Videos: leva uma copia das fontes pra dentro da pasta de
-  // trabalho. Se nem isso der, cai na fonte do sistema.
+  const existentes = FONTES_DIRS.filter((d) => fs.existsSync(d));
+  if (!existentes.length) return null;
   try {
     const copia = path.join(pastas.trabalho(), 'fontes');
     fs.mkdirSync(copia, { recursive: true });
-    for (const nome of fs.readdirSync(FONTES)) {
-      const destino = path.join(copia, nome);
-      if (!fs.existsSync(destino)) fs.copyFileSync(path.join(FONTES, nome), destino);
+    let total = 0;
+    for (const dir of existentes) {
+      for (const nome of fs.readdirSync(dir)) {
+        if (!/\.(ttf|otf|woff2?)$/i.test(nome)) continue;
+        const destino = path.join(copia, nome);
+        if (!fs.existsSync(destino)) fs.copyFileSync(path.join(dir, nome), destino);
+        total++;
+      }
     }
-    return 'fontes';
+    return total ? 'fontes' : null;
   } catch (_) {
     return null;
   }
@@ -160,6 +162,7 @@ function transcrever(audio, destinoJson, duracao, modelo, idioma, aoProgredir, a
       }),
     });
     desempenho.aliviar(p);
+    desempenho.registrarProcesso(p);
 
     let resto = '';
     let erroFinal = '';
@@ -689,6 +692,7 @@ async function renderizarClipe(ctx, c) {
   if ((querLegenda || gancho || textoFixo) && ctx.vertical) {
     arquivoAss = 'leg-' + ctx.assinatura + '-' + limparNome(ctx.base) + '.ass';
     legenda.gerarAss(c.palavras || [], c.inicio, path.join(pastas.trabalho(), arquivoAss), {
+      fonte: opcoes.fonteLegenda || undefined,
       tamanho: opcoes.tamanhoLegenda || 78,
       margemBaixo: margemDaLegenda(opcoes, formatoDoClipe),
       incluirPalavras: querLegenda,
@@ -720,6 +724,68 @@ async function renderizarClipe(ctx, c) {
     aoProgredir: (frac) => aoProgredir(frac,
       'Gerando o ' + rotulo + '... ' + Math.round(frac * 100) + '%'),
   });
+
+  // Se o usuario adicionou ate 2 vinhetas (ou marcou um finalPadrao global no Croma Studio),
+  // insere elas no clipe ja cortado mantendo audio e video 100% sincronizados.
+  // Se nao houver nenhuma marcada, segue 100% o fluxo original sem tocar no arquivo.
+  const pastaFav = path.join(pastas.dados(), 'croma-favoritos');
+  let favIdx = null;
+  try { favIdx = JSON.parse(fs.readFileSync(path.join(pastaFav, 'index.json'), 'utf8')); } catch (_) {}
+  let vinhetas;
+  if (Array.isArray(c.vinhetas)) {
+    vinhetas = c.vinhetas.filter((v) => v && v.thumbId).slice(0, 2);
+  } else if (favIdx && favIdx.finalPadrao && favIdx.finalPadrao.thumbId) {
+    vinhetas = [{
+      thumbId: favIdx.finalPadrao.thumbId,
+      onde: (c.duracao || 0) + (c.teaser ? (c.teaser.duracao || 0) : 0),
+      duracao: favIdx.finalPadrao.duracao || 2.5,
+      audio: favIdx.finalPadrao.audio || null,
+      texto: '',
+    }];
+  } else {
+    vinhetas = [];
+  }
+  if (vinhetas.length) {
+    const favs = favIdx && Array.isArray(favIdx.thumbs) ? favIdx.thumbs : [];
+    const assVinhetas = [];
+    const preparadas = [];
+    for (let i = 0; i < vinhetas.length; i++) {
+      const v = vinhetas[i];
+      const fav = favs.find((f) => f.id === v.thumbId);
+      const img = fav && fav.arquivoPng ? path.join(pastaFav, path.basename(fav.arquivoPng)) : null;
+      if (!img || !fs.existsSync(img)) continue;
+      let vAss = null;
+      const textoLimpo = String(v.texto || '').trim();
+      if (textoLimpo) {
+        vAss = 'vin-' + ctx.assinatura + '-' + i + '-' + Date.now() + '.ass';
+        assVinhetas.push(path.join(pastas.trabalho(), vAss));
+        legenda.gerarAss([], 0, path.join(pastas.trabalho(), vAss), {
+          fonte: v.fonte || opcoes.fonteLegenda || undefined,
+          incluirPalavras: false,
+          textoFixo: { texto: textoLimpo, posicao: 'meio', duracao: 'todo', cor: 'branco' },
+        });
+      }
+      preparadas.push({
+        imagem: img,
+        onde: Math.max(0, Number(v.onde) || 0),
+        duracao: Math.max(0.5, Math.min(15, Number(v.duracao) || 2)),
+        audio: v.audio && fs.existsSync(v.audio) ? v.audio : null,
+        arquivoAss: vAss,
+        fontsdir: vAss ? fontsdirRelativo() : null,
+      });
+    }
+    try {
+      if (preparadas.length) {
+        aoProgredir(0.92, 'Inserindo vinhetas no ' + rotulo + '...');
+        await media.inserirVinhetas(mp4, preparadas, {
+          pastaTrabalho: pastas.trabalho(),
+          qualidade: opcoes.qualidade || 'maxima',
+        });
+      }
+    } finally {
+      for (const a of assVinhetas) { try { fs.unlinkSync(a); } catch (_) {} }
+    }
+  }
 
   // legenda solta, pra editar depois
   legenda.gerarSrt(c.palavras || [], c.inicio, path.join(ctx.pastaSaida, ctx.base + '.srt'));
@@ -909,6 +975,7 @@ async function refazerClipe(pedido, avisar) {
     teaser: pedido.teaser === undefined ? antigo.teaser : pedido.teaser,
     legendar: legendar,
     edicoesLegenda: edicoes || undefined,
+    vinhetas: Array.isArray(pedido.vinhetas) ? pedido.vinhetas.slice(0, 2) : (antigo.vinhetas || undefined),
     editado: true,
   });
 

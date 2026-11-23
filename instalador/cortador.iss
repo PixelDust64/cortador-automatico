@@ -1,9 +1,9 @@
-; Instalador do Cortador Automático (Inno Setup 6).
+﻿; Instalador do Cortador Automático (Inno Setup 6).
 ; Não compile direto: rode  node instalador/montar.js  - ele monta a pasta
 ; "montagem" com tudo que o programa precisa e chama o compilador.
 
 #define Nome "Mega Cortes HD"
-#define Versao "2.1.0"
+#define Versao "2.2.0"
 #define Marca "PixelDust64"
 #define Exe "CortadorAutomatico.exe"
 #ifndef MONTAGEM

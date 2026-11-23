@@ -5,23 +5,50 @@ import {
   Copy,
   Eye,
   EyeOff,
+  ImagePlus,
   Plus,
+  QrCode,
+  RotateCcw,
   Shuffle,
   Trash2,
 } from 'lucide-react';
-import { ARTWORK_FONTS, CURATED_PALETTES } from '../data/presets';
+import { ChangeEvent, useRef } from 'react';
+import { ARTWORK_FONTS, CURATED_PALETTES, INITIAL_BACKGROUND_PHOTO, THUMBNAIL_PRESETS } from '../data/presets';
 import {
+  BackgroundPhotoConfig,
   GradientPalette,
+  QrCodeConfig,
+  SavedFavoriteItem,
   TextAlignOption,
   TextLayer,
+  ThumbnailPresetId,
   WatermarkConfig,
   WatermarkShape,
   YouTubeSubMode,
 } from '../types/studio';
+import { registerPhotoImage } from '../utils/canvasRenderer';
+import { CollapsibleSection } from './CollapsibleSection';
+import { FavoritesSection } from './FavoritesSection';
 
 interface YouTubePanelProps {
   subMode: YouTubeSubMode;
   onChangeSubMode: (mode: YouTubeSubMode) => void;
+  thumbnailPreset: ThumbnailPresetId;
+  onChangeThumbnailPreset: (preset: ThumbnailPresetId) => void;
+  backgroundPhoto: BackgroundPhotoConfig;
+  onChangeBackgroundPhoto: (next: BackgroundPhotoConfig) => void;
+  qrCode: QrCodeConfig;
+  onChangeQrCode: (next: QrCodeConfig) => void;
+  favoriteThumbs: SavedFavoriteItem[];
+  favoriteGradients: SavedFavoriteItem[];
+  defaultEndThumbId: string | null;
+  favSaving: boolean;
+  favError: string | null;
+  onSaveFavorite: (tipo: 'gradiente' | 'thumb', nome: string) => void;
+  onLoadFavorite: (tipo: 'gradiente' | 'thumb', item: SavedFavoriteItem) => void;
+  onDeleteFavorite: (tipo: 'gradiente' | 'thumb', id: string) => void;
+  onToggleDefaultEnd: (thumbId: string | null) => void;
+  onImportThumbImage: (nome: string, pngBase64: string, w: number, h: number) => void;
   // Text layers (thumbnail & banner)
   textLayers: TextLayer[];
   selectedTextId: string | null;
@@ -57,6 +84,22 @@ const WATERMARK_SHAPES: { id: WatermarkShape; label: string }[] = [
 export function YouTubePanel({
   subMode,
   onChangeSubMode,
+  thumbnailPreset,
+  onChangeThumbnailPreset,
+  backgroundPhoto,
+  onChangeBackgroundPhoto,
+  qrCode,
+  onChangeQrCode,
+  favoriteThumbs,
+  favoriteGradients,
+  defaultEndThumbId,
+  favSaving,
+  favError,
+  onSaveFavorite,
+  onLoadFavorite,
+  onDeleteFavorite,
+  onToggleDefaultEnd,
+  onImportThumbImage,
   textLayers,
   selectedTextId,
   onSelectText,
@@ -71,18 +114,47 @@ export function YouTubePanel({
   onApplyPalette,
   onRandomizeGradient,
 }: YouTubePanelProps) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const selectedLayer =
     textLayers.find((l) => l.id === selectedTextId) ?? textLayers[0] ?? null;
+  const activeThumbPreset =
+    THUMBNAIL_PRESETS.find((p) => p.id === thumbnailPreset) ?? THUMBNAIL_PRESETS[0];
+
+  const handleUploadPhoto = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = typeof reader.result === 'string' ? reader.result : null;
+      if (!dataUrl) return;
+      const img = new Image();
+      img.onload = () => {
+        registerPhotoImage(dataUrl, img);
+        onChangeBackgroundPhoto({
+          ...backgroundPhoto,
+          dataUrl,
+          fileName: file.name,
+          opacity: backgroundPhoto.opacity || 100,
+          scale: 100,
+          offsetX: 0,
+          offsetY: 0,
+        });
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
   return (
     <div className="divide-y divide-[#22252D]">
       {/* Mode Switcher */}
       <section className="p-4 space-y-2.5">
         <div className="flex items-center justify-between">
-          <h2 className="text-[13px] font-semibold text-zinc-100">Formato YouTube</h2>
+          <h2 className="text-[13px] font-semibold text-zinc-100">YouTube & Redes Sociais</h2>
           <span className="font-mono text-[11px] tabular-nums text-zinc-400">
             {subMode === 'thumbnail'
-              ? '2048 × 1152'
+              ? `${activeThumbPreset.width} × ${activeThumbPreset.height}`
               : subMode === 'banner'
               ? '2560 × 1440'
               : '150 × 150'}
@@ -106,9 +178,33 @@ export function YouTubePanel({
           ))}
         </div>
 
+        {subMode === 'thumbnail' && (
+          <div className="space-y-1.5 pt-1">
+            <span className="text-[11px] text-zinc-400 block">Resolução / Plataforma</span>
+            <div className="grid grid-cols-2 gap-1.5">
+              {THUMBNAIL_PRESETS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => onChangeThumbnailPreset(p.id)}
+                  className={`px-2.5 py-1.5 rounded-lg border text-left transition-colors cursor-pointer ${
+                    thumbnailPreset === p.id
+                      ? 'bg-[#252936] border-zinc-400 text-white'
+                      : 'bg-[#171920] border-[#252832] text-zinc-400 hover:text-zinc-200 hover:border-[#343948]'
+                  }`}
+                >
+                  <div className="text-[11.5px] font-medium leading-tight truncate">{p.shortLabel}</div>
+                  <div className="font-mono text-[10px] text-zinc-400 tabular-nums mt-0.5">
+                    {p.width}×{p.height}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <p className="text-[12px] leading-relaxed text-zinc-400">
-          {subMode === 'thumbnail' &&
-            'Mínimo recomendado: 2048 × 1152 px e até 6 MB. Arraste os textos diretamente sobre a imagem.'}
+          {subMode === 'thumbnail' && activeThumbPreset.hint}
           {subMode === 'banner' &&
             'Use as guias de área segura na barra superior para alinhar entre TV, desktop e celular.'}
           {subMode === 'watermark' &&
@@ -526,10 +622,329 @@ export function YouTubePanel({
         </>
       ) : (
         <>
-          {/* Text Layers Manager */}
-          <section className="p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-[13px] font-semibold text-zinc-100">Camadas de texto</h3>
+          {/* Design Favoritos: Thumbs (10) e Gradientes (10) — retrateis */}
+          <FavoritesSection
+            title="Thumbs favoritas"
+            items={favoriteThumbs}
+            maxItems={10}
+            saving={favSaving}
+            error={favError}
+            placeholder="Nome da thumb (ex: Final do Canal)..."
+            onSave={(nome) => onSaveFavorite('thumb', nome)}
+            onLoad={(item) => onLoadFavorite('thumb', item)}
+            onDelete={(id) => onDeleteFavorite('thumb', id)}
+            defaultEndId={defaultEndThumbId}
+            onToggleDefaultEnd={onToggleDefaultEnd}
+            onImportImage={onImportThumbImage}
+            defaultOpen={false}
+          />
+          <FavoritesSection
+            title="Gradientes favoritos"
+            items={favoriteGradients}
+            maxItems={10}
+            saving={favSaving}
+            error={favError}
+            placeholder="Nome do fundo/gradiente..."
+            onSave={(nome) => onSaveFavorite('gradiente', nome)}
+            onLoad={(item) => onLoadFavorite('gradiente', item)}
+            onDelete={(id) => onDeleteFavorite('gradiente', id)}
+            defaultOpen={false}
+          />
+
+          {/* Foto / Imagem de Fundo (retratil) */}
+          <CollapsibleSection
+            title="Foto / Imagem"
+            badge={backgroundPhoto.dataUrl ? 'Ativa' : undefined}
+            defaultOpen={true}
+            rightSlot={
+              <div className="flex items-center gap-1.5">
+                {backgroundPhoto.dataUrl && (
+                  <button
+                    type="button"
+                    onClick={() => onChangeBackgroundPhoto(INITIAL_BACKGROUND_PHOTO)}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#1E2129] hover:bg-red-500/20 text-[11px] text-zinc-400 hover:text-red-300 transition-colors cursor-pointer"
+                    title="Remover foto"
+                  >
+                    <Trash2 className="w-3 h-3" aria-hidden="true" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#1E2129] hover:bg-[#282C37] text-[12px] font-medium text-zinc-100 transition-colors cursor-pointer"
+                >
+                  <ImagePlus className="w-3.5 h-3.5" aria-hidden="true" />
+                  {backgroundPhoto.dataUrl ? 'Trocar' : 'Incluir foto'}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleUploadPhoto}
+                  className="hidden"
+                />
+              </div>
+            }
+          >
+
+            {backgroundPhoto.dataUrl ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2 text-[11px] text-zinc-400">
+                  <span className="truncate">{backgroundPhoto.fileName || 'Foto carregada'}</span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onChangeBackgroundPhoto({
+                          ...backgroundPhoto,
+                          fit: backgroundPhoto.fit === 'cover' ? 'contain' : 'cover',
+                        })
+                      }
+                      className="px-2 py-0.5 rounded bg-[#181A20] border border-[#282C37] text-zinc-300 hover:text-white cursor-pointer"
+                    >
+                      {backgroundPhoto.fit === 'cover' ? 'Preencher' : 'Encaixar'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onChangeBackgroundPhoto({
+                          ...backgroundPhoto,
+                          scale: 100,
+                          offsetX: 0,
+                          offsetY: 0,
+                          blur: 0,
+                        })
+                      }
+                      className="p-1 rounded bg-[#181A20] border border-[#282C37] text-zinc-400 hover:text-white cursor-pointer"
+                      title="Centralizar foto"
+                    >
+                      <RotateCcw className="w-3 h-3" aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[11px] text-zinc-400">
+                      <span>Zoom</span>
+                      <span className="font-mono tabular-nums">{backgroundPhoto.scale}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={50}
+                      max={250}
+                      value={backgroundPhoto.scale}
+                      onChange={(e) =>
+                        onChangeBackgroundPhoto({ ...backgroundPhoto, scale: Number(e.target.value) })
+                      }
+                      className="studio-slider"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[11px] text-zinc-400">
+                      <span>Opacidade</span>
+                      <span className="font-mono tabular-nums">{backgroundPhoto.opacity}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={backgroundPhoto.opacity}
+                      onChange={(e) =>
+                        onChangeBackgroundPhoto({ ...backgroundPhoto, opacity: Number(e.target.value) })
+                      }
+                      className="studio-slider"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[11px] text-zinc-400">
+                      <span>Posição X</span>
+                      <span className="font-mono tabular-nums">{backgroundPhoto.offsetX}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={-50}
+                      max={50}
+                      value={backgroundPhoto.offsetX}
+                      onChange={(e) =>
+                        onChangeBackgroundPhoto({ ...backgroundPhoto, offsetX: Number(e.target.value) })
+                      }
+                      className="studio-slider"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[11px] text-zinc-400">
+                      <span>Posição Y</span>
+                      <span className="font-mono tabular-nums">{backgroundPhoto.offsetY}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={-50}
+                      max={50}
+                      value={backgroundPhoto.offsetY}
+                      onChange={(e) =>
+                        onChangeBackgroundPhoto({ ...backgroundPhoto, offsetY: Number(e.target.value) })
+                      }
+                      className="studio-slider"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[11px] text-zinc-400">
+                    <span>Desfoque da foto</span>
+                    <span className="font-mono tabular-nums">{backgroundPhoto.blur}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={24}
+                    value={backgroundPhoto.blur}
+                    onChange={(e) =>
+                      onChangeBackgroundPhoto({ ...backgroundPhoto, blur: Number(e.target.value) })
+                    }
+                    className="studio-slider"
+                  />
+                </div>
+              </div>
+            ) : (
+              <p className="text-[11.5px] text-zinc-500">
+                Envie uma foto ou print do vídeo para usar como fundo da thumbnail ou banner (PNG, JPG ou WebP).
+              </p>
+            )}
+          </CollapsibleSection>
+
+          {/* Gerador de QR Code (logo abaixo de Foto / Imagem, retratil) */}
+          <CollapsibleSection
+            title="QR Code na tela"
+            badge={qrCode.enabled && qrCode.text.trim() ? 'Ativo' : undefined}
+            defaultOpen={false}
+            rightSlot={
+              <label className="inline-flex items-center gap-1.5 text-[11px] text-zinc-300 cursor-pointer">
+                <QrCode className="w-3.5 h-3.5 text-zinc-400" aria-hidden="true" />
+                <input
+                  type="checkbox"
+                  checked={qrCode.enabled}
+                  onChange={(e) => onChangeQrCode({ ...qrCode, enabled: e.target.checked })}
+                  className="accent-zinc-100 w-3.5 h-3.5 cursor-pointer"
+                />
+              </label>
+            }
+          >
+            <label className="space-y-1 block">
+              <span className="text-[11px] text-zinc-400">Texto ou link do QR Code</span>
+              <input
+                type="text"
+                value={qrCode.text}
+                onChange={(e) =>
+                  onChangeQrCode({
+                    ...qrCode,
+                    text: e.target.value,
+                    enabled: e.target.value.trim().length > 0 ? true : qrCode.enabled,
+                  })
+                }
+                placeholder="https://youtube.com/@seucanal ou Pix..."
+                className="w-full h-8 px-2.5 rounded-lg bg-[#181A20] border border-[#282C37] text-[12px] text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400"
+              />
+            </label>
+
+            {qrCode.enabled && qrCode.text.trim() ? (
+              <div className="space-y-2.5">
+                <p className="text-[11px] text-zinc-400">
+                  Arraste o QR Code diretamente sobre a arte para posicionar ou ajuste abaixo:
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[11px] text-zinc-400">
+                      <span>Tamanho</span>
+                      <span className="font-mono tabular-nums">{qrCode.size}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={8}
+                      max={45}
+                      value={qrCode.size}
+                      onChange={(e) => onChangeQrCode({ ...qrCode, size: Number(e.target.value) })}
+                      className="studio-slider"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[11px] text-zinc-400">
+                      <span>Opacidade</span>
+                      <span className="font-mono tabular-nums">{qrCode.opacity}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={20}
+                      max={100}
+                      value={qrCode.opacity}
+                      onChange={(e) => onChangeQrCode({ ...qrCode, opacity: Number(e.target.value) })}
+                      className="studio-slider"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[11px] text-zinc-400">
+                      <span>Posição X</span>
+                      <span className="font-mono tabular-nums">{Math.round(qrCode.x * 100)}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={5}
+                      max={95}
+                      value={Math.round(qrCode.x * 100)}
+                      onChange={(e) => onChangeQrCode({ ...qrCode, x: Number(e.target.value) / 100 })}
+                      className="studio-slider"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[11px] text-zinc-400">
+                      <span>Posição Y</span>
+                      <span className="font-mono tabular-nums">{Math.round(qrCode.y * 100)}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={5}
+                      max={95}
+                      value={Math.round(qrCode.y * 100)}
+                      onChange={(e) => onChangeQrCode({ ...qrCode, y: Number(e.target.value) / 100 })}
+                      className="studio-slider"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <label className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg bg-[#181A20] border border-[#282C37] text-[11px] text-zinc-300">
+                    <span>Cor QR</span>
+                    <input
+                      type="color"
+                      value={qrCode.fgColor}
+                      onChange={(e) => onChangeQrCode({ ...qrCode, fgColor: e.target.value.toUpperCase() })}
+                      className="w-6 h-5 bg-transparent border-0 cursor-pointer"
+                    />
+                  </label>
+                  <label className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg bg-[#181A20] border border-[#282C37] text-[11px] text-zinc-300">
+                    <span>Fundo</span>
+                    <input
+                      type="color"
+                      value={qrCode.bgColor}
+                      onChange={(e) => onChangeQrCode({ ...qrCode, bgColor: e.target.value.toUpperCase() })}
+                      className="w-6 h-5 bg-transparent border-0 cursor-pointer"
+                    />
+                  </label>
+                </div>
+              </div>
+            ) : (
+              <p className="text-[11.5px] text-zinc-500">
+                Digite qualquer link ou texto acima para gerar um QR Code arrastável e redimensionável na tela.
+              </p>
+            )}
+          </CollapsibleSection>
+
+          {/* Text Layers Manager (retratil) */}
+          <CollapsibleSection
+            title="Camadas de texto"
+            badge={String(textLayers.length)}
+            defaultOpen={true}
+            rightSlot={
               <button
                 type="button"
                 onClick={onAddTextLayer}
@@ -538,7 +953,8 @@ export function YouTubePanel({
                 <Plus className="w-3.5 h-3.5" aria-hidden="true" />
                 Novo texto
               </button>
-            </div>
+            }
+          >
 
             <div className="space-y-1.5">
               {textLayers.map((layer) => {
@@ -614,7 +1030,7 @@ export function YouTubePanel({
                 className="studio-slider"
               />
             </div>
-          </section>
+          </CollapsibleSection>
 
           {/* Active Layer Editor */}
           {selectedLayer && (

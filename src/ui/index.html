@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mega Cortes HD</title>
-<link rel="icon" type="image/png" href="/ui/icone.png">
+<link rel="icon" type="image/png" href="/ui/icone.png?v=mega2">
+<link rel="shortcut icon" type="image/png" href="/ui/icone.png?v=mega2">
 <script src="/ui/lucide.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -835,13 +836,86 @@
 .assinatura .ia { font-size: var(--t6); color: var(--texto3); margin-top: 4px; }
   .sel-resolucao { background: var(--superficie2, #131315); color: var(--texto); border: 1px solid var(--linha2); border-radius: 8px; padding: 4px 8px; font: inherit; font-size: var(--t6); cursor: pointer; }
 
-/* ---------- aba isolada do Croma Studio */
-body[data-modo="croma"] { padding-bottom: 0; overflow: hidden; }
-body[data-modo="croma"] .pagina, body[data-modo="croma"] #acao { display: none !important; }
-#telaCroma { display: none; position: fixed; left: 0; right: 0; bottom: 0; top: var(--topo-h, 62px); z-index: 30; background: #0B0C0F; }
+/* ---------- aba isolada do Croma Studio e Splitter Studio */
+body[data-modo="croma"], body[data-modo="splitter"] { padding-bottom: 0; overflow: hidden; }
+body[data-modo="croma"] .pagina, body[data-modo="croma"] #acao,
+body[data-modo="splitter"] .pagina, body[data-modo="splitter"] #acao { display: none !important; }
+#telaCroma, #telaSplitter { display: none; position: fixed; left: 0; right: 0; bottom: 0; top: var(--topo-h, 62px); z-index: 30; background: #0B0C0F; }
 body[data-modo="croma"] #telaCroma { display: block; }
-#telaCroma iframe { width: 100%; height: 100%; border: 0; display: block; }
-#btnCroma[aria-pressed="true"] { border-color: var(--marca); background: var(--marca-fundo2); color: var(--texto); }
+body[data-modo="splitter"] #telaSplitter { display: block; }
+#telaCroma iframe, #telaSplitter iframe { width: 100%; height: 100%; border: 0; display: block; }
+#btnCroma[aria-pressed="true"], #btnSplitter[aria-pressed="true"] { border-color: var(--marca); background: var(--marca-fundo2); color: var(--texto); }
+
+/* ---------- vinhetas do Croma Studio no Editor de Corte */
+details.ed-vinhetas > summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: var(--t6); font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--texto2); }
+details.ed-vinhetas > summary::-webkit-details-marker { display: none; }
+.vin-item { margin-top: 10px; padding: 10px; border-radius: 10px; background: var(--superficie); border: 1px solid var(--linha); display: grid; gap: 8px; }
+.vin-topo { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: var(--t5); font-weight: 600; }
+.vin-previa { width: 100%; max-height: 82px; object-fit: contain; border-radius: 7px; background: #08090c; border: 1px solid var(--linha); display: block; }
+.vin-linha { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.vin-campo { display: grid; gap: 3px; font-size: var(--t6); color: var(--texto3); }
+.vin-campo input, .vin-campo select { width: 100%; padding: 6px 8px; border-radius: 7px; background: var(--superficie2); border: 1px solid var(--linha2); color: var(--texto); font: inherit; font-size: var(--t5); }
+.vin-atalhos { display: flex; gap: 4px; }
+.vin-atalhos button { flex: 1; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--linha2); background: var(--superficie2); color: var(--texto2); font: inherit; font-size: 11px; cursor: pointer; }
+.vin-atalhos button:hover { border-color: var(--marca); color: var(--texto); }
+.vin-audio { display: flex; align-items: center; gap: 6px; font-size: var(--t6); color: var(--texto2); }
+.vin-audio span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- painel lateral da fila de execucao */
+.fila-dock {
+  position: fixed; right: 16px; top: 74px; z-index: 25;
+  width: 286px; max-height: calc(100vh - 96px);
+  display: flex; flex-direction: column;
+  background: rgba(14,16,21,.92); backdrop-filter: blur(14px);
+  border: 1px solid var(--linha2); border-radius: 14px;
+  box-shadow: 0 24px 60px -24px rgba(0,0,0,.85);
+  overflow: hidden; transition: transform .22s var(--suave), opacity .22s;
+}
+body[data-modo="croma"] .fila-dock,
+body[data-modo="croma"] .fila-aba,
+body[data-modo="splitter"] .fila-dock,
+body[data-modo="splitter"] .fila-aba { display: none !important; }
+.fila-dock.recolhida { transform: translateX(calc(100% + 24px)); opacity: 0; pointer-events: none; }
+.fila-aba {
+  position: fixed; right: 16px; top: 74px; z-index: 24;
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 13px; border-radius: 99px;
+  background: rgba(14,16,21,.92); border: 1px solid var(--linha2);
+  color: var(--texto); font: inherit; font-size: var(--t5); font-weight: 600;
+  cursor: pointer; box-shadow: 0 12px 30px -10px rgba(0,0,0,.7);
+}
+.fila-aba:hover { border-color: var(--marca); }
+.fila-aba .ponto { width: 8px; height: 8px; border-radius: 50%; background: var(--texto3); }
+.fila-aba.ativa .ponto { background: var(--marca); box-shadow: 0 0 10px var(--marca); }
+.fila-cab { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 11px 13px; border-bottom: 1px solid var(--linha); }
+.fila-cab b { font-size: var(--t5); font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
+.fila-cab .acoes { display: flex; align-items: center; gap: 4px; }
+.fila-cab button { padding: 4px 8px; border-radius: 7px; border: 1px solid var(--linha); background: var(--superficie2); color: var(--texto2); font: inherit; font-size: 11px; cursor: pointer; }
+.fila-cab button:hover { border-color: var(--linha2); color: var(--texto); }
+.fila-corpo { overflow-y: auto; padding: 10px; display: grid; gap: 8px; }
+.fila-vazia { font-size: var(--t6); color: var(--texto3); text-align: center; padding: 16px 8px; line-height: 1.45; }
+.fila-item {
+  padding: 9px 10px; border-radius: 10px; background: var(--superficie);
+  border: 1px solid var(--linha); display: grid; gap: 6px; cursor: pointer;
+  transition: border-color .15s;
+}
+.fila-item:hover { border-color: var(--linha2); }
+.fila-item.rodando { border-color: rgba(61,139,255,.55); background: rgba(61,139,255,.07); }
+.fila-item.concluido { border-color: rgba(74,222,128,.35); }
+.fila-item.erro, .fila-item.cancelado { opacity: .72; }
+.fila-it-top { display: flex; align-items: center; gap: 7px; font-size: var(--t5); }
+.fila-it-top .tit { flex: 1; min-width: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fila-it-top .pct { font-size: 11px; font-variant-numeric: tabular-nums; color: var(--texto2); font-weight: 700; }
+.fila-barra { height: 4px; border-radius: 99px; background: rgba(255,255,255,.08); overflow: hidden; }
+.fila-barra > i { display: block; height: 100%; background: var(--marca); transition: width .3s; }
+.fila-msg { font-size: 11.5px; color: var(--texto2); line-height: 1.35; }
+.fila-det { display: flex; align-items: center; justify-content: space-between; gap: 5px; margin-top: 2px; flex-wrap: wrap; }
+.fila-tag { font-size: 10.5px; color: var(--texto3); padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,.04); }
+.fila-btns { display: flex; gap: 4px; }
+.fila-btns button { padding: 3px 7px; border-radius: 6px; border: 1px solid var(--linha2); background: var(--superficie2); color: var(--texto2); font: inherit; font-size: 11px; cursor: pointer; }
+.fila-btns button:hover { border-color: var(--marca); color: var(--texto); }
+.fila-btns button.parar:hover { border-color: #f87171; color: #fca5a5; }
+@media (max-width: 1220px) { .fila-dock:not(.forcada) { transform: translateX(calc(100% + 24px)); opacity: 0; pointer-events: none; } }
 </style>
 </head>
 <body data-modo="fluxo">
@@ -854,10 +928,29 @@ body[data-modo="croma"] #telaCroma { display: block; }
     <button class="btn principal p" id="btnLinkTopo" type="submit">Ir</button>
   </form>
   <button class="btn p" id="btnCroma" aria-pressed="false" hidden><i data-lucide="palette" class="i"></i> Croma Studio</button>
+  <button class="btn p" id="btnSplitter" aria-pressed="false" hidden><i data-lucide="audio-waveform" class="i"></i> Splitter Studio</button>
   <button class="btn p" id="btnProjetos"><i data-lucide="folder-kanban" class="i"></i> Projetos</button>
   <button class="btn p" id="btnAjustes"><i data-lucide="settings-2" class="i"></i> Ajustes</button>
 </div>
 <div id="telaCroma"><iframe id="frameCroma" title="Croma Studio"></iframe></div>
+<div id="telaSplitter"><iframe id="frameSplitter" title="Splitter Studio"></iframe></div>
+
+<button type="button" class="fila-aba" id="btnAbrirFila" title="Mostrar fila de execução">
+  <span class="ponto"></span>
+  <span id="filaAbaTxt">Fila</span>
+</button>
+<aside class="fila-dock" id="filaDock" aria-label="Fila de execução">
+  <div class="fila-cab">
+    <b><i data-lucide="list-video" class="i"></i> Fila <span id="filaBadge" style="color:var(--texto3); font-weight:600">0</span></b>
+    <div class="acoes">
+      <button type="button" id="btnLimparFila" title="Limpar concluídos">Limpar</button>
+      <button type="button" id="btnRecolherFila" title="Recolher painel">›</button>
+    </div>
+  </div>
+  <div class="fila-corpo" id="filaCorpo">
+    <div class="fila-vazia">Nenhum vídeo na fila. Quando você enviar cortes, o progresso aparece aqui ao vivo.</div>
+  </div>
+</aside>
 
 <div class="pagina">
 
@@ -1504,6 +1597,36 @@ body[data-modo="croma"] #telaCroma { display: block; }
           <button data-tam="96" aria-pressed="false">Grande</button>
         </div>
       </div>
+      <div style="margin-top:12px">
+        <label class="rot">Fonte da legenda</label>
+        <div class="trio" style="grid-template-columns:1fr 1fr" id="fonteLegenda">
+          <button data-fonte="Arial Black" aria-pressed="true">Arial Black</button>
+          <button data-fonte="BF_Modernista" aria-pressed="false">BF Modernista</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="grupo">
+      <h4><i data-lucide="image" class="i"></i> Final padrão dos cortes (opcional)</h4>
+      <div id="finalPadraoStatus" class="dica">Nenhum selecionado — os cortes seguem o fluxo normal.</div>
+      <img id="finalPadraoImg" class="vin-previa" style="margin-top:8px; display:none" alt="">
+      <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap">
+        <select id="finalPadraoSel" style="flex:1; min-width:140px; padding:7px 9px; border-radius:8px; background:var(--superficie2); border:1px solid var(--linha2); color:var(--texto); font:inherit; font-size:var(--t5)"></select>
+        <button type="button" class="btn p" id="btnImportarFinal">Importar imagem</button>
+        <input type="file" id="inpImportarFinal" accept="image/*" hidden>
+      </div>
+      <div id="finalPadraoOpts" hidden style="margin-top:8px; display:grid; gap:8px">
+        <div class="trio" id="finalPadraoDur">
+          <button type="button" data-fdur="1.5" aria-pressed="false">1,5 s</button>
+          <button type="button" data-fdur="2.5" aria-pressed="true">2,5 s</button>
+          <button type="button" data-fdur="4" aria-pressed="false">4 s</button>
+        </div>
+        <div class="vin-audio">
+          <span id="finalPadraoAudioTxt">Sem som (silêncio)</span>
+          <button type="button" class="btn p" id="btnFinalAudio" style="padding:4px 8px; font-size:11px">Áudio / Jingle</button>
+          <button type="button" class="btn p" id="btnFinalAudioLimpar" hidden style="padding:4px 7px; font-size:11px" title="Voltar ao silêncio">×</button>
+        </div>
+      </div>
     </div>
 
     <div class="grupo">
@@ -1663,6 +1786,16 @@ body[data-modo="croma"] #telaCroma { display: block; }
           </label>
         </div>
 
+        <details class="cartao ed-vinhetas" id="edVinhetasBox" data-so="clipe">
+          <summary>
+            <span><i data-lucide="sparkles" class="i"></i> Vinhetas / Thumbs (até 2)</span>
+            <span id="edVinCount" style="color:var(--texto3); font-weight:600">0/2</span>
+          </summary>
+          <div class="dica" style="margin-top:8px">Importe thumbs salvas no Croma Studio pra inserir em qualquer ponto do corte (ex.: após 3s e no final), com silêncio ou jingle MP3/MP4.</div>
+          <div id="edVinLista"></div>
+          <button class="btn p" id="edAddVinheta" type="button" style="width:100%; margin-top:10px"><i data-lucide="plus" class="i"></i> Adicionar vinheta</button>
+        </details>
+
         <div class="cartao" data-so="clipe">
           <button class="btn principal" id="edRefazer" style="width:100%" disabled><i data-lucide="wand-sparkles" class="i"></i> Refazer este clipe</button>
           <button class="btn p" id="edDesfazer" style="width:100%; margin-top:8px" disabled><i data-lucide="undo-2" class="i"></i> Voltar como estava</button>
@@ -1775,7 +1908,7 @@ body[data-modo="croma"] #telaCroma { display: block; }
       linha: { cor: '#ffffff', espessura: 8 },
     },
     formato: 'split', quantidade: 8, duracao: '28-62', ordem: 'nota',
-    velocidade: 'equilibrado', tamLegenda: 78,
+    velocidade: 'equilibrado', tamLegenda: 78, fonteLegenda: 'Arial Black',
     gancho: true, legenda: false, focarRosto: true, picos: true,
     resolucao: 1080, pedidos: [], idioma: 'pt',
     // ao vivo: formato, webcam e o jeito de clipar
@@ -2403,6 +2536,7 @@ body[data-modo="croma"] #telaCroma { display: block; }
   grupo('#duracoes', 'data-dur', (v) => { cfg.duracao = v; });
   grupo('#ordem', 'data-ordem', (v) => { cfg.ordem = v; });
   grupo('#tamLegenda', 'data-tam', (v) => { cfg.tamLegenda = Number(v); });
+  grupo('#fonteLegenda', 'data-fonte', (v) => { cfg.fonteLegenda = v; });
   // o programa e feito pra cortes brasileiros: a fala e sempre transcrita em portugues
   cfg.idioma = 'pt';
   grupo('#velocidade', 'data-vel', (v) => {
@@ -2414,7 +2548,7 @@ body[data-modo="croma"] #telaCroma { display: block; }
 
   // reaplica o que estava lembrado
   [['#quantidades', 'data-qtd', cfg.quantidade], ['#duracoes', 'data-dur', cfg.duracao],
-   ['#ordem', 'data-ordem', cfg.ordem], ['#tamLegenda', 'data-tam', cfg.tamLegenda],
+   ['#ordem', 'data-ordem', cfg.ordem], ['#tamLegenda', 'data-tam', cfg.tamLegenda], ['#fonteLegenda', 'data-fonte', cfg.fonteLegenda],
    ['#velocidade', 'data-vel', cfg.velocidade], ['#posGancho', 'data-pos', cfg.posGancho]].forEach(function (t) {
     document.querySelectorAll(t[0] + ' [' + t[1] + ']').forEach((b) => {
       b.setAttribute('aria-pressed', String(b.getAttribute(t[1]) == t[2]));
@@ -2475,7 +2609,7 @@ body[data-modo="croma"] #telaCroma { display: block; }
 
   // ------------------------------------------------------------ gaveta
   const abrir = (v) => { $('gaveta').classList.toggle('on', v); $('fundoGaveta').classList.toggle('on', v); };
-  $('btnAjustes').addEventListener('click', () => { abrir(true); carregarArmazenamento(); });
+  $('btnAjustes').addEventListener('click', () => { abrir(true); carregarArmazenamento(); carregarFinalPadrao(); });
 
   // ------------------------------------------------------------ onde salvar
   let armazenamento = null;
@@ -3165,7 +3299,7 @@ body[data-modo="croma"] #telaCroma { display: block; }
         quantidade: cfg.quantidade, minDur: Number(faixa[0]), maxDur: Number(faixa[1]),
         ordem: cfg.ordem, modelo: vel.modelo, qualidade: vel.qualidade,
         legendar: cfg.legenda && formato !== 'original',
-        textoGancho: cfg.gancho, tamanhoLegenda: cfg.tamLegenda,
+        textoGancho: cfg.gancho, tamanhoLegenda: cfg.tamLegenda, fonteLegenda: cfg.fonteLegenda,
         detectarWebcam: cfg.focarRosto, detectarMomentos: cfg.picos,
         trecho: trechoFluxo ? { inicio: trechoFluxo.inicio, fim: trechoFluxo.fim } : null,
         modoTrecho: trechoFluxo ? trechoFluxo.modo : null,
@@ -3659,13 +3793,16 @@ body[data-modo="croma"] #telaCroma { display: block; }
       duracao: doClipe ? (c.fonte.duracao || 0) : p.duracaoVideo,
       outros: doClipe ? [] : p.clipes, c: c, pastaProj: pastaProj,
       edicoes: Object.assign({}, c.edicoesLegenda || {}),
+      vinhetas: JSON.parse(JSON.stringify(c.vinhetas || [])),
       assinaturaLegenda: '',
       base: {
         inicio: c.inicio, fim: arred(c.inicio + c.duracao), gancho: c.gancho || '',
         legendar: typeof c.legendar === 'boolean' ? c.legendar : legendaDoProjeto,
         edicoes: JSON.stringify(c.edicoesLegenda || {}),
+        vinhetas: JSON.stringify(c.vinhetas || []),
       },
     });
+    carregarThumbsParaEditor();
     $('edLegendar').checked = ed.base.legendar;
     ed.inicio = ed.base.inicio;
     ed.fim = ed.base.fim;
@@ -3814,7 +3951,8 @@ body[data-modo="croma"] #telaCroma { display: block; }
            Math.abs(ed.fim - ed.base.fim) >= 0.05 ||
            $('edGancho').value.trim() !== ed.base.gancho.trim() ||
            $('edLegendar').checked !== ed.base.legendar ||
-           JSON.stringify(ed.edicoes) !== ed.base.edicoes;
+           JSON.stringify(ed.edicoes) !== ed.base.edicoes ||
+           JSON.stringify(ed.vinhetas || []) !== (ed.base.vinhetas || '[]');
   }
 
   /**
@@ -4315,15 +4453,159 @@ body[data-modo="croma"] #telaCroma { display: block; }
 
   $('edGancho').addEventListener('input', pintarEditor);
 
+  // ---- vinhetas do Croma Studio no Editor de Corte (ate 2 por clipe)
+  let cromaThumbsCache = [];
+  async function carregarThumbsParaEditor() {
+    try {
+      const r = await fetch('/api/croma/favoritos').then((x) => x.json());
+      cromaThumbsCache = Array.isArray(r.thumbs) ? r.thumbs : [];
+    } catch (_) {
+      cromaThumbsCache = [];
+    }
+    pintarVinhetasEditor();
+  }
+
+  function pintarVinhetasEditor() {
+    const lista = Array.isArray(ed.vinhetas) ? ed.vinhetas : [];
+    $('edVinCount').textContent = lista.length + '/2';
+    $('edAddVinheta').disabled = lista.length >= 2 || !cromaThumbsCache.length;
+    $('edAddVinheta').textContent = !cromaThumbsCache.length
+      ? 'Salve uma thumb no Croma Studio primeiro'
+      : (lista.length >= 2 ? 'Limite de 2 vinhetas atingido' : '+ Adicionar vinheta');
+
+    const cont = $('edVinLista');
+    if (!lista.length) {
+      cont.innerHTML = '';
+      return;
+    }
+    const durClipe = Math.max(3, Math.round((ed.fim - ed.inicio) * 10) / 10);
+    cont.innerHTML = lista.map((v, idx) => {
+      const fav = cromaThumbsCache.find((t) => t.id === v.thumbId) || cromaThumbsCache[0];
+      if (fav && v.thumbId !== fav.id) v.thumbId = fav.id;
+      const opts = cromaThumbsCache.map((t) =>
+        '<option value="' + esc(t.id) + '"' + (t.id === v.thumbId ? ' selected' : '') + '>' + esc(t.nome) + '</option>'
+      ).join('');
+      const imgTag = fav && fav.arquivoPng
+        ? '<img class="vin-previa" src="/api/croma/favoritos/img/' + encodeURIComponent(fav.arquivoPng) + '" alt="">'
+        : '';
+      const audioNome = v.audio ? v.audio.split(/[\\/]/).pop() : 'Sem som (silêncio)';
+      return '<div class="vin-item" data-vidx="' + idx + '">' +
+        '<div class="vin-topo"><span>Vinheta ' + (idx + 1) + '</span>' +
+        '<button type="button" class="btn p" data-vacao="remover" style="padding:3px 8px; font-size:11px">Remover</button></div>' +
+        imgTag +
+        '<label class="vin-campo"><span>Thumb salva</span><select data-vcampo="thumbId">' + opts + '</select></label>' +
+        '<div class="vin-linha">' +
+          '<label class="vin-campo"><span>Aparece em (s)</span><input type="number" min="0" max="' + durClipe + '" step="0.5" data-vcampo="onde" value="' + esc(String(v.onde)) + '"></label>' +
+          '<label class="vin-campo"><span>Duração (s)</span><input type="number" min="0.5" max="15" step="0.5" data-vcampo="duracao" value="' + esc(String(v.duracao)) + '"></label>' +
+        '</div>' +
+        '<div class="vin-atalhos">' +
+          '<button type="button" data-vatalho="0">Início (0s)</button>' +
+          '<button type="button" data-vatalho="3">Após 3s</button>' +
+          '<button type="button" data-vatalho="fim">No final</button>' +
+        '</div>' +
+        '<div class="vin-audio">' +
+          '<span title="' + esc(v.audio || 'Sem som') + '">' + esc(audioNome) + '</span>' +
+          '<button type="button" class="btn p" data-vacao="audio" style="padding:4px 8px; font-size:11px">Áudio / Jingle</button>' +
+          (v.audio ? '<button type="button" class="btn p" data-vacao="limpar-audio" style="padding:4px 7px; font-size:11px" title="Voltar ao silêncio">×</button>' : '') +
+        '</div>' +
+        '<div class="vin-linha">' +
+          '<label class="vin-campo"><span>Texto na vinheta (opcional)</span><input type="text" maxlength="60" placeholder="Sem texto extra" data-vcampo="texto" value="' + esc(v.texto || '') + '"></label>' +
+          '<label class="vin-campo"><span>Fonte</span><select data-vcampo="fonte">' +
+            '<option value="Arial Black"' + ((v.fonte || 'Arial Black') === 'Arial Black' ? ' selected' : '') + '>Arial Black</option>' +
+            '<option value="BF_Modernista"' + (v.fonte === 'BF_Modernista' ? ' selected' : '') + '>BF Modernista</option>' +
+          '</select></label>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  $('edAddVinheta').addEventListener('click', () => {
+    if (!cromaThumbsCache.length) return;
+    ed.vinhetas = Array.isArray(ed.vinhetas) ? ed.vinhetas : [];
+    if (ed.vinhetas.length >= 2) return;
+    const durClipe = Math.max(3, Math.round((ed.fim - ed.inicio) * 10) / 10);
+    // 1a vinheta: por padrao apos 3s; 2a vinheta: por padrao no fim do clipe
+    const ondePadrao = ed.vinhetas.length === 0 ? Math.min(3, durClipe) : durClipe;
+    ed.vinhetas.push({
+      thumbId: cromaThumbsCache[0].id,
+      onde: ondePadrao,
+      duracao: 2,
+      audio: null,
+      texto: '',
+      fonte: cfg.fonteLegenda || 'Arial Black',
+    });
+    pintarVinhetasEditor();
+    pintarEditor();
+  });
+
+  $('edVinLista').addEventListener('input', (e) => {
+    const item = e.target.closest('.vin-item');
+    const campo = e.target.dataset && e.target.dataset.vcampo;
+    if (!item || !campo) return;
+    const v = ed.vinhetas[Number(item.dataset.vidx)];
+    if (!v) return;
+    v[campo] = (campo === 'onde' || campo === 'duracao') ? Number(e.target.value) : e.target.value;
+    if (campo === 'thumbId') pintarVinhetasEditor();
+    pintarEditor();
+  });
+
+  $('edVinLista').addEventListener('change', (e) => {
+    const item = e.target.closest('.vin-item');
+    const campo = e.target.dataset && e.target.dataset.vcampo;
+    if (!item || !campo) return;
+    const v = ed.vinhetas[Number(item.dataset.vidx)];
+    if (!v) return;
+    v[campo] = (campo === 'onde' || campo === 'duracao') ? Number(e.target.value) : e.target.value;
+    if (campo === 'thumbId') pintarVinhetasEditor();
+    pintarEditor();
+  });
+
+  $('edVinLista').addEventListener('click', async (e) => {
+    const item = e.target.closest('.vin-item');
+    if (!item) return;
+    const idx = Number(item.dataset.vidx);
+    const v = ed.vinhetas[idx];
+    if (!v) return;
+    const atalho = e.target.dataset && e.target.dataset.vatalho;
+    if (atalho !== undefined) {
+      const durClipe = Math.max(3, Math.round((ed.fim - ed.inicio) * 10) / 10);
+      v.onde = atalho === 'fim' ? durClipe : Math.min(Number(atalho), durClipe);
+      pintarVinhetasEditor();
+      pintarEditor();
+      return;
+    }
+    const acao = e.target.dataset && e.target.dataset.vacao;
+    if (acao === 'remover') {
+      ed.vinhetas.splice(idx, 1);
+      pintarVinhetasEditor();
+      pintarEditor();
+    } else if (acao === 'limpar-audio') {
+      v.audio = null;
+      pintarVinhetasEditor();
+      pintarEditor();
+    } else if (acao === 'audio') {
+      try {
+        const r = await fetch('/api/escolher-audio', { method: 'POST' }).then((x) => x.json());
+        if (r && r.caminho) {
+          v.audio = r.caminho;
+          pintarVinhetasEditor();
+          pintarEditor();
+        }
+      } catch (_) {}
+    }
+  });
+
   $('edDesfazer').addEventListener('click', () => {
     ed.inicio = ed.base.inicio;
     ed.fim = ed.base.fim;
     $('edGancho').value = ed.base.gancho;
     $('edLegendar').checked = ed.base.legendar;
     ed.edicoes = JSON.parse(ed.base.edicoes || '{}');
+    ed.vinhetas = JSON.parse(ed.base.vinhetas || '[]');
     ed.assinaturaLegenda = '';
     edVideo.pause();
     espiar(ed.inicio, true);
+    pintarVinhetasEditor();
     pintarEditor();
   });
 
@@ -4370,6 +4652,7 @@ body[data-modo="croma"] #telaCroma { display: block; }
           gancho: $('edGancho').value.trim(),
           legendar: $('edLegendar').checked,
           edicoes: ed.edicoes,
+          vinhetas: (ed.vinhetas || []).filter((v) => v && v.thumbId).slice(0, 2),
         }),
       }).then((x) => x.json());
     } catch (_) {
@@ -4427,28 +4710,250 @@ body[data-modo="croma"] #telaCroma { display: block; }
     irPara(projetoAtual && projetoAtual.recem && arquivo ? 3 : 1);
   });
 
-  // Croma Studio (aba isolada em iframe, lazy-load; so aparece se o build existir em /croma/)
-  let modoAntesCroma = 'fluxo';
+  // ---- final padrao dos cortes (em sincronia com ★ Final padrao do Croma Studio)
+  let estadoFinalPadrao = { thumbs: [], finalPadrao: null };
+  async function carregarFinalPadrao() {
+    try {
+      const r = await fetch('/api/croma/favoritos').then((x) => x.json());
+      estadoFinalPadrao = { thumbs: r.thumbs || [], finalPadrao: r.finalPadrao || null };
+      pintarFinalPadrao();
+    } catch (_) {}
+  }
+  function pintarFinalPadrao() {
+    const fp = estadoFinalPadrao.finalPadrao;
+    const thumbs = estadoFinalPadrao.thumbs || [];
+    const sel = $('finalPadraoSel');
+    sel.innerHTML = '<option value="">Desativado (fluxo original)</option>' +
+      thumbs.map((t) => '<option value="' + esc(t.id) + '"' + (fp && fp.thumbId === t.id ? ' selected' : '') + '>' + esc(t.nome) + '</option>').join('');
+    const ativo = fp && thumbs.find((t) => t.id === fp.thumbId);
+    const img = $('finalPadraoImg');
+    if (ativo && ativo.arquivoPng) {
+      img.src = '/api/croma/favoritos/img/' + encodeURIComponent(ativo.arquivoPng);
+      img.style.display = 'block';
+      $('finalPadraoStatus').textContent = 'Ativo: "' + ativo.nome + '" aparecerá no final de todos os novos cortes (' + (fp.duracao || 2.5) + 's).';
+      $('finalPadraoOpts').hidden = false;
+      $('finalPadraoAudioTxt').textContent = fp.audio ? fp.audio.split(/[\\/]/).pop() : 'Sem som (silêncio)';
+      $('btnFinalAudioLimpar').hidden = !fp.audio;
+      document.querySelectorAll('#finalPadraoDur button').forEach((b) =>
+        b.setAttribute('aria-pressed', String(Number(b.dataset.fdur) === Number(fp.duracao || 2.5))));
+    } else {
+      img.style.display = 'none';
+      $('finalPadraoStatus').textContent = 'Nenhum selecionado — os cortes seguem o fluxo normal.';
+      $('finalPadraoOpts').hidden = true;
+    }
+  }
+  async function salvarFinalPadrao(corpo) {
+    try {
+      const r = await fetch('/api/croma/final-padrao', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(corpo),
+      }).then((x) => x.json());
+      if (!r.erro) { estadoFinalPadrao = { thumbs: r.thumbs || [], finalPadrao: r.finalPadrao || null }; pintarFinalPadrao(); }
+    } catch (_) {}
+  }
+  $('finalPadraoSel').addEventListener('change', (e) => {
+    const id = e.target.value || null;
+    salvarFinalPadrao({ thumbId: id });
+  });
+  $('finalPadraoDur').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-fdur]');
+    if (!b || !estadoFinalPadrao.finalPadrao) return;
+    salvarFinalPadrao({ thumbId: estadoFinalPadrao.finalPadrao.thumbId, duracao: Number(b.dataset.fdur) });
+  });
+  $('btnFinalAudio').addEventListener('click', async () => {
+    if (!estadoFinalPadrao.finalPadrao) return;
+    try {
+      const r = await fetch('/api/escolher-audio', { method: 'POST' }).then((x) => x.json());
+      if (r && r.caminho) salvarFinalPadrao({ thumbId: estadoFinalPadrao.finalPadrao.thumbId, audio: r.caminho });
+    } catch (_) {}
+  });
+  $('btnFinalAudioLimpar').addEventListener('click', () => {
+    if (!estadoFinalPadrao.finalPadrao) return;
+    salvarFinalPadrao({ thumbId: estadoFinalPadrao.finalPadrao.thumbId, audio: null });
+  });
+  $('btnImportarFinal').addEventListener('click', () => $('inpImportarFinal').click());
+  $('inpImportarFinal').addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = async () => {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth; c.height = img.naturalHeight;
+        c.getContext('2d').drawImage(img, 0, 0);
+        const nome = file.name.replace(/\.[^.]+$/, '').slice(0, 40) || 'Final do canal';
+        const r = await fetch('/api/croma/favoritos', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tipo: 'thumb', nome, largura: c.width, altura: c.height, dados: null, pngBase64: c.toDataURL('image/png') }),
+        }).then((x) => x.json());
+        if (!r.erro && r.thumbs && r.thumbs[0]) {
+          await salvarFinalPadrao({ thumbId: r.thumbs[0].id, duracao: 2.5 });
+        }
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  });
+
+  // ---- painel lateral da fila de execucao ao vivo
+  let filaAbertaId = null;
+  let filaTimer = null;
+  const ROTULO_TIPO = { processar: 'Novo vídeo', refazer: 'Refazer clipe', mais: 'Mais cortes' };
+  const ROTULO_STATUS = { rodando: 'Executando', aguardando: 'Na fila', concluido: 'Pronto', cancelado: 'Cancelado', erro: 'Erro' };
+
+  function pintarFila(dados) {
+    const itens = Array.isArray(dados && dados.itens) ? dados.itens : [];
+    const pendentes = itens.filter((i) => i.status === 'rodando' || i.status === 'aguardando');
+    const aguardando = itens.filter((i) => i.status === 'aguardando');
+    $('filaBadge').textContent = String(pendentes.length || itens.length);
+    $('btnAbrirFila').classList.toggle('ativa', pendentes.length > 0);
+    const rodando = itens.find((i) => i.status === 'rodando');
+    $('filaAbaTxt').textContent = rodando
+      ? 'Fila · ' + (rodando.pct || 0) + '%'
+      : (pendentes.length ? 'Fila (' + pendentes.length + ')' : 'Fila');
+
+    const corpo = $('filaCorpo');
+    if (!itens.length) {
+      corpo.innerHTML = '<div class="fila-vazia">Nenhum vídeo na fila. Quando você enviar cortes, o progresso aparece aqui ao vivo.</div>';
+      return;
+    }
+    corpo.innerHTML = itens.map((it) => {
+      const expandido = filaAbertaId === it.id || it.status === 'rodando';
+      const idxAg = aguardando.findIndex((a) => a.id === it.id);
+      const ordem = idxAg >= 0 ? '#' + (idxAg + 1) + ' na fila' : (ROTULO_STATUS[it.status] || it.status);
+      const barra = it.status === 'rodando'
+        ? '<div class="fila-barra"><i style="width:' + Math.max(4, Math.min(100, it.pct || 0)) + '%"></i></div>'
+        : '';
+      let botoes = '';
+      if (it.status === 'rodando') {
+        botoes = '<button type="button" class="parar" data-facao="cancelar" data-fid="' + esc(it.id) + '">Parar</button>';
+      } else if (it.status === 'aguardando') {
+        botoes =
+          (idxAg > 0 ? '<button type="button" data-facao="subir" data-fid="' + esc(it.id) + '" title="Subir prioridade">↑</button>' : '') +
+          (idxAg < aguardando.length - 1 ? '<button type="button" data-facao="descer" data-fid="' + esc(it.id) + '" title="Descer prioridade">↓</button>' : '') +
+          '<button type="button" class="parar" data-facao="cancelar" data-fid="' + esc(it.id) + '" title="Remover da fila">×</button>';
+      } else if (it.status === 'concluido' && it.pasta) {
+        botoes = '<button type="button" data-facao="abrir" data-fpasta="' + esc(it.pasta) + '">Abrir</button>';
+      }
+      return '<div class="fila-item ' + esc(it.status) + '" data-fcard="' + esc(it.id) + '">' +
+        '<div class="fila-it-top"><span class="tit" title="' + esc(it.titulo) + '">' + esc(it.titulo) + '</span>' +
+        '<span class="pct">' + (it.status === 'rodando' ? (it.pct || 0) + '%' : esc(ordem)) + '</span></div>' +
+        barra +
+        (expandido ? '<div class="fila-msg">' + esc(it.msg || ordem) + '</div>' : '') +
+        '<div class="fila-det"><span class="fila-tag">' + esc(ROTULO_TIPO[it.tipo] || it.tipo) + '</span>' +
+        '<div class="fila-btns">' + botoes + '</div></div>' +
+      '</div>';
+    }).join('');
+  }
+
+  async function atualizarFila() {
+    clearTimeout(filaTimer);
+    let ativo = false;
+    try {
+      const r = await fetch('/api/fila').then((x) => x.json());
+      ativo = !!(r && (r.ativo || (r.itens || []).some((i) => i.status === 'aguardando')));
+      pintarFila(r);
+    } catch (_) {}
+    filaTimer = setTimeout(atualizarFila, ativo ? 1500 : 4000);
+  }
+
+  $('btnRecolherFila').addEventListener('click', () => {
+    $('filaDock').classList.add('recolhida');
+    $('filaDock').classList.remove('forcada');
+  });
+  $('btnAbrirFila').addEventListener('click', () => {
+    $('filaDock').classList.remove('recolhida');
+    $('filaDock').classList.add('forcada');
+    atualizarFila();
+  });
+  $('btnLimparFila').addEventListener('click', async () => {
+    try { pintarFila(await fetch('/api/fila/limpar', { method: 'POST' }).then((x) => x.json())); } catch (_) {}
+  });
+  $('filaCorpo').addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-facao]');
+    if (btn) {
+      e.stopPropagation();
+      const acao = btn.dataset.facao;
+      const id = btn.dataset.fid;
+      if (acao === 'abrir' && btn.dataset.fpasta) {
+        abrirProjeto(btn.dataset.fpasta);
+        return;
+      }
+      if (acao === 'subir' || acao === 'descer') {
+        const r = await fetch('/api/fila/mover', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, direcao: acao }),
+        }).then((x) => x.json());
+        pintarFila(r);
+        return;
+      }
+      if (acao === 'cancelar') {
+        const r = await fetch('/api/fila/cancelar', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id }),
+        }).then((x) => x.json());
+        pintarFila(r);
+        return;
+      }
+    }
+    const card = e.target.closest('[data-fcard]');
+    if (card) {
+      filaAbertaId = filaAbertaId === card.dataset.fcard ? null : card.dataset.fcard;
+      atualizarFila();
+    }
+  });
+  atualizarFila();
+
+  // Croma Studio e Splitter Studio (abas isoladas em iframe, lazy-load)
+  let modoAntesStudio = 'fluxo';
   function abrirCroma(ligar) {
     const ativo = document.body.dataset.modo === 'croma';
     const proximo = typeof ligar === 'boolean' ? ligar : !ativo;
     if (proximo === ativo) return;
     if (proximo) {
-      modoAntesCroma = document.body.dataset.modo || 'fluxo';
+      if (document.body.dataset.modo !== 'splitter') modoAntesStudio = document.body.dataset.modo || 'fluxo';
       const topo = document.querySelector('.topo');
       if (topo) document.documentElement.style.setProperty('--topo-h', topo.offsetHeight + 'px');
       const frame = $('frameCroma');
       if (!frame.getAttribute('src')) frame.src = '/croma/';
       document.body.dataset.modo = 'croma';
+      $('btnSplitter').setAttribute('aria-pressed', 'false');
     } else {
-      document.body.dataset.modo = modoAntesCroma === 'croma' ? 'fluxo' : modoAntesCroma;
+      document.body.dataset.modo = (modoAntesStudio === 'croma' || modoAntesStudio === 'splitter') ? 'fluxo' : modoAntesStudio;
     }
     $('btnCroma').setAttribute('aria-pressed', String(proximo));
   }
+  function abrirSplitter(ligar) {
+    const ativo = document.body.dataset.modo === 'splitter';
+    const proximo = typeof ligar === 'boolean' ? ligar : !ativo;
+    if (proximo === ativo) return;
+    if (proximo) {
+      if (document.body.dataset.modo !== 'croma') modoAntesStudio = document.body.dataset.modo || 'fluxo';
+      const topo = document.querySelector('.topo');
+      if (topo) document.documentElement.style.setProperty('--topo-h', topo.offsetHeight + 'px');
+      const frame = $('frameSplitter');
+      if (!frame.getAttribute('src')) frame.src = '/splitter/';
+      document.body.dataset.modo = 'splitter';
+      $('btnCroma').setAttribute('aria-pressed', 'false');
+    } else {
+      document.body.dataset.modo = (modoAntesStudio === 'croma' || modoAntesStudio === 'splitter') ? 'fluxo' : modoAntesStudio;
+    }
+    $('btnSplitter').setAttribute('aria-pressed', String(proximo));
+  }
   fetch('/croma/').then((r) => { if (r.ok) $('btnCroma').hidden = false; }).catch(() => {});
+  fetch('/splitter/').then((r) => { if (r.ok) $('btnSplitter').hidden = false; }).catch(() => {});
   $('btnCroma').addEventListener('click', () => abrirCroma());
-  $('btnProjetos').addEventListener('click', () => { if (document.body.dataset.modo === 'croma') abrirCroma(false); });
-  $('formLinkTopo').addEventListener('submit', () => { if (document.body.dataset.modo === 'croma') abrirCroma(false); });
+  $('btnSplitter').addEventListener('click', () => abrirSplitter());
+  $('btnProjetos').addEventListener('click', () => {
+    if (document.body.dataset.modo === 'croma') abrirCroma(false);
+    if (document.body.dataset.modo === 'splitter') abrirSplitter(false);
+  });
+  $('formLinkTopo').addEventListener('submit', () => {
+    if (document.body.dataset.modo === 'croma') abrirCroma(false);
+    if (document.body.dataset.modo === 'splitter') abrirSplitter(false);
+  });
 
   resumo();
   icones();

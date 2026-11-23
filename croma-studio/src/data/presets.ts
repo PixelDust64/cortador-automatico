@@ -1,15 +1,95 @@
 import {
+  BackgroundPhotoConfig,
   BlendModeOption,
   GeometricConfig,
   GeometricPatternType,
   GradientConfig,
   GradientPalette,
   GradientType,
+  QrCodeConfig,
   ResolutionPreset,
   StudioState,
   TextLayer,
+  ThumbnailPreset,
   WatermarkConfig,
 } from '../types/studio';
+
+export const THUMBNAIL_PRESETS: ThumbnailPreset[] = [
+  {
+    id: 'yt-16x9',
+    label: 'YouTube 16:9',
+    shortLabel: 'YouTube 16:9',
+    platform: 'YouTube Thumbnail',
+    width: 2048,
+    height: 1152,
+    filename: 'croma-youtube-thumbnail',
+    hint: 'Thumbnail horizontal para YouTube (2048 × 1152 px, 16:9). Arraste os textos sobre a arte.',
+  },
+  {
+    id: 'shorts-reels-tiktok',
+    label: 'Shorts / Reels / TikTok 9:16',
+    shortLabel: 'Shorts / Reels',
+    platform: 'Shorts · Reels · TikTok',
+    width: 1080,
+    height: 1920,
+    filename: 'croma-shorts-reels-tiktok',
+    hint: 'Capa vertical 9:16 (1080 × 1920 px) ideal para YouTube Shorts, Instagram Reels e TikTok.',
+  },
+  {
+    id: 'ig-portrait',
+    label: 'Instagram Feed 4:5',
+    shortLabel: 'Instagram 4:5',
+    platform: 'Instagram Retrato',
+    width: 1080,
+    height: 1350,
+    filename: 'croma-instagram-4x5',
+    hint: 'Formato retrato 4:5 (1080 × 1350 px) que ocupa mais espaço no feed do Instagram.',
+  },
+  {
+    id: 'ig-square',
+    label: 'Instagram Quadrado 1:1',
+    shortLabel: 'Instagram 1:1',
+    platform: 'Instagram Quadrado',
+    width: 1080,
+    height: 1080,
+    filename: 'croma-instagram-1x1',
+    hint: 'Capa quadrada 1:1 (1080 × 1080 px) para grade do Instagram e posts sociais.',
+  },
+  {
+    id: 'tiktok-cover',
+    label: 'TikTok / Reels Capa 3:4',
+    shortLabel: 'TikTok 3:4',
+    platform: 'TikTok · Reels Grade',
+    width: 1080,
+    height: 1440,
+    filename: 'croma-tiktok-capa-3x4',
+    hint: 'Proporção 3:4 (1080 × 1440 px) alinhada com a grade de perfil do TikTok e Instagram.',
+  },
+];
+
+export const INITIAL_BACKGROUND_PHOTO: BackgroundPhotoConfig = {
+  dataUrl: null,
+  fileName: '',
+  opacity: 100,
+  scale: 100,
+  offsetX: 0,
+  offsetY: 0,
+  blur: 0,
+  fit: 'cover',
+};
+
+export const INITIAL_QR_CODE: QrCodeConfig = {
+  enabled: false,
+  text: '',
+  x: 0.86,
+  y: 0.8,
+  size: 20,
+  fgColor: '#09090B',
+  bgColor: '#FFFFFF',
+  padding: 10,
+  radius: 12,
+  opacity: 100,
+};
 
 export const RESOLUTION_PRESETS: ResolutionPreset[] = [
   // Social
@@ -114,6 +194,7 @@ export const RESOLUTION_PRESETS: ResolutionPreset[] = [
 ];
 
 export const ARTWORK_FONTS: { name: string; label: string; category: string }[] = [
+  { name: 'BF_Modernista', label: 'BF Modernista (Portátil)', category: 'Display Local' },
   { name: 'Plus Jakarta Sans', label: 'Plus Jakarta Sans', category: 'Geométrica' },
   { name: 'Outfit', label: 'Outfit', category: 'Moderna' },
   { name: 'Anton', label: 'Anton', category: 'Impacto YouTube' },
@@ -137,6 +218,8 @@ export const GEOMETRIC_PATTERNS: { id: GeometricPatternType; label: string }[] =
   { id: 'waves', label: 'Ondas' },
   { id: 'bauhaus', label: 'Bauhaus' },
   { id: 'orbs', label: 'Esferas' },
+  { id: 'fractals', label: 'Fractais' },
+  { id: 'tri-fractal', label: 'Triângulos Fractais' },
 ];
 
 export const BLEND_MODES: { id: BlendModeOption; label: string }[] = [
@@ -465,6 +548,9 @@ export const INITIAL_WATERMARK_CONFIG: WatermarkConfig = {
 export const INITIAL_STUDIO_STATE: StudioState = {
   activeTab: 'gradient',
   youtubeSubMode: 'thumbnail',
+  thumbnailPreset: 'yt-16x9',
+  backgroundPhoto: INITIAL_BACKGROUND_PHOTO,
+  qrCode: INITIAL_QR_CODE,
   resolutionId: 'desktop-fhd',
   customWidth: 1600,
   customHeight: 900,

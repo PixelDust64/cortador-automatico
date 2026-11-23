@@ -107,6 +107,101 @@ test('base/ffmpeg: binario ffmpeg responde -version com codigo 0', (t) => {
   assert.match(r.stdout, /ffmpeg version/i);
 });
 
+test('base/corte-e-sincronia: cortarClipe() gera corte vertical 9:16 sem deslocamento de audio (normal e com chamariz)', async (t) => {
+  const ff = process.env.FFMPEG_PATH || (fs.existsSync(EMBED_FFMPEG) ? EMBED_FFMPEG : null);
+  const fp = process.env.FFPROBE_PATH || (fs.existsSync(EMBED_FFPROBE) ? EMBED_FFPROBE : null);
+  if (!ff || !fp) return t.skip('FFmpeg/ffprobe nao encontrado localmente');
+
+  process.env.FFMPEG_PATH = ff;
+  process.env.FFPROBE_PATH = fp;
+
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'teste-corte-sync-'));
+  const origem = path.join(tmpDir, 'origem.mp4');
+  const clipeNormal = path.join(tmpDir, 'clipe-normal.mp4');
+  const clipeTeaser = path.join(tmpDir, 'clipe-teaser.mp4');
+
+  function medirSincronia(arquivo) {
+    const r = spawnSync(fp, [
+      '-v', 'quiet', '-print_format', 'json',
+      '-show_format', '-show_streams', arquivo,
+    ], { encoding: 'utf8', windowsHide: true, timeout: 10000 });
+    assert.equal(r.status, 0, 'ffprobe falhou em ' + arquivo);
+    const info = JSON.parse(r.stdout);
+    const v = (info.streams || []).find((s) => s.codec_type === 'video');
+    const a = (info.streams || []).find((s) => s.codec_type === 'audio');
+    assert.ok(v, 'stream de video ausente');
+    assert.ok(a, 'stream de audio ausente');
+    const startV = Number(v.start_time || 0);
+    const startA = Number(a.start_time || 0);
+    const durV = Number(v.duration || info.format.duration || 0);
+    const durA = Number(a.duration || info.format.duration || 0);
+    return {
+      largura: v.width,
+      altura: v.height,
+      startV,
+      startA,
+      durV,
+      durA,
+      deslocamentoInicio: Math.abs(startV - startA),
+      deslocamentoDuracao: Math.abs(durV - durA),
+    };
+  }
+
+  try {
+    // Gera video sintetico de 7s (1280x720 @ 30fps + audio 48kHz)
+    const gen = spawnSync(ff, [
+      '-y', '-hide_banner', '-loglevel', 'error',
+      '-f', 'lavfi', '-i', 'testsrc2=size=1280x720:rate=30:duration=7',
+      '-f', 'lavfi', '-i', 'sine=frequency=440:sample_rate=48000:duration=7',
+      '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p',
+      '-c:a', 'aac', '-b:a', '128k',
+      origem,
+    ], { encoding: 'utf8', windowsHide: true, timeout: 20000 });
+    assert.equal(gen.status, 0, gen.stderr);
+
+    // 1. Corte normal (3s a partir de 2s)
+    await media.cortarClipe({
+      video: origem,
+      inicio: 2,
+      duracao: 3,
+      destino: clipeNormal,
+      formato: 'vertical',
+      qualidade: 'rapida',
+      temAudio: true,
+      pastaTrabalho: tmpDir,
+    });
+    assert.ok(fs.existsSync(clipeNormal) && fs.statSync(clipeNormal).size > 10000);
+    const s1 = medirSincronia(clipeNormal);
+    assert.equal(s1.largura, 1080);
+    assert.equal(s1.altura, 1920);
+    assert.ok(Math.abs(s1.durV - 3) < 0.25, 'duracao video normal fora do esperado: ' + s1.durV);
+    assert.ok(s1.deslocamentoInicio < 0.05, 'audio deslocado no inicio (normal): ' + s1.deslocamentoInicio + 's');
+    assert.ok(s1.deslocamentoDuracao < 0.08, 'audio dessincronizado na duracao (normal): ' + s1.deslocamentoDuracao + 's');
+
+    // 2. Corte com chamariz/teaser (3s + 1s de teaser = 4s)
+    await media.cortarClipe({
+      video: origem,
+      inicio: 2,
+      duracao: 3,
+      destino: clipeTeaser,
+      formato: 'vertical',
+      qualidade: 'rapida',
+      temAudio: true,
+      teaser: { inicio: 3.5, duracao: 1 },
+      pastaTrabalho: tmpDir,
+    });
+    assert.ok(fs.existsSync(clipeTeaser) && fs.statSync(clipeTeaser).size > 10000);
+    const s2 = medirSincronia(clipeTeaser);
+    assert.equal(s2.largura, 1080);
+    assert.equal(s2.altura, 1920);
+    assert.ok(Math.abs(s2.durV - 4) < 0.25, 'duracao video com chamariz fora do esperado: ' + s2.durV);
+    assert.ok(s2.deslocamentoInicio < 0.05, 'audio deslocado no inicio (chamariz): ' + s2.deslocamentoInicio + 's');
+    assert.ok(s2.deslocamentoDuracao < 0.08, 'audio dessincronizado na duracao (chamariz): ' + s2.deslocamentoDuracao + 's');
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
 // ------------------------------------------------------------------ 3. Legenda, Sessoes, Score e Copy
 
 test('base/legenda: temTextoFixo() e gerarAss() funcionam corretamente', () => {

@@ -128,6 +128,13 @@ test('mega/croma: rotas /croma, /croma/, bundle JS e protecao contra path traver
     assert.equal(home.status, 200);
     assert.match(home.body, /id="btnCroma"/);
     assert.match(home.body, /id="telaCroma"/);
+    assert.match(home.body, /id="filaDock"/);
+
+    const fila = await httpGet(porta, '/api/fila');
+    assert.equal(fila.status, 200);
+    const filaDados = JSON.parse(fila.body);
+    assert.equal(typeof filaDados.ativo, 'boolean');
+    assert.ok(Array.isArray(filaDados.itens));
 
     const redir = await httpGet(porta, '/croma');
     assert.equal(redir.status, 302);
@@ -165,4 +172,70 @@ test('mega/identidade: nome proprio Mega Cortes HD, nova banner e creditos ao cr
 
   const ui = fs.readFileSync(path.join(RAIZ, 'src', 'ui', 'index.html'), 'utf8');
   assert.match(ui, /<title>Mega Cortes HD<\/title>/);
+  assert.match(ui, /id="fonteLegenda"/);
+  assert.match(ui, /data-fonte="BF_Modernista"/);
+});
+
+test('mega/fontes: BF_Modernista-Regular.ttf portatil em src/fontes e no Croma Studio', () => {
+  assert.ok(fs.existsSync(path.join(RAIZ, 'src', 'fontes', 'BF_Modernista-Regular.ttf')), 'fonte portatil em src/fontes');
+  const pipeline = require(path.join(RAIZ, 'src', 'pipeline'));
+  assert.equal(pipeline.fontsdirRelativo(), 'fontes');
+  const cromaAssets = fs.readdirSync(path.join(RAIZ, 'src', 'ui', 'croma', 'assets'));
+  assert.ok(cromaAssets.some((f) => /BF_Modernista.*\.ttf$/i.test(f)), 'fonte empacotada no bundle do Croma Studio');
+});
+
+test('mega/vinhetas: inserirVinhetas() insere 2 vinhetas (apos 3s e no fim) mantendo sincronia A/V', async (t) => {
+  const ff = process.env.FFMPEG_PATH || (fs.existsSync(EMBED_FFMPEG) ? EMBED_FFMPEG : null);
+  const fp = process.env.FFPROBE_PATH || (fs.existsSync(EMBED_FFPROBE) ? EMBED_FFPROBE : null);
+  if (!ff || !fp) return t.skip('FFmpeg/ffprobe nao encontrado localmente');
+
+  process.env.FFMPEG_PATH = ff;
+  process.env.FFPROBE_PATH = fp;
+  const media = require(path.join(RAIZ, 'src', 'media'));
+  const os = require('node:os');
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'teste-vinheta-'));
+  const clipe = path.join(tmpDir, 'clipe.mp4');
+  const thumb = path.join(tmpDir, 'thumb.png');
+
+  try {
+    // Clipe base de 5s (1080x1920 + audio 48kHz) + imagem PNG de vinheta
+    let r = spawnSync(ff, [
+      '-y', '-hide_banner', '-loglevel', 'error',
+      '-f', 'lavfi', '-i', 'testsrc2=size=1080x1920:rate=30:duration=5',
+      '-f', 'lavfi', '-i', 'sine=frequency=440:sample_rate=48000:duration=5',
+      '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p',
+      '-c:a', 'aac', '-b:a', '128k', clipe,
+    ], { encoding: 'utf8', windowsHide: true, timeout: 20000 });
+    assert.equal(r.status, 0, r.stderr);
+
+    r = spawnSync(ff, [
+      '-y', '-hide_banner', '-loglevel', 'error',
+      '-f', 'lavfi', '-i', 'color=c=purple:s=1080x1920:d=0.1',
+      '-frames:v', '1', thumb,
+    ], { encoding: 'utf8', windowsHide: true, timeout: 10000 });
+    assert.equal(r.status, 0, r.stderr);
+
+    await media.inserirVinhetas(clipe, [
+      { imagem: thumb, onde: 3, duracao: 1.5, audio: null },
+      { imagem: thumb, onde: 5, duracao: 1.0, audio: null },
+    ], { pastaTrabalho: tmpDir, qualidade: 'rapida' });
+
+    const p = spawnSync(fp, [
+      '-v', 'quiet', '-print_format', 'json',
+      '-show_format', '-show_streams', clipe,
+    ], { encoding: 'utf8', windowsHide: true, timeout: 10000 });
+    assert.equal(p.status, 0);
+    const info = JSON.parse(p.stdout);
+    const v = info.streams.find((s) => s.codec_type === 'video');
+    const a = info.streams.find((s) => s.codec_type === 'audio');
+    assert.ok(v && a);
+    const durV = Number(v.duration || info.format.duration);
+    const durA = Number(a.duration || info.format.duration);
+    // 5s originais + 1.5s + 1.0s = 7.5s
+    assert.ok(Math.abs(durV - 7.5) < 0.3, 'duracao esperada ~7.5s, obtido: ' + durV);
+    assert.ok(Math.abs(durV - durA) < 0.08, 'dessincronia A/V apos vinhetas: ' + Math.abs(durV - durA));
+    assert.ok(Math.abs(Number(v.start_time || 0) - Number(a.start_time || 0)) < 0.05);
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
 });

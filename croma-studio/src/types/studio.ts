@@ -2,6 +2,71 @@ export type MainTab = 'gradient' | 'shapes' | 'youtube';
 
 export type YouTubeSubMode = 'thumbnail' | 'banner' | 'watermark';
 
+export type ThumbnailPresetId =
+  | 'yt-16x9'
+  | 'shorts-reels-tiktok'
+  | 'ig-portrait'
+  | 'ig-square'
+  | 'tiktok-cover';
+
+export interface ThumbnailPreset {
+  id: ThumbnailPresetId;
+  label: string;
+  shortLabel: string;
+  platform: string;
+  width: number;
+  height: number;
+  filename: string;
+  hint: string;
+}
+
+export interface BackgroundPhotoConfig {
+  dataUrl: string | null;
+  fileName: string;
+  opacity: number; // 0 to 100
+  scale: number; // 50 to 250 (%)
+  offsetX: number; // -50 to 50 (%)
+  offsetY: number; // -50 to 50 (%)
+  blur: number; // 0 to 24 (px)
+  fit: 'cover' | 'contain';
+}
+
+export interface QrCodeConfig {
+  enabled: boolean;
+  text: string;
+  x: number; // normalized 0..1 relative to canvas width
+  y: number; // normalized 0..1 relative to canvas height
+  size: number; // percentage of min(width, height), 8 to 45
+  fgColor: string;
+  bgColor: string;
+  padding: number; // 0 to 20
+  radius: number; // 0 to 24
+  opacity: number; // 10 to 100
+}
+
+export interface SavedFavoriteItem {
+  id: string;
+  nome: string;
+  criadoEm: string;
+  arquivoPng: string | null;
+  caminhoPng?: string | null;
+  largura?: number;
+  altura?: number;
+  dados?: any;
+}
+
+export interface FinalPadraoConfig {
+  thumbId: string;
+  duracao: number;
+  audio: string | null;
+}
+
+export interface SavedFavoritesState {
+  gradientes: SavedFavoriteItem[];
+  thumbs: SavedFavoriteItem[];
+  finalPadrao?: FinalPadraoConfig | null;
+}
+
 export type GradientType = 'linear' | 'radial' | 'conic' | 'mesh';
 
 export interface ColorStop {
@@ -32,7 +97,9 @@ export type GeometricPatternType =
   | 'hexagons'
   | 'waves'
   | 'bauhaus'
-  | 'orbs';
+  | 'orbs'
+  | 'fractals'
+  | 'tri-fractal';
 
 export type ShapeFillMode = 'stroke' | 'fill' | 'mixed';
 
@@ -148,6 +215,9 @@ export type ExportFormat = 'png' | 'jpeg' | 'webp' | 'bmp';
 export interface StudioState {
   activeTab: MainTab;
   youtubeSubMode: YouTubeSubMode;
+  thumbnailPreset: ThumbnailPresetId;
+  backgroundPhoto: BackgroundPhotoConfig;
+  qrCode: QrCodeConfig;
   resolutionId: string;
   customWidth: number;
   customHeight: number;

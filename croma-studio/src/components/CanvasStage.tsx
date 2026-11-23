@@ -21,6 +21,7 @@ interface CanvasStageProps {
   resolutionLabel: string;
   onSelectText: (id: string | null) => void;
   onUpdateTextLayer: (id: string, patch: Partial<TextLayer>) => void;
+  onUpdateQrCode?: (patch: { x?: number; y?: number; size?: number }) => void;
   onToggleSafeZones: () => void;
   onRandomizeAll: () => void;
   onUndo: () => void;
@@ -35,6 +36,7 @@ export function CanvasStage({
   resolutionLabel,
   onSelectText,
   onUpdateTextLayer,
+  onUpdateQrCode,
   onToggleSafeZones,
   onRandomizeAll,
   onUndo,
@@ -137,7 +139,17 @@ export function CanvasStage({
     const cy = ((e.clientY - rect.top) / rect.height) * canvas.height;
 
     const hitId = hitTestTextLayer(cx, cy);
-    if (hitId) {
+    if (hitId === '__qrcode__') {
+      onSelectText(null);
+      canvas.setPointerCapture(e.pointerId);
+      setDragState({
+        id: '__qrcode__',
+        startClientX: e.clientX,
+        startClientY: e.clientY,
+        origX: state.qrCode.x,
+        origY: state.qrCode.y,
+      });
+    } else if (hitId) {
       const layer = state.textLayers.find((l) => l.id === hitId);
       if (!layer) return;
       onSelectText(hitId);
@@ -170,7 +182,11 @@ export function CanvasStage({
     if (snapY) nextY = 0.5;
 
     setSnapGuide({ x: snapX, y: snapY });
-    onUpdateTextLayer(dragState.id, { x: nextX, y: nextY });
+    if (dragState.id === '__qrcode__') {
+      onUpdateQrCode?.({ x: nextX, y: nextY });
+    } else {
+      onUpdateTextLayer(dragState.id, { x: nextX, y: nextY });
+    }
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {

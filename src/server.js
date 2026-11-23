@@ -20,6 +20,7 @@ const baixador = require('./baixar');
 const projetos = require('./projetos');
 const sessoes = require('./sessoes');
 const aovivo = require('./aovivo');
+const splitter = require('./splitter');
 
 // Um erro solto em algum canto (um ffmpeg que sumiu, uma conexao que caiu)
 // nao pode derrubar o programa inteiro: a janela ficaria dando "Failed to fetch"
@@ -47,7 +48,152 @@ function emitirAoVivo(ev) {
     try { res.write(linha); } catch (_) { ouvintesAoVivo.delete(res); }
   }
 }
-let jobAtivo = false;        // uma transcricao por vez - CPU pesada nao divide bem
+let jobAtivo = false;        // um trabalho rodando por vez na fila sequencial
+const filaTrabalhos = [];    // { id, tipo, titulo, pasta, status, pct, etapa, msg, criadoEm, cancelado, executar }
+
+function resumoDaFila() {
+  return {
+    ativo: jobAtivo,
+    itens: filaTrabalhos.map((it) => ({
+      id: it.id,
+      tipo: it.tipo,
+      titulo: it.titulo,
+      pasta: it.pasta || null,
+      status: it.status,
+      pct: it.pct || 0,
+      etapa: it.etapa || '',
+      msg: it.msg || '',
+      criadoEm: it.criadoEm,
+    })),
+  };
+}
+
+function podarFilaAntiga() {
+  // Mantem todos ativos/aguardando e no maximo os 15 ultimos concluidos/cancelados
+  const terminados = filaTrabalhos.filter((it) => it.status !== 'rodando' && it.status !== 'aguardando');
+  while (terminados.length > 15) {
+    const velho = terminados.shift();
+    const idx = filaTrabalhos.indexOf(velho);
+    if (idx >= 0) filaTrabalhos.splice(idx, 1);
+  }
+}
+
+function enfileirarTrabalho(cfg) {
+  const item = {
+    id: cfg.id,
+    tipo: cfg.tipo,
+    titulo: String(cfg.titulo || 'Vídeo').slice(0, 80),
+    pasta: cfg.pasta || null,
+    status: 'aguardando',
+    pct: 0,
+    etapa: 'fila',
+    msg: 'Na fila (aguardando)...',
+    criadoEm: new Date().toISOString(),
+    cancelado: false,
+    executar: cfg.executar,
+  };
+  filaTrabalhos.push(item);
+  podarFilaAntiga();
+  emitir(item.id, { tipo: 'progresso', pct: 0, etapa: 'fila', msg: 'Na fila (aguardando)...' });
+  avancarFila();
+  return item;
+}
+
+function avancarFila() {
+  if (jobAtivo) return;
+  const prox = filaTrabalhos.find((it) => it.status === 'aguardando');
+  if (!prox) return;
+
+  jobAtivo = true;
+  prox.status = 'rodando';
+  prox.msg = 'Iniciando...';
+  const avisar = (ev) => {
+    if (prox.cancelado) return;
+    if (ev.tipo === 'progresso') {
+      if (typeof ev.pct === 'number') prox.pct = Math.round(ev.pct);
+      if (ev.etapa) prox.etapa = ev.etapa;
+      if (ev.msg) prox.msg = ev.msg;
+    } else if (ev.tipo === 'fim' || ev.tipo === 'clipe-refeito') {
+      prox.pct = 100;
+      if (ev.pasta) prox.pasta = ev.pasta;
+    } else if (ev.tipo === 'erro') {
+      prox.msg = ev.msg || 'Erro no processamento';
+    }
+    emitir(prox.id, ev);
+  };
+
+  Promise.resolve()
+    .then(() => prox.executar(avisar))
+    .then((res) => {
+      if (prox.cancelado) {
+        prox.status = 'cancelado';
+        prox.msg = 'Cancelado pelo usuário.';
+      } else {
+        prox.status = 'concluido';
+        prox.pct = 100;
+        prox.msg = 'Concluído';
+        if (res && res.pasta) prox.pasta = res.pasta;
+      }
+    })
+    .catch((e) => {
+      if (prox.cancelado) {
+        prox.status = 'cancelado';
+        prox.msg = 'Cancelado pelo usuário.';
+      } else {
+        prox.status = 'erro';
+        prox.msg = (e && e.message) ? String(e.message).slice(0, 220) : String(e);
+        emitir(prox.id, { tipo: 'erro', msg: prox.msg });
+      }
+    })
+    .finally(() => {
+      jobAtivo = false;
+      podarFilaAntiga();
+      setImmediate(avancarFila);
+    });
+}
+
+function moverNaFila(id, direcao) {
+  const aguardando = filaTrabalhos.filter((it) => it.status === 'aguardando');
+  const pos = aguardando.findIndex((it) => it.id === id);
+  if (pos < 0) return resumoDaFila();
+  const alvoPos = direcao === 'subir' ? pos - 1 : pos + 1;
+  if (alvoPos < 0 || alvoPos >= aguardando.length) return resumoDaFila();
+  const iA = filaTrabalhos.indexOf(aguardando[pos]);
+  const iB = filaTrabalhos.indexOf(aguardando[alvoPos]);
+  if (iA >= 0 && iB >= 0) {
+    const tmp = filaTrabalhos[iA];
+    filaTrabalhos[iA] = filaTrabalhos[iB];
+    filaTrabalhos[iB] = tmp;
+  }
+  return resumoDaFila();
+}
+
+function cancelarNaFila(id) {
+  const item = filaTrabalhos.find((it) => it.id === id);
+  if (!item) return resumoDaFila();
+  if (item.status === 'aguardando') {
+    item.cancelado = true;
+    item.status = 'cancelado';
+    item.msg = 'Removido da fila.';
+    emitir(item.id, { tipo: 'erro', msg: 'Cancelado na fila.' });
+  } else if (item.status === 'rodando') {
+    item.cancelado = true;
+    item.status = 'cancelado';
+    item.msg = 'Parando...';
+    desempenho.cancelarProcessosAtivos();
+    emitir(item.id, { tipo: 'erro', msg: 'Cancelado pelo usuário.' });
+  }
+  return resumoDaFila();
+}
+
+function limparFilaConcluidos() {
+  for (let i = filaTrabalhos.length - 1; i >= 0; i--) {
+    if (filaTrabalhos[i].status !== 'rodando' && filaTrabalhos[i].status !== 'aguardando') {
+      filaTrabalhos.splice(i, 1);
+    }
+  }
+  return resumoDaFila();
+}
 
 // ---------------------------------------------------------------- helpers
 
@@ -77,8 +223,8 @@ function lerBytes(req, limite) {
   });
 }
 
-function lerCorpo(req) {
-  return lerBytes(req, 2e6).then((dados) => {
+function lerCorpo(req, limite) {
+  return lerBytes(req, limite || 2e6).then((dados) => {
     try { return dados ? JSON.parse(dados) : {}; }
     catch (e) { throw new Error('json invalido'); }
   });
@@ -99,6 +245,8 @@ const TIPOS = {
   '.webp': 'image/webp',
   '.ico': 'image/x-icon',
   '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf',
+  '.otf': 'font/otf',
   '.srt': 'text/plain; charset=utf-8',
   '.txt': 'text/plain; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
@@ -306,6 +454,114 @@ function escolherArquivoNativo() {
   ], 'FileName');
 }
 
+/** Janela do Windows pra escolher um audio ou jingle (mp3, wav, mp4, m4a...). */
+function escolherAudioNativo() {
+  return janelaDoWindows([
+    '$d = New-Object System.Windows.Forms.OpenFileDialog',
+    '$d.Title = "Escolha o audio ou jingle da vinheta"',
+    '$d.Filter = "Audio / Video|*.mp3;*.wav;*.mp4;*.m4a;*.aac;*.ogg;*.flac;*.webm|Todos os arquivos|*.*"',
+    '$d.Multiselect = $false',
+  ], 'FileName');
+}
+
+// ---------------------------------------------------------------- Croma Studio favoritos
+// Guarda ate 10 gradientes/fundos e ate 10 thumbs favoritas (PNG no disco + estado JSON)
+// em <pastaDados>/croma-favoritos, acessivel tanto pelo Croma Studio quanto pelo Editor.
+const MAX_FAVORITOS_CROMA = 10;
+
+function pastaFavoritosCroma() {
+  const p = path.join(pastas.dados(), 'croma-favoritos');
+  fs.mkdirSync(p, { recursive: true });
+  return p;
+}
+
+function lerFavoritosCroma() {
+  const arq = path.join(pastaFavoritosCroma(), 'index.json');
+  try {
+    const raw = JSON.parse(fs.readFileSync(arq, 'utf8'));
+    return {
+      gradientes: Array.isArray(raw.gradientes) ? raw.gradientes : [],
+      thumbs: Array.isArray(raw.thumbs) ? raw.thumbs : [],
+      finalPadrao: raw.finalPadrao && raw.finalPadrao.thumbId ? raw.finalPadrao : null,
+    };
+  } catch (_) {
+    return { gradientes: [], thumbs: [], finalPadrao: null };
+  }
+}
+
+function gravarFavoritosCroma(dados) {
+  fs.writeFileSync(path.join(pastaFavoritosCroma(), 'index.json'), JSON.stringify(dados, null, 2), 'utf8');
+}
+
+function salvarFavoritoCroma(corpo) {
+  const tipo = corpo.tipo === 'gradiente' ? 'gradientes' : (corpo.tipo === 'thumb' ? 'thumbs' : null);
+  if (!tipo) throw new Error('Tipo de favorito invalido.');
+  const atual = lerFavoritosCroma();
+  const lista = atual[tipo];
+  if (lista.length >= MAX_FAVORITOS_CROMA) {
+    throw new Error('Limite de ' + MAX_FAVORITOS_CROMA + ' favoritos atingido nesta categoria. Apague um antes de salvar outro.');
+  }
+  const id = Date.now().toString(36) + '-' + crypto.randomBytes(3).toString('hex');
+  const nome = String(corpo.nome || (tipo === 'gradientes' ? 'Gradiente' : 'Thumb')).trim().slice(0, 60) || 'Favorito';
+  let arquivoPng = null;
+  let caminhoPng = null;
+  if (typeof corpo.pngBase64 === 'string' && corpo.pngBase64.length > 32) {
+    const limpo = corpo.pngBase64.replace(/^data:image\/\w+;base64,/, '');
+    arquivoPng = (tipo === 'gradientes' ? 'grad-' : 'thumb-') + id + '.png';
+    caminhoPng = path.join(pastaFavoritosCroma(), arquivoPng);
+    fs.writeFileSync(caminhoPng, Buffer.from(limpo, 'base64'));
+  }
+  const item = {
+    id,
+    nome,
+    criadoEm: new Date().toISOString(),
+    arquivoPng,
+    caminhoPng,
+    largura: Number(corpo.largura) || 0,
+    altura: Number(corpo.altura) || 0,
+    dados: corpo.dados || null,
+  };
+  lista.unshift(item);
+  gravarFavoritosCroma(atual);
+  return atual;
+}
+
+function apagarFavoritoCroma(tipoBruto, id) {
+  const tipo = tipoBruto === 'gradiente' || tipoBruto === 'gradientes' ? 'gradientes'
+    : (tipoBruto === 'thumb' || tipoBruto === 'thumbs' ? 'thumbs' : null);
+  const atual = lerFavoritosCroma();
+  if (!tipo || !id) return atual;
+  const alvo = atual[tipo].find((x) => x.id === id);
+  if (alvo && alvo.arquivoPng) {
+    try { fs.unlinkSync(path.join(pastaFavoritosCroma(), path.basename(alvo.arquivoPng))); } catch (_) {}
+  }
+  atual[tipo] = atual[tipo].filter((x) => x.id !== id);
+  if (tipo === 'thumbs' && atual.finalPadrao && atual.finalPadrao.thumbId === id) {
+    atual.finalPadrao = null;
+  }
+  gravarFavoritosCroma(atual);
+  return atual;
+}
+
+function definirFinalPadraoCroma(corpo) {
+  const atual = lerFavoritosCroma();
+  if (!corpo || !corpo.thumbId) {
+    atual.finalPadrao = null;
+    gravarFavoritosCroma(atual);
+    return atual;
+  }
+  const existe = atual.thumbs.find((t) => t.id === corpo.thumbId);
+  if (!existe) throw new Error('Thumb favorita nao encontrada.');
+  const prev = atual.finalPadrao || {};
+  atual.finalPadrao = {
+    thumbId: existe.id,
+    duracao: Math.max(0.5, Math.min(15, Number(corpo.duracao != null ? corpo.duracao : (prev.duracao || 2.5)))),
+    audio: corpo.audio !== undefined ? (corpo.audio || null) : (prev.audio || null),
+  };
+  gravarFavoritosCroma(atual);
+  return atual;
+}
+
 /** Quando o usuario arrasta o arquivo, o navegador so entrega o nome. Procuramos ele. */
 function localizarPorNome(nome, tamanho) {
   const casa = os.homedir();
@@ -413,6 +669,9 @@ const servidor = http.createServer(async (req, res) => {
 
     // Arquivos da propria interface (lucide.js, css...). So o que esta na
     // pasta ui, e so o nome do arquivo - nada de subir diretorio.
+    if (rota === '/favicon.ico') {
+      return servirArquivo(req, res, path.join(__dirname, 'ui', 'icone.png'));
+    }
     if (/^\/ui\/[\w.-]+$/.test(rota)) {
       return servirArquivo(req, res, path.join(__dirname, 'ui', path.basename(rota)));
     }
@@ -433,6 +692,25 @@ const servidor = http.createServer(async (req, res) => {
       if (fs.existsSync(idx)) return servirArquivo(req, res, idx);
     }
 
+    // Splitter Studio (ferramentas de audio + separador vocal/stems integrados ao Mega Cortes).
+    if (rota === '/splitter') {
+      res.writeHead(302, { Location: '/splitter/' });
+      return res.end();
+    }
+    if (rota.startsWith('/splitter/')) {
+      const raizSplitter = path.resolve(__dirname, 'ui', 'splitter');
+      const rel = rota.slice('/splitter/'.length) || 'index.html';
+      const alvo = path.resolve(raizSplitter, rel);
+      if (alvo.startsWith(raizSplitter + path.sep) && fs.existsSync(alvo) && fs.statSync(alvo).isFile()) {
+        return servirArquivo(req, res, alvo);
+      }
+      const idx = path.join(raizSplitter, 'index.html');
+      if (fs.existsSync(idx)) return servirArquivo(req, res, idx);
+    }
+    if (rota.startsWith('/api/splitter/')) {
+      return await splitter.tratarRota(req, res, rota, url);
+    }
+
     // A janela usa isso pra mostrar o endereco do celular e o QR code, e pra
     // saber se pode oferecer o dialogo nativo (so faz sentido no Windows local).
     if (rota === '/api/rede') {
@@ -451,6 +729,34 @@ const servidor = http.createServer(async (req, res) => {
       if (process.platform !== 'win32') return json(res, 200, { caminho: null });
       // { caminho } | { cancelou } | { falhou: motivo }
       return json(res, 200, await escolherArquivoNativo());
+    }
+
+    if (rota === '/api/escolher-audio' && req.method === 'POST') {
+      if (process.platform !== 'win32') return json(res, 200, { caminho: null });
+      return json(res, 200, await escolherAudioNativo());
+    }
+
+    // ---------------------------------------------------------- Croma Studio favoritos (10 gradientes + 10 thumbs)
+    if (rota === '/api/croma/favoritos' && req.method === 'GET') {
+      return json(res, 200, lerFavoritosCroma());
+    }
+    if (rota === '/api/croma/favoritos' && req.method === 'POST') {
+      const corpo = await lerCorpo(req, 15e6);
+      try { return json(res, 200, salvarFavoritoCroma(corpo)); }
+      catch (e) { return json(res, 400, { erro: e.message }); }
+    }
+    if (rota === '/api/croma/favoritos' && req.method === 'DELETE') {
+      return json(res, 200, apagarFavoritoCroma(url.searchParams.get('tipo'), url.searchParams.get('id')));
+    }
+    if (rota === '/api/croma/final-padrao' && req.method === 'POST') {
+      const corpo = await lerCorpo(req);
+      try { return json(res, 200, definirFinalPadraoCroma(corpo)); }
+      catch (e) { return json(res, 400, { erro: e.message }); }
+    }
+    if (rota.startsWith('/api/croma/favoritos/img/')) {
+      const nome = path.basename(rota.slice('/api/croma/favoritos/img/'.length));
+      if (!/^[\w.-]+\.png$/i.test(nome)) { res.writeHead(400); return res.end('invalido'); }
+      return servirArquivo(req, res, path.join(pastaFavoritosCroma(), nome));
     }
 
     if (rota === '/api/localizar' && req.method === 'POST') {
@@ -711,63 +1017,69 @@ const servidor = http.createServer(async (req, res) => {
       return enviarImagem(res, alvo);
     }
 
-    if (rota === '/api/processar' && req.method === 'POST') {
-      // Duas transcricoes ao mesmo tempo nao dividem CPU de graca: as duas
-      // ficam mais lentas e a memoria pode estourar. Um job de cada vez.
-      if (jobAtivo) return json(res, 429, { erro: 'Já tem um vídeo sendo processado. Espere terminar antes de mandar outro.' });
+    // ---------------------------------------------------------- fila de processamento
+    if (rota === '/api/fila' && req.method === 'GET') {
+      return json(res, 200, resumoDaFila());
+    }
+    if (rota === '/api/fila/mover' && req.method === 'POST') {
+      const corpo = await lerCorpo(req);
+      return json(res, 200, moverNaFila(corpo.id, corpo.direcao));
+    }
+    if (rota === '/api/fila/cancelar' && req.method === 'POST') {
+      const corpo = await lerCorpo(req);
+      return json(res, 200, cancelarNaFila(corpo.id));
+    }
+    if (rota === '/api/fila/limpar' && req.method === 'POST') {
+      return json(res, 200, limparFilaConcluidos());
+    }
 
+    if (rota === '/api/processar' && req.method === 'POST') {
       const opcoes = await lerCorpo(req);
       const id = novoTrabalho();
-      json(res, 200, { id });
-
-      jobAtivo = true;
-      processar(opcoes, (ev) => emitir(id, ev))
-        .catch((e) => emitir(id, { tipo: 'erro', msg: e.message || String(e) }))
-        .finally(() => { jobAtivo = false; });
-      return;
+      const titulo = opcoes.titulo || (opcoes.video ? path.basename(opcoes.video, path.extname(opcoes.video)) : 'Novo vídeo');
+      enfileirarTrabalho({
+        id,
+        tipo: 'processar',
+        titulo,
+        executar: (avisar) => processar(opcoes, avisar),
+      });
+      return json(res, 200, { id, naFila: true });
     }
 
     // Refaz UM clipe com outro gancho e/ou outro comeco e fim. Nao transcreve
     // nada de novo - reaproveita a transcricao guardada, entao leva segundos.
     if (rota === '/api/refazer' && req.method === 'POST') {
-      if (jobAtivo) return json(res, 429, { erro: 'Espere o video que esta sendo processado terminar.' });
-
       const corpo = await lerCorpo(req);
-      // A janela manda o caminho do proprio clipe; a pasta sai daqui. Deixar
-      // o navegador separar pasta de arquivo daria errado em algum sistema -
-      // path.dirname ja sabe fazer isso certo no Windows e no Linux.
       const arquivo = dentroDaSaida(corpo.arquivo);
       if (!arquivo || !fs.existsSync(arquivo)) {
         return json(res, 400, { erro: 'Nao achei o arquivo desse clipe.' });
       }
       const pasta = path.dirname(arquivo);
-
       const id = novoTrabalho();
-      json(res, 200, { id });
-
-      jobAtivo = true;
-      refazerClipe({
-        pasta: pasta,
-        numero: corpo.numero,
-        inicio: corpo.inicio,
-        duracao: corpo.duracao,
-        gancho: corpo.gancho,
-        // legenda palavra por palavra neste clipe e o que a pessoa corrigiu nela
-        legendar: typeof corpo.legendar === 'boolean' ? corpo.legendar : undefined,
-        edicoes: corpo.edicoes && typeof corpo.edicoes === 'object' ? corpo.edicoes : undefined,
-      }, (ev) => emitir(id, ev))
-        .then((pronto) => {
-          // Clipe da live que ainda esta gravando: a live guarda a lista dos
-          // clipes na memoria e regrava a pasta a cada clipe novo - sem isso,
-          // o proximo clipe desfaria a edicao.
+      enfileirarTrabalho({
+        id,
+        tipo: 'refazer',
+        titulo: 'Clipe ' + corpo.numero + ' · ' + path.basename(pasta),
+        pasta,
+        executar: async (avisar) => {
+          const pronto = await refazerClipe({
+            pasta: pasta,
+            numero: corpo.numero,
+            inicio: corpo.inicio,
+            duracao: corpo.duracao,
+            gancho: corpo.gancho,
+            legendar: typeof corpo.legendar === 'boolean' ? corpo.legendar : undefined,
+            edicoes: corpo.edicoes && typeof corpo.edicoes === 'object' ? corpo.edicoes : undefined,
+            vinhetas: Array.isArray(corpo.vinhetas) ? corpo.vinhetas.slice(0, 2) : undefined,
+          }, avisar);
           if (aoVivoAtual && pronto && aoVivoAtual.pasta && path.resolve(aoVivoAtual.pasta) === path.resolve(pasta)) {
             aoVivoAtual.atualizarClipe(pronto);
           }
-          emitir(id, { tipo: 'fim' });
-        })
-        .catch((e) => emitir(id, { tipo: 'erro', msg: e.message || String(e) }))
-        .finally(() => { jobAtivo = false; });
-      return;
+          avisar({ tipo: 'fim', pasta });
+          return { pasta };
+        },
+      });
+      return json(res, 200, { id, naFila: true });
     }
 
     // ---------------------------------------------------------- projetos
@@ -808,27 +1120,26 @@ const servidor = http.createServer(async (req, res) => {
     // Mais cortes de um projeto que ja existe, sem repetir trecho - do video
     // todo, ou so de um trecho marcado.
     if (rota === '/api/projeto/mais' && req.method === 'POST') {
-      if (jobAtivo) return json(res, 429, { erro: 'Já tem um vídeo sendo processado. Espere terminar antes de pedir mais cortes.' });
-
       const corpo = await lerCorpo(req);
       const pasta = projetos.pastaDoProjeto(corpo.pasta);
       if (!pasta) return json(res, 400, { erro: 'Não achei esse projeto.' });
 
       const id = novoTrabalho();
-      json(res, 200, { id });
-
-      jobAtivo = true;
-      extrairMais({
-        pasta: pasta,
-        quantidade: corpo.quantidade,
-        minDur: corpo.minDur,
-        maxDur: corpo.maxDur,
-        trecho: corpo.trecho,
-        modo: corpo.modo,
-      }, (ev) => emitir(id, ev))
-        .catch((e) => emitir(id, { tipo: 'erro', msg: e.message || String(e) }))
-        .finally(() => { jobAtivo = false; });
-      return;
+      enfileirarTrabalho({
+        id,
+        tipo: 'mais',
+        titulo: 'Mais cortes · ' + path.basename(pasta),
+        pasta,
+        executar: (avisar) => extrairMais({
+          pasta: pasta,
+          quantidade: corpo.quantidade,
+          minDur: corpo.minDur,
+          maxDur: corpo.maxDur,
+          trecho: corpo.trecho,
+          modo: corpo.modo,
+        }, avisar),
+      });
+      return json(res, 200, { id, naFila: true });
     }
 
     if (rota === '/api/eventos') {

@@ -76,6 +76,7 @@ function rodarUma(cmd, args, opcoes) {
   return new Promise((resolve, reject) => {
     const p = spawn(cmd, args, { windowsHide: true, cwd: opcoes.cwd });
     desempenho.aliviar(p);
+    desempenho.registrarProcesso(p);
     let saida = '';
     let erro = '';
 
@@ -768,12 +769,149 @@ async function gerarPrevia(video, segundo, formato, recorte, destino, extra) {
   return destino;
 }
 
+/**
+ * Insere ate 2 vinhetas (thumbs do Croma Studio) em pontos exatos do clipe,
+ * com silencio ou audio/jingle opcional e texto/fonte editaveis.
+ * Usa concat=n=K:v=1:a=1 num unico passe pra manter audio e video 100% sincronizados.
+ *
+ * @param {string} clipeMp4   caminho do clipe ja cortado
+ * @param {Array}  vinhetas   ate 2 itens: { imagem, onde, duracao, audio, arquivoAss, fontsdir }
+ * @param {object} opcoes     { pastaTrabalho, qualidade }
+ */
+async function inserirVinhetas(clipeMp4, vinhetas, opcoes) {
+  opcoes = opcoes || {};
+  const validas = (vinhetas || [])
+    .filter((v) => v && v.imagem && fs.existsSync(v.imagem))
+    .slice(0, 2)
+    .map((v) => ({
+      imagem: v.imagem,
+      onde: Math.max(0, Number(v.onde) || 0),
+      duracao: Math.max(0.5, Math.min(15, Number(v.duracao) || 2)),
+      audio: v.audio && fs.existsSync(v.audio) ? v.audio : null,
+      arquivoAss: v.arquivoAss || null,
+      fontsdir: v.fontsdir || null,
+    }))
+    .sort((a, b) => a.onde - b.onde);
+  if (!validas.length) return clipeMp4;
+
+  const { ffmpeg } = await garantirFfmpeg();
+  const info = await inspecionar(clipeMp4);
+  const W = info.largura || 1080;
+  const H = info.altura || 1920;
+  const fps = Math.max(24, Math.min(60, Math.round(info.fps || 30)));
+  const durTotal = info.duracao || 0;
+  const q = perfilDeQualidade(opcoes.qualidade);
+  const cwd = opcoes.pastaTrabalho || path.dirname(clipeMp4);
+
+  // 1. Gera cada vinheta como um mini-clipe sincronizado (mesmo WxH, fps e 48kHz stereo)
+  const temps = [];
+  const vinhetaMp4s = [];
+  try {
+    for (let i = 0; i < validas.length; i++) {
+      const v = validas[i];
+      const vOut = path.join(cwd, 'vinheta-' + Date.now() + '-' + i + '.mp4');
+      temps.push(vOut);
+
+      const args = [
+        '-y',
+        '-loop', '1', '-framerate', String(fps), '-t', String(v.duracao), '-i', v.imagem,
+      ];
+      if (v.audio) {
+        args.push('-t', String(v.duracao), '-i', v.audio);
+      } else {
+        args.push('-f', 'lavfi', '-t', String(v.duracao), '-i', 'anullsrc=channel_layout=stereo:sample_rate=48000');
+      }
+
+      let vf = 'scale=' + W + ':' + H + ':force_original_aspect_ratio=increase:flags=lanczos,' +
+        'crop=' + W + ':' + H + ',setsar=1,fps=' + fps + ',format=yuv420p';
+      if (v.arquivoAss) {
+        vf += ',subtitles=' + v.arquivoAss + (v.fontsdir ? ':fontsdir=' + v.fontsdir : '');
+      }
+
+      const af = v.audio
+        ? 'aresample=48000,aformat=channel_layouts=stereo,apad,atrim=0:' + v.duracao + ',asetpts=PTS-STARTPTS'
+        : 'atrim=0:' + v.duracao + ',asetpts=PTS-STARTPTS';
+
+      args.push(
+        '-vf', vf,
+        '-af', af,
+        '-map', '0:v:0', '-map', '1:a:0',
+        '-c:v', 'libx264', '-preset', q.preset, '-crf', q.crf, '-pix_fmt', 'yuv420p',
+        '-c:a', 'aac', '-b:a', q.audio, '-ar', '48000', '-ac', '2',
+        '-shortest', '-loglevel', 'error',
+        vOut,
+      );
+      await rodar(ffmpeg, args, { cwd });
+      vinhetaMp4s.push({ arquivo: vOut, onde: Math.min(durTotal, v.onde) });
+    }
+
+    // 2. Divide o clipe original nos pontos de insercao e concatena com as vinhetas
+    const entradas = ['-y', '-i', clipeMp4];
+    vinhetaMp4s.forEach((vm) => entradas.push('-i', vm.arquivo));
+
+    const filtros = [];
+    const paresConcat = [];
+    let cursor = 0;
+    let segIdx = 0;
+
+    // Normaliza audio/video do clipe principal para o mesmo formato (48kHz stereo)
+    const temAudio = info.temAudio !== false;
+    if (!temAudio) {
+      entradas.push('-f', 'lavfi', '-t', String(Math.max(1, durTotal)), '-i', 'anullsrc=channel_layout=stereo:sample_rate=48000');
+    }
+    const audioOrigRef = temAudio ? '[0:a]' : '[' + (1 + vinhetaMp4s.length) + ':a]';
+
+    const adicionarTrechoOrig = (de, ate) => {
+      if (ate - de < 0.05) return;
+      const sv = 'ov' + segIdx;
+      const sa = 'oa' + segIdx;
+      segIdx++;
+      filtros.push('[0:v]trim=start=' + de.toFixed(3) + ':end=' + ate.toFixed(3) + ',setpts=PTS-STARTPTS,fps=' + fps + ',format=yuv420p[' + sv + ']');
+      filtros.push(audioOrigRef + 'atrim=start=' + de.toFixed(3) + ':end=' + ate.toFixed(3) + ',asetpts=PTS-STARTPTS,aresample=48000,aformat=channel_layouts=stereo[' + sa + ']');
+      paresConcat.push('[' + sv + '][' + sa + ']');
+    };
+
+    for (let i = 0; i < vinhetaMp4s.length; i++) {
+      const ponto = Math.max(cursor, Math.min(durTotal, vinhetaMp4s[i].onde));
+      adicionarTrechoOrig(cursor, ponto);
+      const inIdx = i + 1;
+      const vv = 'vv' + i;
+      const va = 'va' + i;
+      filtros.push('[' + inIdx + ':v]setpts=PTS-STARTPTS,fps=' + fps + ',format=yuv420p[' + vv + ']');
+      filtros.push('[' + inIdx + ':a]asetpts=PTS-STARTPTS,aresample=48000,aformat=channel_layouts=stereo[' + va + ']');
+      paresConcat.push('[' + vv + '][' + va + ']');
+      cursor = ponto;
+    }
+    adicionarTrechoOrig(cursor, durTotal);
+
+    filtros.push(paresConcat.join('') + 'concat=n=' + paresConcat.length + ':v=1:a=1[outv][outa]');
+
+    const saidaTemp = clipeMp4 + '.vinheta.mp4';
+    temps.push(saidaTemp);
+    await rodar(ffmpeg, entradas.concat([
+      '-filter_complex', filtros.join(';'),
+      '-map', '[outv]', '-map', '[outa]',
+      '-c:v', 'libx264', '-preset', q.preset, '-crf', q.crf,
+      '-pix_fmt', 'yuv420p', '-profile:v', 'high', '-level', '4.2',
+      '-c:a', 'aac', '-b:a', q.audio, '-ar', '48000', '-ac', '2',
+      '-movflags', '+faststart', '-loglevel', 'error',
+      saidaTemp,
+    ]), { cwd });
+
+    fs.renameSync(saidaTemp, clipeMp4);
+  } finally {
+    for (const f of temps) { try { if (fs.existsSync(f)) fs.unlinkSync(f); } catch (_) {} }
+  }
+  return clipeMp4;
+}
+
 module.exports = {
   garantirFfmpeg,
   inspecionar,
   extrairAudio,
   energiaPorSegundo,
   cortarClipe,
+  inserirVinhetas,
   gerarMiniatura,
   gerarFrame,
   detectarWebcam,

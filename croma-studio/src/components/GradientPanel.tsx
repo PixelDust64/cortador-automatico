@@ -1,12 +1,19 @@
 import { ArrowLeftRight, Plus, Shuffle, Trash2 } from 'lucide-react';
 import { CURATED_PALETTES, RESOLUTION_PRESETS } from '../data/presets';
-import { ColorStop, GradientConfig, GradientPalette, GradientType } from '../types/studio';
+import { ColorStop, GradientConfig, GradientPalette, GradientType, SavedFavoriteItem } from '../types/studio';
+import { FavoritesSection } from './FavoritesSection';
 
 interface GradientPanelProps {
   gradient: GradientConfig;
   resolutionId: string;
   customWidth: number;
   customHeight: number;
+  favoriteGradients?: SavedFavoriteItem[];
+  favSaving?: boolean;
+  favError?: string | null;
+  onSaveFavorite?: (nome: string) => void;
+  onLoadFavorite?: (item: SavedFavoriteItem) => void;
+  onDeleteFavorite?: (id: string) => void;
   onChangeGradient: (next: GradientConfig) => void;
   onApplyPalette: (palette: GradientPalette) => void;
   onSelectResolution: (id: string) => void;
@@ -26,6 +33,12 @@ export function GradientPanel({
   resolutionId,
   customWidth,
   customHeight,
+  favoriteGradients = [],
+  favSaving = false,
+  favError = null,
+  onSaveFavorite,
+  onLoadFavorite,
+  onDeleteFavorite,
   onChangeGradient,
   onApplyPalette,
   onSelectResolution,
@@ -73,6 +86,20 @@ export function GradientPanel({
 
   return (
     <div className="divide-y divide-[#22252D]">
+      {onSaveFavorite && onLoadFavorite && onDeleteFavorite && (
+        <FavoritesSection
+          title="Gradientes favoritos"
+          items={favoriteGradients}
+          maxItems={10}
+          saving={favSaving}
+          error={favError}
+          placeholder="Nome do gradiente..."
+          onSave={onSaveFavorite}
+          onLoad={onLoadFavorite}
+          onDelete={onDeleteFavorite}
+          defaultOpen={false}
+        />
+      )}
       {/* Resolution & Social Formats */}
       <section className="p-4 space-y-3">
         <div className="flex items-center justify-between">

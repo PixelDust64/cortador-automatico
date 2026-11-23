@@ -74,6 +74,23 @@ function aliviar(proc) {
   try { os.setPriority(proc.pid, os.constants.priority.PRIORITY_BELOW_NORMAL); } catch (_) { /* processo ja terminou */ }
 }
 
+// Processos filhos ativos (ffmpeg/python) do trabalho atual, pra permitir "Parar" pela fila.
+const processosAtivos = new Set();
+function registrarProcesso(proc) {
+  if (!proc || !proc.pid) return;
+  processosAtivos.add(proc);
+  const limpar = () => processosAtivos.delete(proc);
+  proc.once('close', limpar);
+  proc.once('exit', limpar);
+  proc.once('error', limpar);
+}
+function cancelarProcessosAtivos() {
+  for (const p of Array.from(processosAtivos)) {
+    try { p.kill(); } catch (_) {}
+  }
+  processosAtivos.clear();
+}
+
 /** Pro ffmpeg que recodifica (libx264): no modo leve, limita os nucleos. */
 function argsDoFfmpeg(args) {
   if (modo() !== 'leve') return args;
@@ -267,6 +284,6 @@ function resumo() {
 }
 
 module.exports = {
-  modo, escolhido, definir, pc, recomendado, nucleos, aliviar, argsDoFfmpeg,
-  adaptarFfmpeg, detectarPlaca, detectarCuda, usarCudaNaTranscricao, definirPlaca, marcarPlacaQuebrada, resumo,
+  modo, escolhido, definir, pc, recomendado, nucleos, aliviar, registrarProcesso, cancelarProcessosAtivos,
+  argsDoFfmpeg, adaptarFfmpeg, detectarPlaca, detectarCuda, usarCudaNaTranscricao, definirPlaca, marcarPlacaQuebrada, resumo,
 };

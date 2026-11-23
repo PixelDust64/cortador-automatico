@@ -34,3 +34,7 @@ fontes/
 
 # Python so do programa (o instalar.bat cria)
 ambiente/
+
+# Sandbox local e config de IDE
+splitter-studio/
+.vscode/

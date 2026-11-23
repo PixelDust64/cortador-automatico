@@ -1,10 +1,52 @@
+import QRCode from 'qrcode';
 import {
+  BackgroundPhotoConfig,
   GeometricConfig,
   GradientConfig,
+  QrCodeConfig,
   StudioState,
   TextLayer,
   WatermarkConfig,
 } from '../types/studio';
+
+// Cache sincrono das fotos carregadas pelo usuario para preview instantaneo e exportacao em alta resolucao
+const photoImageCache = new Map<string, HTMLImageElement>();
+
+export function registerPhotoImage(dataUrl: string, img: HTMLImageElement) {
+  photoImageCache.set(dataUrl, img);
+}
+
+export function drawBackgroundPhoto(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  photo: BackgroundPhotoConfig
+) {
+  if (!photo.dataUrl || photo.opacity <= 0) return;
+  const img = photoImageCache.get(photo.dataUrl);
+  if (!img || !img.complete || !img.naturalWidth || !img.naturalHeight) return;
+
+  const iw = img.naturalWidth;
+  const ih = img.naturalHeight;
+  const baseScale =
+    photo.fit === 'contain'
+      ? Math.min(width / iw, height / ih)
+      : Math.max(width / iw, height / ih);
+  const finalScale = baseScale * (photo.scale / 100);
+  const drawW = iw * finalScale;
+  const drawH = ih * finalScale;
+  const dx = (width - drawW) / 2 + (photo.offsetX / 100) * width;
+  const dy = (height - drawH) / 2 + (photo.offsetY / 100) * height;
+
+  ctx.save();
+  ctx.globalAlpha = Math.max(0, Math.min(1, photo.opacity / 100));
+  if (photo.blur > 0) {
+    const blurScale = Math.min(width, height) / 1080;
+    ctx.filter = `blur(${(photo.blur * Math.max(0.5, blurScale)).toFixed(1)}px)`;
+  }
+  ctx.drawImage(img, dx, dy, drawW, drawH);
+  ctx.restore();
+}
 
 // Deterministic PRNG (Mulberry32) so preview and export match pixel-for-pixel
 function createRng(seed: number) {
@@ -477,6 +519,105 @@ export function drawGeometricOverlay(
       }
       break;
     }
+
+    case 'fractals': {
+      // Fractal geometrico radial (galhos recursivos em simetria hexagonal)
+      const rng = createRng(geo.seed);
+      const minDim = Math.min(width, height);
+      const baseLen = minDim * (0.18 + (geo.scale / 240) * 0.24);
+      const maxDepth = geo.scale > 120 ? 4 : 5;
+      const spreadAngle = 0.42 + (rng() * 0.22);
+
+      const drawBranch = (x: number, y: number, len: number, angle: number, depth: number) => {
+        if (depth <= 0 || len < 4) return;
+        const x2 = x + Math.cos(angle) * len;
+        const y2 = y + Math.sin(angle) * len;
+
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = depth % 2 === 0 ? geo.secondaryColor : geo.color;
+        ctx.lineWidth = Math.max(0.8, strokeW * (depth / maxDepth) * 1.3);
+        ctx.stroke();
+
+        if (geo.fillMode !== 'stroke' && depth <= 2) {
+          ctx.beginPath();
+          ctx.arc(x2, y2, Math.max(2, len * 0.14), 0, Math.PI * 2);
+          ctx.fillStyle = depth === 1 ? geo.secondaryColor : geo.color;
+          ctx.fill();
+        }
+
+        const nextLen = len * 0.66;
+        drawBranch(x2, y2, nextLen, angle - spreadAngle, depth - 1);
+        drawBranch(x2, y2, nextLen, angle + spreadAngle, depth - 1);
+      };
+
+      const arms = 6;
+      for (let i = 0; i < arms; i++) {
+        const a = ((Math.PI * 2) / arms) * i;
+        drawBranch(0, 0, baseLen, a, maxDepth);
+      }
+      break;
+    }
+
+    case 'tri-fractal': {
+      // Triangulo Fractal de Sierpinski recursivo com subdivisao geometrica
+      const rng = createRng(geo.seed);
+      const minDim = Math.min(width, height);
+      const r = minDim * (0.36 + (geo.scale / 240) * 0.42);
+      const depth = geo.scale < 50 ? 5 : 4;
+
+      const drawSierpinski = (
+        x1: number, y1: number,
+        x2: number, y2: number,
+        x3: number, y3: number,
+        d: number
+      ) => {
+        if (d <= 0) {
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.lineTo(x3, y3);
+          ctx.closePath();
+
+          const pick = rng();
+          const col = pick > 0.5 ? geo.color : geo.secondaryColor;
+          if (geo.fillMode === 'fill' || (geo.fillMode === 'mixed' && pick > 0.42)) {
+            ctx.save();
+            ctx.globalAlpha *= 0.35 + rng() * 0.55;
+            ctx.fillStyle = col;
+            ctx.fill();
+            ctx.restore();
+          }
+          if (geo.fillMode !== 'fill') {
+            ctx.strokeStyle = col;
+            ctx.lineWidth = Math.max(0.8, strokeW * 0.85);
+            ctx.stroke();
+          }
+          return;
+        }
+        const mx12 = (x1 + x2) / 2;
+        const my12 = (y1 + y2) / 2;
+        const mx23 = (x2 + x3) / 2;
+        const my23 = (y2 + y3) / 2;
+        const mx31 = (x3 + x1) / 2;
+        const my31 = (y3 + y1) / 2;
+        drawSierpinski(x1, y1, mx12, my12, mx31, my31, d - 1);
+        drawSierpinski(mx12, my12, x2, y2, mx23, my23, d - 1);
+        drawSierpinski(mx31, my31, mx23, my23, x3, y3, d - 1);
+      };
+
+      const a0 = -Math.PI / 2;
+      const a1 = a0 + (Math.PI * 2) / 3;
+      const a2 = a1 + (Math.PI * 2) / 3;
+      drawSierpinski(
+        Math.cos(a0) * r, Math.sin(a0) * r,
+        Math.cos(a1) * r, Math.sin(a1) * r,
+        Math.cos(a2) * r, Math.sin(a2) * r,
+        depth
+      );
+      break;
+    }
   }
 
   ctx.restore();
@@ -808,6 +949,80 @@ export function drawWatermarkCanvas(
   ctx.restore();
 }
 
+// Cache sincrono da matriz QR Code para desenhar em alta resolucao sem atraso
+const qrMatrixCache = new Map<string, { size: number; data: Uint8Array }>();
+
+function getQrMatrix(text: string): { size: number; data: Uint8Array } | null {
+  const clean = text.trim();
+  if (!clean) return null;
+  const cached = qrMatrixCache.get(clean);
+  if (cached) return cached;
+  try {
+    const qr = QRCode.create(clean, { errorCorrectionLevel: 'M' });
+    const entry = { size: qr.modules.size, data: qr.modules.data };
+    if (qrMatrixCache.size > 40) qrMatrixCache.clear();
+    qrMatrixCache.set(clean, entry);
+    return entry;
+  } catch {
+    return null;
+  }
+}
+
+export function drawQrCode(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  qr: QrCodeConfig
+): TextLayerBounds | null {
+  if (!qr || !qr.enabled || !qr.text.trim()) return null;
+  const matrix = getQrMatrix(qr.text);
+  if (!matrix) return null;
+
+  const minDim = Math.min(width, height);
+  const boxSize = Math.max(48, Math.round(minDim * (qr.size / 100)));
+  const cx = qr.x * width;
+  const cy = qr.y * height;
+  const pad = Math.round(boxSize * (qr.padding / 100));
+  const inner = Math.max(24, boxSize - pad * 2);
+  const cell = inner / matrix.size;
+  const rad = Math.round(boxSize * (qr.radius / 100));
+
+  ctx.save();
+  ctx.globalAlpha = Math.max(0.1, Math.min(1, qr.opacity / 100));
+  ctx.translate(cx - boxSize / 2, cy - boxSize / 2);
+
+  // Fundo arredondado do QR Code
+  ctx.fillStyle = qr.bgColor || '#FFFFFF';
+  ctx.beginPath();
+  ctx.roundRect(0, 0, boxSize, boxSize, rad);
+  ctx.fill();
+
+  // Modulos do QR Code
+  ctx.fillStyle = qr.fgColor || '#09090B';
+  for (let row = 0; row < matrix.size; row++) {
+    for (let col = 0; col < matrix.size; col++) {
+      if (matrix.data[row * matrix.size + col]) {
+        ctx.fillRect(
+          pad + col * cell,
+          pad + row * cell,
+          Math.ceil(cell),
+          Math.ceil(cell)
+        );
+      }
+    }
+  }
+  ctx.restore();
+
+  return {
+    id: '__qrcode__',
+    cx,
+    cy,
+    width: boxSize,
+    height: boxSize,
+    rotation: 0,
+  };
+}
+
 export function renderStudioCanvas(
   ctx: CanvasRenderingContext2D,
   width: number,
@@ -824,6 +1039,9 @@ export function renderStudioCanvas(
 
   ctx.clearRect(0, 0, width, height);
   drawGradientBackground(ctx, width, height, state.gradient);
+  if (state.backgroundPhoto && state.backgroundPhoto.dataUrl) {
+    drawBackgroundPhoto(ctx, width, height, state.backgroundPhoto);
+  }
   drawGeometricOverlay(ctx, width, height, state.geometric);
 
   const isYouTubeTextMode =
@@ -839,7 +1057,10 @@ export function renderStudioCanvas(
       ctx.restore();
     }
 
-    return drawTextLayers(ctx, width, height, state.textLayers);
+    const bounds = drawTextLayers(ctx, width, height, state.textLayers);
+    const qrBounds = drawQrCode(ctx, width, height, state.qrCode);
+    if (qrBounds) bounds.push(qrBounds);
+    return bounds;
   }
 
   return [];

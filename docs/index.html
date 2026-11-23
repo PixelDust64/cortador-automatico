@@ -533,7 +533,10 @@
   }
   .nivel-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 26px; }
   .nivel-nome { display: inline-flex; align-items: center; gap: 8px; font-size: 16.5px; font-weight: 750; color: var(--texto); }
+  .nivel-nome svg { width: 18px; height: 18px; color: var(--marca2); }
+  .nivel-card.rec .nivel-nome svg { color: var(--estrela); }
   .nivel-selo { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 99px; background: rgba(245,196,81,.16); border: 1px solid rgba(245,196,81,.4); color: var(--estrela); font-size: 11px; font-weight: 750; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
+  .nivel-selo svg { width: 12px; height: 12px; }
   .nivel-preco { font-size: 28px; font-weight: 800; letter-spacing: -.03em; line-height: 1.1; color: var(--texto); }
   .nivel-card.rec .nivel-preco { color: var(--estrela); }
   .nivel-preco small { font-size: 12.5px; font-weight: 600; color: var(--texto3); letter-spacing: 0; margin-left: 4px; }
@@ -563,8 +566,11 @@
     box-shadow: inset 0 0 0 1px rgba(245,196,81,.35);
   }
   .nv-pill .nv-esq { display: inline-flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap; }
+  .nv-pill .nv-esq svg { width: 14px; height: 14px; color: var(--marca2); }
+  .nv-pill[aria-pressed="true"] .nv-esq svg { color: var(--estrela); }
   .nv-pill .nv-val { font-weight: 800; color: var(--estrela); white-space: nowrap; font-size: 12.5px; }
-  .nv-pill .nv-rec { font-size: 10px; padding: 1px 5px; border-radius: 99px; background: rgba(245,196,81,.22); color: var(--estrela); font-weight: 750; }
+  .nv-pill .nv-rec { display: inline-flex; align-items: center; font-size: 10px; padding: 2px 5px; border-radius: 99px; background: rgba(245,196,81,.22); color: var(--estrela); font-weight: 750; }
+  .nv-pill .nv-rec svg { width: 10px; height: 10px; color: var(--estrela); }
   @media (max-width: 440px) { .seletor-niveis { grid-template-columns: 1fr; } }
 
   .formas { display: grid; gap: 12px; text-align: left; }
@@ -1133,7 +1139,7 @@
       <div class="niveis-apoio" data-escalonar>
         <div class="nivel-card">
           <div class="nivel-topo">
-            <span class="nivel-nome">☕ Apoio</span>
+            <span class="nivel-nome"><i data-lucide="coffee"></i> Apoio</span>
           </div>
           <div class="nivel-preco">R$ 10 <small>contribuição</small></div>
           <p class="nivel-desc">Ajuda a manter o projeto ativo e gratuito pra todo mundo.</p>
@@ -1141,12 +1147,12 @@
             <li><i data-lucide="circle-check"></i><span>Ajuda a manter o Cortador 100% grátis</span></li>
             <li><i data-lucide="circle-check"></i><span>Apoia correções e manutenção contínua</span></li>
           </ul>
-          <a class="btn" href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20contribuir%20com%20o%20n%C3%ADvel%20%E2%98%95%20Apoio%20(R%24%2010)%20no%20Cortador%20Autom%C3%A1tico!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> Apoiar com R$ 10</a>
+          <a class="btn" href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20contribuir%20com%20o%20n%C3%ADvel%20Apoio%20(R%24%2010)%20no%20Cortador%20Autom%C3%A1tico!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> Apoiar com R$ 10</a>
         </div>
         <div class="nivel-card rec contorno brilha">
           <div class="nivel-topo">
-            <span class="nivel-nome">🚀 Colaborador</span>
-            <span class="nivel-selo">⭐ Recomendado</span>
+            <span class="nivel-nome"><i data-lucide="rocket"></i> Colaborador</span>
+            <span class="nivel-selo"><i data-lucide="star"></i> Recomendado</span>
           </div>
           <div class="nivel-preco">R$ 25 <small>contribuição</small></div>
           <p class="nivel-desc">Ajuda no desenvolvimento e nas próximas atualizações.</p>
@@ -1155,11 +1161,11 @@
             <li><i data-lucide="circle-check"></i><span><b>Sugestões diretas</b> para as atualizações</span></li>
             <li><i data-lucide="circle-check"></i><span><b>Seu nome no projeto</b> como colaborador</span></li>
           </ul>
-          <a class="btn estrelar" href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20participar%20no%20n%C3%ADvel%20%F0%9F%9A%80%20Colaborador%20(R%24%2025)%20do%20Cortador%20Autom%C3%A1tico!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> Ser Colaborador · R$ 25</a>
+          <a class="btn estrelar" href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20participar%20no%20n%C3%ADvel%20Colaborador%20(R%24%2025)%20do%20Cortador%20Autom%C3%A1tico!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> Ser Colaborador · R$ 25</a>
         </div>
         <div class="nivel-card">
           <div class="nivel-topo">
-            <span class="nivel-nome">💎 Apoiador</span>
+            <span class="nivel-nome"><i data-lucide="gem"></i> Apoiador</span>
             <span class="vagas-pill" style="font-size:10.5px;padding:2px 8px"><span class="ponto-vaga"></span> 20 vagas</span>
           </div>
           <div class="nivel-preco">R$ 50 <small>contribuição</small></div>
@@ -1169,11 +1175,11 @@
             <li><i data-lucide="circle-check"></i><span><b>Prioridade nas sugestões</b> de novos recursos</span></li>
             <li><i data-lucide="circle-check"></i><span><b>Seu nome em destaque</b> no projeto</span></li>
           </ul>
-          <a class="btn" href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20participar%20no%20n%C3%ADvel%20%F0%9F%92%8E%20Apoiador%20(R%24%2050)%20do%20Cortador%20Autom%C3%A1tico!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> Ser Apoiador · R$ 50</a>
+          <a class="btn" href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20participar%20no%20n%C3%ADvel%20Apoiador%20(R%24%2050)%20do%20Cortador%20Autom%C3%A1tico!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> Ser Apoiador · R$ 50</a>
         </div>
         <div class="nivel-card">
           <div class="nivel-topo">
-            <span class="nivel-nome">🛠️ Patrocinador</span>
+            <span class="nivel-nome"><i data-lucide="wrench"></i> Patrocinador</span>
           </div>
           <div class="nivel-preco">R$ 100+ <small>contribuição</small></div>
           <p class="nivel-desc">Para quem realmente quer financiar o desenvolvimento.</p>
@@ -1182,7 +1188,7 @@
             <li><i data-lucide="circle-check"></i><span><b>Nome ou @canal</b> como patrocinador no projeto</span></li>
             <li><i data-lucide="circle-check"></i><span><b>Prioridade máxima</b> em ajustes pro seu canal</span></li>
           </ul>
-          <a class="btn" href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20apoiar%20como%20%F0%9F%9B%A0%EF%B8%8F%20Patrocinador%20(R%24%20100%2B)%20do%20Cortador%20Autom%C3%A1tico!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> Ser Patrocinador · R$ 100+</a>
+          <a class="btn" href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20apoiar%20como%20Patrocinador%20(R%24%20100%2B)%20do%20Cortador%20Autom%C3%A1tico!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> Ser Patrocinador · R$ 100+</a>
         </div>
       </div>
       <div class="formas lado" data-escalonar>
@@ -1289,25 +1295,25 @@
       <div class="opcao apoiador contorno brilha" data-grupo-nivel>
         <div class="apoiador-selo">
           <span class="vagas-pill"><span class="ponto-vaga"></span> 20 vagas restantes</span>
-          <span class="tag-exclusivo"><i data-lucide="sparkles"></i> ⭐ Recomendado</span>
+          <span class="tag-exclusivo"><i data-lucide="star"></i> Recomendado</span>
         </div>
         <div class="opcao-topo">
           <span class="opcao-ic apoiador-ic"><i data-lucide="crown"></i></span>
           <div><b>Seja um Apoiador do Projeto</b><span>Escolha quanto quer contribuir com o desenvolvimento</span></div>
         </div>
         <div class="seletor-niveis" role="group" aria-label="Escolha o nível de apoio">
-          <button type="button" class="nv-pill" data-nivel="apoio" aria-pressed="false"><span class="nv-esq">☕ Apoio</span><span class="nv-val">R$ 10</span></button>
-          <button type="button" class="nv-pill" data-nivel="colaborador" aria-pressed="true"><span class="nv-esq">🚀 Colaborador <span class="nv-rec">⭐</span></span><span class="nv-val">R$ 25</span></button>
-          <button type="button" class="nv-pill" data-nivel="apoiador" aria-pressed="false"><span class="nv-esq">💎 Apoiador</span><span class="nv-val">R$ 50</span></button>
-          <button type="button" class="nv-pill" data-nivel="patrocinador" aria-pressed="false"><span class="nv-esq">🛠️ Patrocinador</span><span class="nv-val">R$ 100+</span></button>
+          <button type="button" class="nv-pill" data-nivel="apoio" aria-pressed="false"><span class="nv-esq"><i data-lucide="coffee"></i> Apoio</span><span class="nv-val">R$ 10</span></button>
+          <button type="button" class="nv-pill" data-nivel="colaborador" aria-pressed="true"><span class="nv-esq"><i data-lucide="rocket"></i> Colaborador <span class="nv-rec"><i data-lucide="star"></i></span></span><span class="nv-val">R$ 25</span></button>
+          <button type="button" class="nv-pill" data-nivel="apoiador" aria-pressed="false"><span class="nv-esq"><i data-lucide="gem"></i> Apoiador</span><span class="nv-val">R$ 50</span></button>
+          <button type="button" class="nv-pill" data-nivel="patrocinador" aria-pressed="false"><span class="nv-esq"><i data-lucide="wrench"></i> Patrocinador</span><span class="nv-val">R$ 100+</span></button>
         </div>
         <ul class="beneficios-apoiador">
-          <li><i data-lucide="circle-check"></i><span data-nivel-resumo><b>🚀 Colaborador (R$ 25):</b> ajuda diretamente no desenvolvimento e nas próximas atualizações.</span></li>
+          <li><i data-lucide="circle-check"></i><span data-nivel-resumo><b>Colaborador (R$ 25):</b> ajuda diretamente no desenvolvimento e nas próximas atualizações.</span></li>
           <li><i data-lucide="circle-check"></i><span><b>Versão exclusiva + acesso antecipado:</b> receba novas versões e ideias antes de todo mundo.</span></li>
           <li><i data-lucide="circle-check"></i><span><b>Sugestões para atualizações:</b> dê ideias, sugira funções e participe de cada atualização.</span></li>
           <li><i data-lucide="circle-check"></i><span><b>Seu nome no projeto:</b> reconhecimento oficial com seu nome registrado no projeto.</span></li>
         </ul>
-        <a class="btn estrelar grande" data-nivel-link href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20apoiar%20o%20Cortador%20Autom%C3%A1tico%20no%20n%C3%ADvel%20%F0%9F%9A%80%20Colaborador%20(R%24%2025)%20e%20garantir%20minha%20vaga!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> <span data-nivel-btn>Ser Colaborador · R$ 25 (WhatsApp)</span></a>
+        <a class="btn estrelar grande" data-nivel-link href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20apoiar%20o%20Cortador%20Autom%C3%A1tico%20no%20n%C3%ADvel%20Colaborador%20(R%24%2025)%20e%20garantir%20minha%20vaga!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> <span data-nivel-btn>Ser Colaborador · R$ 25 (WhatsApp)</span></a>
       </div>
     </div>
     <div class="opcao">
@@ -1338,14 +1344,14 @@
         <span class="f-ic"><i data-lucide="crown"></i></span>
         <div>
           <b>Apoie o desenvolvimento <span class="vagas-pill"><span class="ponto-vaga"></span> 20 vagas restantes</span></b>
-          <small data-nivel-resumo><b>🚀 Colaborador (R$ 25):</b> ajuda no desenvolvimento, com acesso antecipado, sugestões e seu nome no projeto.</small>
+          <small data-nivel-resumo><b>Colaborador (R$ 25):</b> ajuda no desenvolvimento, com acesso antecipado, sugestões e seu nome no projeto.</small>
           <div class="seletor-niveis" style="margin-bottom:12px" role="group" aria-label="Escolha o nível de apoio">
-            <button type="button" class="nv-pill" data-nivel="apoio" aria-pressed="false"><span class="nv-esq">☕ Apoio</span><span class="nv-val">R$ 10</span></button>
-            <button type="button" class="nv-pill" data-nivel="colaborador" aria-pressed="true"><span class="nv-esq">🚀 Colaborador <span class="nv-rec">⭐</span></span><span class="nv-val">R$ 25</span></button>
-            <button type="button" class="nv-pill" data-nivel="apoiador" aria-pressed="false"><span class="nv-esq">💎 Apoiador</span><span class="nv-val">R$ 50</span></button>
-            <button type="button" class="nv-pill" data-nivel="patrocinador" aria-pressed="false"><span class="nv-esq">🛠️ Patrocinador</span><span class="nv-val">R$ 100+</span></button>
+            <button type="button" class="nv-pill" data-nivel="apoio" aria-pressed="false"><span class="nv-esq"><i data-lucide="coffee"></i> Apoio</span><span class="nv-val">R$ 10</span></button>
+            <button type="button" class="nv-pill" data-nivel="colaborador" aria-pressed="true"><span class="nv-esq"><i data-lucide="rocket"></i> Colaborador <span class="nv-rec"><i data-lucide="star"></i></span></span><span class="nv-val">R$ 25</span></button>
+            <button type="button" class="nv-pill" data-nivel="apoiador" aria-pressed="false"><span class="nv-esq"><i data-lucide="gem"></i> Apoiador</span><span class="nv-val">R$ 50</span></button>
+            <button type="button" class="nv-pill" data-nivel="patrocinador" aria-pressed="false"><span class="nv-esq"><i data-lucide="wrench"></i> Patrocinador</span><span class="nv-val">R$ 100+</span></button>
           </div>
-          <a class="btn estrelar" data-nivel-link href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20apoiar%20o%20Cortador%20Autom%C3%A1tico%20no%20n%C3%ADvel%20%F0%9F%9A%80%20Colaborador%20(R%24%2025)%20e%20garantir%20minha%20vaga!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> <span data-nivel-btn>Ser Colaborador · R$ 25 (WhatsApp)</span></a>
+          <a class="btn estrelar" data-nivel-link href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20apoiar%20o%20Cortador%20Autom%C3%A1tico%20no%20n%C3%ADvel%20Colaborador%20(R%24%2025)%20e%20garantir%20minha%20vaga!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> <span data-nivel-btn>Ser Colaborador · R$ 25 (WhatsApp)</span></a>
         </div>
       </div>
       <div class="forma f-estrela">
@@ -1388,14 +1394,14 @@
         <span class="f-ic"><i data-lucide="crown"></i></span>
         <div>
           <b>Apoie o desenvolvimento <span class="vagas-pill"><span class="ponto-vaga"></span> 20 vagas restantes</span></b>
-          <small data-nivel-resumo><b>🚀 Colaborador (R$ 25):</b> ajuda no desenvolvimento, com acesso antecipado, sugestões e seu nome no projeto.</small>
+          <small data-nivel-resumo><b>Colaborador (R$ 25):</b> ajuda no desenvolvimento, com acesso antecipado, sugestões e seu nome no projeto.</small>
           <div class="seletor-niveis" style="margin-bottom:12px" role="group" aria-label="Escolha o nível de apoio">
-            <button type="button" class="nv-pill" data-nivel="apoio" aria-pressed="false"><span class="nv-esq">☕ Apoio</span><span class="nv-val">R$ 10</span></button>
-            <button type="button" class="nv-pill" data-nivel="colaborador" aria-pressed="true"><span class="nv-esq">🚀 Colaborador <span class="nv-rec">⭐</span></span><span class="nv-val">R$ 25</span></button>
-            <button type="button" class="nv-pill" data-nivel="apoiador" aria-pressed="false"><span class="nv-esq">💎 Apoiador</span><span class="nv-val">R$ 50</span></button>
-            <button type="button" class="nv-pill" data-nivel="patrocinador" aria-pressed="false"><span class="nv-esq">🛠️ Patrocinador</span><span class="nv-val">R$ 100+</span></button>
+            <button type="button" class="nv-pill" data-nivel="apoio" aria-pressed="false"><span class="nv-esq"><i data-lucide="coffee"></i> Apoio</span><span class="nv-val">R$ 10</span></button>
+            <button type="button" class="nv-pill" data-nivel="colaborador" aria-pressed="true"><span class="nv-esq"><i data-lucide="rocket"></i> Colaborador <span class="nv-rec"><i data-lucide="star"></i></span></span><span class="nv-val">R$ 25</span></button>
+            <button type="button" class="nv-pill" data-nivel="apoiador" aria-pressed="false"><span class="nv-esq"><i data-lucide="gem"></i> Apoiador</span><span class="nv-val">R$ 50</span></button>
+            <button type="button" class="nv-pill" data-nivel="patrocinador" aria-pressed="false"><span class="nv-esq"><i data-lucide="wrench"></i> Patrocinador</span><span class="nv-val">R$ 100+</span></button>
           </div>
-          <a class="btn estrelar" data-nivel-link href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20apoiar%20o%20Cortador%20Autom%C3%A1tico%20no%20n%C3%ADvel%20%F0%9F%9A%80%20Colaborador%20(R%24%2025)%20e%20garantir%20minha%20vaga!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> <span data-nivel-btn>Ser Colaborador · R$ 25 (WhatsApp)</span></a>
+          <a class="btn estrelar" data-nivel-link href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20apoiar%20o%20Cortador%20Autom%C3%A1tico%20no%20n%C3%ADvel%20Colaborador%20(R%24%2025)%20e%20garantir%20minha%20vaga!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> <span data-nivel-btn>Ser Colaborador · R$ 25 (WhatsApp)</span></a>
         </div>
       </div>
       <div class="forma f-estrela">
@@ -1593,24 +1599,24 @@
   // ---------------------------------------------------------------- niveis de apoio interativos
   var NIVEIS = {
     apoio: {
-      resumo: '<b>☕ Apoio (R$ 10):</b> ajuda a manter o projeto ativo e gratuito pra todo mundo.',
+      resumo: '<b>Apoio (R$ 10):</b> ajuda a manter o projeto ativo e gratuito pra todo mundo.',
       btn: 'Apoiar com R$ 10 (WhatsApp)',
-      msg: 'Olá Gabriel! Quero contribuir com o nível ☕ Apoio (R$ 10) no Cortador Automático!'
+      msg: 'Olá Gabriel! Quero contribuir com o nível Apoio (R$ 10) no Cortador Automático!'
     },
     colaborador: {
-      resumo: '<b>🚀 Colaborador (R$ 25 · Recomendado):</b> ajuda no desenvolvimento, com acesso antecipado, sugestões e seu nome no projeto.',
+      resumo: '<b>Colaborador (R$ 25 · Recomendado):</b> ajuda no desenvolvimento, com acesso antecipado, sugestões e seu nome no projeto.',
       btn: 'Ser Colaborador · R$ 25 (WhatsApp)',
-      msg: 'Olá Gabriel! Quero apoiar o Cortador Automático no nível 🚀 Colaborador (R$ 25) e garantir minha vaga!'
+      msg: 'Olá Gabriel! Quero apoiar o Cortador Automático no nível Colaborador (R$ 25) e garantir minha vaga!'
     },
     apoiador: {
-      resumo: '<b>💎 Apoiador (R$ 50):</b> para quem quer contribuir mais, com versão única exclusiva, prioridade em sugestões e nome em destaque no projeto.',
+      resumo: '<b>Apoiador (R$ 50):</b> para quem quer contribuir mais, com versão única exclusiva, prioridade em sugestões e nome em destaque no projeto.',
       btn: 'Ser Apoiador · R$ 50 (WhatsApp)',
-      msg: 'Olá Gabriel! Quero apoiar o Cortador Automático no nível 💎 Apoiador (R$ 50) e garantir uma das 20 vagas!'
+      msg: 'Olá Gabriel! Quero apoiar o Cortador Automático no nível Apoiador (R$ 50) e garantir uma das 20 vagas!'
     },
     patrocinador: {
-      resumo: '<b>🛠️ Patrocinador (R$ 100+):</b> para quem quer financiar o desenvolvimento, com contato direto e nome/@canal em destaque no projeto.',
+      resumo: '<b>Patrocinador (R$ 100+):</b> para quem quer financiar o desenvolvimento, com contato direto e nome/@canal em destaque no projeto.',
       btn: 'Ser Patrocinador · R$ 100+ (WhatsApp)',
-      msg: 'Olá Gabriel! Quero apoiar como 🛠️ Patrocinador (R$ 100+) do Cortador Automático!'
+      msg: 'Olá Gabriel! Quero apoiar como Patrocinador (R$ 100+) do Cortador Automático!'
     }
   };
   document.querySelectorAll('[data-grupo-nivel]').forEach(function (grupo) {

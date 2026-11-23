@@ -1953,9 +1953,17 @@ body[data-modo="splitter"] .fila-aba { display: none !important; }
   const SECOES = ['tela1', 'tela2', 'tela3', 'processando', 'resultado', 'projetos', 'aovivo'];
   let avAtivo = false;     // tem live sendo gravada agora
   let modoCorte = 'video'; // aba escolhida: video gravado ou ao vivo
+  function atualizarAbasTopo() {
+    const m = document.body.dataset.modo || '';
+    if ($('btnCroma')) $('btnCroma').setAttribute('aria-pressed', String(m === 'croma'));
+    if ($('btnSplitter')) $('btnSplitter').setAttribute('aria-pressed', String(m === 'splitter'));
+    if ($('btnProjetos')) $('btnProjetos').setAttribute('aria-pressed', String(m === 'projetos'));
+  }
+
   function mostrarSecao(id, modo) {
     SECOES.forEach((s) => $(s).classList.toggle('on', s === id));
     document.body.dataset.modo = modo;
+    atualizarAbasTopo();
     // as abas so aparecem no comeco de cada caminho
     $('modos').hidden = !(id === 'tela1' || (id === 'aovivo' && !avAtivo));
     if (id === 'tela1' || id === 'aovivo') {
@@ -4930,11 +4938,10 @@ body[data-modo="splitter"] .fila-aba { display: none !important; }
       const frame = $('frameCroma');
       if (!frame.getAttribute('src')) frame.src = '/croma/';
       document.body.dataset.modo = 'croma';
-      $('btnSplitter').setAttribute('aria-pressed', 'false');
     } else {
       document.body.dataset.modo = (modoAntesStudio === 'croma' || modoAntesStudio === 'splitter') ? 'fluxo' : modoAntesStudio;
     }
-    $('btnCroma').setAttribute('aria-pressed', String(proximo));
+    atualizarAbasTopo();
   }
   function abrirSplitter(ligar) {
     const ativo = document.body.dataset.modo === 'splitter';
@@ -4947,11 +4954,10 @@ body[data-modo="splitter"] .fila-aba { display: none !important; }
       const frame = $('frameSplitter');
       if (!frame.getAttribute('src')) frame.src = '/splitter/';
       document.body.dataset.modo = 'splitter';
-      $('btnCroma').setAttribute('aria-pressed', 'false');
     } else {
       document.body.dataset.modo = (modoAntesStudio === 'croma' || modoAntesStudio === 'splitter') ? 'fluxo' : modoAntesStudio;
     }
-    $('btnSplitter').setAttribute('aria-pressed', String(proximo));
+    atualizarAbasTopo();
   }
   fetch('/croma/').then((r) => { if (r.ok) $('btnCroma').hidden = false; }).catch(() => {});
   fetch('/splitter/').then((r) => { if (r.ok) $('btnSplitter').hidden = false; }).catch(() => {});

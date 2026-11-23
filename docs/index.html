@@ -375,7 +375,8 @@
   .garantias li { display: flex; gap: 10px; align-items: flex-start; font-size: 14.5px; color: var(--texto2); }
   .garantias li svg { color: var(--verde); margin-top: 3px; width: 17px; height: 17px; }
   .garantias b { color: var(--texto); }
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 22px; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 22px; }
+  @media (max-width: 520px) { .stats { grid-template-columns: repeat(2, 1fr); } }
   .stats div { padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,.035); border: 1px solid var(--linha); }
   .stats b { display: block; font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
   .stats span { font-size: 12px; color: var(--texto3); }
@@ -432,17 +433,19 @@
   .depo small svg.lucide { width: 12px; height: 12px; }
   .ver-video { text-align: center; margin-top: 10px; }
 
-  /* ---------------------------------------------------------- apoio (3 jeitos) */
+  /* ---------------------------------------------------------- apoio (4 jeitos) */
   .formas { display: grid; gap: 12px; text-align: left; }
-  .formas.lado { grid-template-columns: repeat(3, 1fr); }
+  .formas.lado { grid-template-columns: repeat(2, 1fr); }
   @media (max-width: 900px) { .formas.lado { grid-template-columns: 1fr; } }
   .forma { display: grid; grid-template-columns: 44px 1fr; gap: 14px; padding: 18px; border-radius: 18px; border: 1px solid var(--linha); background: var(--vidro); }
   .formas.lado .forma { padding: 24px; }
   .forma .f-ic { width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; }
   .forma .f-ic svg { width: 20px; height: 20px; }
-  .forma b { display: block; font-size: 16px; font-weight: 700; }
+  .forma b { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 16px; font-weight: 700; }
   .forma > div > small { display: block; color: var(--texto3); font-size: 13.5px; line-height: 1.5; margin: 4px 0 14px; }
   .forma .btn { padding: 9px 16px; font-size: 14px; white-space: normal; }
+  .f-colab { border-color: rgba(245,196,81,.45); background: radial-gradient(ellipse 90% 70% at 100% 0%, rgba(245,196,81,.15), transparent 65%), rgba(245,196,81,.04); }
+  .f-colab .f-ic { color: #2a1d00; background: linear-gradient(180deg, #ffd978, #f0b23c); box-shadow: 0 8px 20px -6px rgba(245,196,81,.5); }
   .f-estrela .f-ic { color: var(--estrela); background: rgba(245,196,81,.1); border: 1px solid rgba(245,196,81,.3); }
   .f-pix { border-color: rgba(61,139,255,.35); background: var(--marca-fundo2); }
   .f-pix .f-ic { color: #ff6f91; background: var(--marca-fundo); border: 1px solid rgba(127,178,255,.3); }
@@ -487,7 +490,7 @@
   .modal .dica b { color: var(--texto2); }
   .fechar-x { position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--linha); background: transparent; color: var(--texto3); cursor: pointer; display: grid; place-items: center; }
   .fechar-x:hover { color: var(--texto); border-color: var(--linha2); }
-  .modal.escolha { max-width: 860px; text-align: left; }
+  .modal.escolha { max-width: 880px; text-align: left; }
   .modal.escolha > h3, .modal.escolha > p { text-align: center; }
   .opcoes-exe { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: stretch; margin-bottom: 14px; }
   .opcao { padding: 20px; border-radius: 18px; border: 1px solid var(--linha); background: var(--vidro); display: flex; flex-direction: column; gap: 14px; }
@@ -496,23 +499,27 @@
   .opcao.recomendada { border-color: rgba(61,139,255,.4); background: var(--marca-fundo2); }
   .opcao.apoiador { border-color: rgba(245,196,81,.45); background: radial-gradient(ellipse 90% 70% at 100% 0%, rgba(245,196,81,.15), transparent 65%), rgba(245,196,81,.04); }
   .opcao .btn.grande { margin-top: auto; width: 100%; }
-  .apoiador-selo { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .apoiador-selo { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; min-height: 28px; }
+  .gratis-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 99px; background: rgba(134,211,164,.14); border: 1px solid rgba(134,211,164,.35); color: var(--verde); font-size: 12px; font-weight: 750; }
+  .gratis-pill svg { width: 13px; height: 13px; }
+  .tag-gratis { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 99px; background: var(--marca-fundo); border: 1px solid rgba(127,178,255,.3); color: var(--marca-claro); font-size: 11.5px; font-weight: 750; text-transform: uppercase; letter-spacing: .08em; }
   .vagas-pill { display: inline-flex; align-items: center; gap: 7px; padding: 4px 11px; border-radius: 99px; background: rgba(255,77,94,.14); border: 1px solid rgba(255,77,94,.38); color: #ff9aa3; font-size: 12px; font-weight: 750; letter-spacing: .02em; }
   .ponto-vaga { width: 7px; height: 7px; border-radius: 50%; background: var(--vivo); animation: pulsa 1.6s infinite; }
   .tag-exclusivo { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 99px; background: rgba(245,196,81,.14); border: 1px solid rgba(245,196,81,.35); color: var(--estrela); font-size: 11.5px; font-weight: 750; text-transform: uppercase; letter-spacing: .08em; }
   .tag-exclusivo svg { width: 13px; height: 13px; }
-  .opcao-topo { display: flex; gap: 14px; align-items: center; }
-  .opcao-topo b { display: block; font-size: 16.5px; font-weight: 700; }
-  .opcao-topo div > span { display: block; font-size: 13px; color: var(--texto3); }
+  .opcao-topo { display: flex; gap: 13px; align-items: center; min-height: 46px; }
+  .opcao-topo div { min-width: 0; }
+  .opcao-topo b { display: block; font-size: 16px; font-weight: 750; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .opcao-topo div > span { display: block; font-size: 12.5px; color: var(--texto3); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
   .opcao-ic { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; flex: none; background: linear-gradient(180deg, var(--marca2), var(--marca)); color: var(--sobre-marca); }
   .opcao-ic svg { width: 20px; height: 20px; }
   .opcao-ic.github { background: #fff; color: #000; }
   .opcao-ic.apoiador-ic { background: linear-gradient(180deg, #ffd978, #f0b23c); color: #2a1d00; box-shadow: 0 10px 24px -8px rgba(245,196,81,.5); }
-  .beneficios-apoiador { list-style: none; display: grid; gap: 10px; padding: 14px 16px; border-radius: 14px; background: rgba(5,6,7,.45); border: 1px solid rgba(245,196,81,.22); font-size: 13.5px; color: var(--texto2); line-height: 1.45; }
+  .beneficios-apoiador { flex: 1; list-style: none; display: grid; align-content: start; gap: 10px; padding: 14px 16px; border-radius: 14px; background: rgba(5,6,7,.45); border: 1px solid rgba(245,196,81,.22); font-size: 13.5px; color: var(--texto2); line-height: 1.45; }
   .beneficios-apoiador li { display: grid; grid-template-columns: 18px 1fr; gap: 9px; align-items: start; }
   .beneficios-apoiador li svg { width: 16px; height: 16px; color: var(--estrela); margin-top: 2px; }
   .beneficios-apoiador b { color: var(--texto); }
-  .seguranca { padding: 14px 16px; border-radius: 14px; background: rgba(245,196,81,.06); border: 1px solid rgba(245,196,81,.25); font-size: 13.5px; color: var(--texto2); }
+  .seguranca { flex: 1; padding: 14px 16px; border-radius: 14px; background: rgba(245,196,81,.06); border: 1px solid rgba(245,196,81,.25); font-size: 13.5px; color: var(--texto2); }
   .seguranca > b { display: flex; align-items: center; gap: 8px; color: var(--estrela); font-size: 14px; margin-bottom: 6px; }
   .seguranca p { margin: 0 0 8px; }
   .seguranca ol { padding-left: 20px; display: grid; gap: 4px; }
@@ -597,7 +604,7 @@
           <a class="btn principal grande baixar" href="#"><i data-lucide="download"></i> Baixar grátis para Windows</a>
           <a class="btn grande" href="#painel"><i data-lucide="mouse-pointer-click"></i> Ver o painel</a>
         </div>
-        <div class="miudo entra" style="--d:950">Windows 10 e 11 (64 bits) · instalador completo · <span data-versao>versão mais nova</span></div>
+        <div class="miudo entra" style="--d:950"><b style="color:var(--verde)">Mais de 100 downloads</b> · Windows 10 e 11 (64 bits) · instalador completo · <span data-versao>versão mais nova</span></div>
         <div class="funciona entra" style="--d:1050">
           <span>Funciona com</span>
           <div class="plataformas">
@@ -667,9 +674,9 @@
 
   <div class="numeros">
     <div class="largura" data-escalonar>
+      <div><i data-lucide="download"></i><span><b>+100 downloads</b>clipadores já usando no PC</span></div>
       <div><i data-lucide="timer"></i><span><b>~15 s</b>do lance ao clipe pronto, ao vivo</span></div>
-      <div><i data-lucide="gamepad-2"></i><span><b>Qualquer jogo</b>e qualquer live ou vídeo</span></div>
-      <div><i data-lucide="radio"></i><span><b>3 plataformas</b>Twitch, Kick e YouTube</span></div>
+      <div><i data-lucide="gamepad-2"></i><span><b>Qualquer jogo</b>Twitch, Kick, YouTube e PC</span></div>
       <div><i data-lucide="shield-check"></i><span><b>R$ 0</b>sem conta, sem assinatura, sem API</span></div>
     </div>
   </div>
@@ -832,6 +839,7 @@
           <h3>Dá pra conferir tudo</h3>
           <p>Antivírus reclamou? Ficou com dúvida? O código está lá, aberto, do jeito que vai no instalador.</p>
           <div class="stats">
+            <div><b>+100</b><span>downloads</span></div>
             <div><b data-estrelas-num>—</b><span>estrelas</span></div>
             <div><b data-versao-num>—</b><span>versão</span></div>
             <div><b>R$ 0</b><span>sempre</span></div>
@@ -944,9 +952,17 @@
       <div class="titulo surge">
         <span class="rot"><i data-lucide="heart-handshake"></i> Apoie o projeto</span>
         <h2>Feito por uma pessoa. Grátis pra todo mundo.</h2>
-        <p>O Cortador é do Gabriel Workspace e vai continuar grátis. Se ele te ajudou, dá pra apoiar de três jeitos:</p>
+        <p>O Cortador é do Gabriel Workspace e vai continuar grátis. Se ele te ajudou, dá pra apoiar e participar do projeto:</p>
       </div>
       <div class="formas lado" data-escalonar>
+      <div class="forma f-colab contorno brilha">
+        <span class="f-ic"><i data-lucide="sparkles"></i></span>
+        <div>
+          <b>Torne-se um colaborador <span class="vagas-pill"><span class="ponto-vaga"></span> 20 vagas restantes</span></b>
+          <small>Acesso antecipado a ideias, versões e projetos, versão única exclusiva para apoiadores e seu nome creditado nos projetos.</small>
+          <a class="btn estrelar" href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20me%20tornar%20um%20colaborador%20e%20apoiador%20do%20Cortador%20Autom%C3%A1tico!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> Quero ser colaborador</a>
+        </div>
+      </div>
       <div class="forma f-estrela">
         <span class="f-ic"><i data-lucide="star"></i></span>
         <div>
@@ -1028,9 +1044,13 @@
   <div class="modal escolha">
     <button class="fechar-x" type="button" data-fechar aria-label="Fechar"><i data-lucide="x"></i></button>
     <h3 id="escolherTitulo">Como você quer baixar?</h3>
-    <p>Escolha o instalador (.exe) na versão gratuita, participe da versão exclusiva para apoiadores ou baixe pelo GitHub.</p>
+    <p>Escolha o instalador (.exe) na versão gratuita, seja um apoiador com versão exclusiva ou baixe pelo GitHub.</p>
     <div class="opcoes-exe">
       <div class="opcao recomendada contorno">
+        <div class="apoiador-selo">
+          <span class="gratis-pill"><i data-lucide="download"></i> +100 downloads</span>
+          <span class="tag-gratis">100% Grátis</span>
+        </div>
         <div class="opcao-topo">
           <span class="opcao-ic"><i data-lucide="download"></i></span>
           <div><b>Instalador (.exe) · Versão Gratuita</b><span>Grátis para sempre · é só clicar em Avançar · ~770 MB</span></div>
@@ -1049,19 +1069,19 @@
       <div class="opcao apoiador contorno brilha">
         <div class="apoiador-selo">
           <span class="vagas-pill"><span class="ponto-vaga"></span> 20 vagas restantes</span>
-          <span class="tag-exclusivo"><i data-lucide="sparkles"></i> Acesso Antecipado</span>
+          <span class="tag-exclusivo"><i data-lucide="sparkles"></i> Versão Única</span>
         </div>
         <div class="opcao-topo">
           <span class="opcao-ic apoiador-ic"><i data-lucide="star"></i></span>
-          <div><b>Instalador (.exe) · Apoiador do Projeto</b><span>Construa junto e tenha acesso antecipado</span></div>
+          <div><b>Seja um Apoiador do Projeto</b><span>Versão única disponibilizada apenas para apoiadores</span></div>
         </div>
         <ul class="beneficios-apoiador">
-          <li><i data-lucide="circle-check"></i><span><b>Acesso antecipado:</b> receba todos os nossos projetos e atualizações antes de todo mundo.</span></li>
-          <li><i data-lucide="circle-check"></i><span><b>Mais inclusões:</b> funções novas, melhorias e vagas exclusivas para testar em primeira mão.</span></li>
-          <li><i data-lucide="circle-check"></i><span><b>Participe dos updates:</b> dê ideias, sugira recursos e contribua de fato com o projeto.</span></li>
-          <li><i data-lucide="circle-check"></i><span><b>Seu nome no projeto:</b> reconhecimento oficial com seu nome registrado pela sua contribuição.</span></li>
+          <li><i data-lucide="circle-check"></i><span><b>Versão única exclusiva:</b> uma versão especial disponibilizada apenas para os apoiadores do projeto.</span></li>
+          <li><i data-lucide="circle-check"></i><span><b>Acesso antecipado:</b> receba novas versões, ideias e projetos antes de todo mundo.</span></li>
+          <li><i data-lucide="circle-check"></i><span><b>Sugestões para atualizações:</b> dê ideias, sugira funções e participe de cada atualização.</span></li>
+          <li><i data-lucide="circle-check"></i><span><b>Nome no projeto:</b> seu nome registrado oficialmente no projeto pela sua contribuição.</span></li>
         </ul>
-        <a class="btn estrelar grande" href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20participar%20da%20vers%C3%A3o%20para%20Apoiador%20do%20Cortador%20Autom%C3%A1tico%20e%20garantir%20uma%20das%2020%20vagas!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> Quero ser apoiador (WhatsApp)</a>
+        <a class="btn estrelar grande" href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20ser%20um%20apoiador%20do%20projeto%20Cortador%20Autom%C3%A1tico%20e%20garantir%20uma%20das%2020%20vagas!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> Seja um apoiador (WhatsApp)</a>
       </div>
     </div>
     <div class="opcao">
@@ -1084,6 +1104,14 @@
     <h3 id="obrigadoTitulo">Seu download começou!</h3>
     <p>O Cortador é grátis e feito por uma pessoa. Se quiser ajudar a manter ele assim, escolha um jeito:</p>
     <div class="formas">
+      <div class="forma f-colab contorno">
+        <span class="f-ic"><i data-lucide="sparkles"></i></span>
+        <div>
+          <b>Torne-se um colaborador <span class="vagas-pill"><span class="ponto-vaga"></span> 20 vagas restantes</span></b>
+          <small>Acesso antecipado a ideias, versões e projetos, versão única exclusiva e seu nome nos projetos.</small>
+          <a class="btn estrelar" href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20me%20tornar%20um%20colaborador%20e%20apoiador%20do%20Cortador%20Autom%C3%A1tico!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> Quero ser colaborador</a>
+        </div>
+      </div>
       <div class="forma f-estrela">
         <span class="f-ic"><i data-lucide="star"></i></span>
         <div>
@@ -1118,8 +1146,16 @@
 <div class="modal-fundo" id="apoio" role="dialog" aria-modal="true" aria-labelledby="apoioTitulo">
   <div class="modal">
     <h3 id="apoioTitulo">Apoie o Cortador Automático</h3>
-    <p>Obrigado por querer ajudar! Escolha um jeito, ou os três:</p>
+    <p>Obrigado por querer ajudar! Escolha como prefere apoiar ou participar:</p>
     <div class="formas">
+      <div class="forma f-colab contorno">
+        <span class="f-ic"><i data-lucide="sparkles"></i></span>
+        <div>
+          <b>Torne-se um colaborador <span class="vagas-pill"><span class="ponto-vaga"></span> 20 vagas restantes</span></b>
+          <small>Acesso antecipado a ideias, versões e projetos, versão única exclusiva e seu nome nos projetos.</small>
+          <a class="btn estrelar" href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20me%20tornar%20um%20colaborador%20e%20apoiador%20do%20Cortador%20Autom%C3%A1tico!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> Quero ser colaborador</a>
+        </div>
+      </div>
       <div class="forma f-estrela">
         <span class="f-ic"><i data-lucide="star"></i></span>
         <div>

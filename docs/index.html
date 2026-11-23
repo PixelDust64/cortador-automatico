@@ -5,12 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cortador Automático · Gabriel Workspace</title>
 <meta name="description" content="Transforma lives e vídeos de qualquer jogo, da Twitch, Kick e YouTube, em cortes verticais prontos pro TikTok, Reels e Shorts. Gravado ou ao vivo. Grátis, código aberto, no seu PC.">
-<meta property="og:title" content="Cortador Automático">
-<meta property="og:description" content="Lives e vídeos de qualquer jogo viram cortes em pé, sozinhos. Grátis e código aberto, no seu PC.">
+<link rel="canonical" href="https://gabrielworkspace.github.io/cortador-automatico/">
+<link rel="preload" href="manrope.woff2" as="font" type="font/woff2" crossorigin>
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:site_name" content="Cortador Automático · Gabriel Workspace">
+<meta property="og:url" content="https://gabrielworkspace.github.io/cortador-automatico/">
+<meta property="og:title" content="Cortador Automático · Lives viram cortes 9:16 sozinhas">
+<meta property="og:description" content="Lives e vídeos de qualquer jogo viram cortes em pé, sozinhos. Grátis, 100% local e código aberto no seu PC.">
 <meta property="og:image" content="https://gabrielworkspace.github.io/cortador-automatico/icone.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Cortador Automático · Gabriel Workspace">
+<meta name="twitter:description" content="Transforma lives e vídeos da Twitch, Kick e YouTube em cortes 9:16 prontos pro TikTok, Reels e Shorts. Grátis e 100% no seu PC.">
+<meta name="twitter:image" content="https://gabrielworkspace.github.io/cortador-automatico/icone.png">
 <meta name="theme-color" content="#050607">
 <meta name="author" content="Gabriel Workspace">
 <link rel="icon" type="image/png" href="icone.png">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Cortador Automático","operatingSystem":"Windows 10, Windows 11 (64-bit)","applicationCategory":"MultimediaApplication","softwareVersion":"2.0.7","description":"Transforma lives e vídeos de qualquer jogo, da Twitch, Kick e YouTube, em cortes verticais 9:16 prontos para TikTok, Reels e Shorts. Roda 100% localmente no PC.","url":"https://gabrielworkspace.github.io/cortador-automatico/","downloadUrl":"https://github.com/gabrielworkspace/cortador-automatico/releases/latest/download/Instalar-Cortador-Automatico.exe","author":{"@type":"Organization","name":"Gabriel Workspace","url":"https://github.com/gabrielworkspace"},"offers":{"@type":"Offer","price":"0","priceCurrency":"BRL"}}
+</script>
 <style>
   @font-face { font-family: 'Manrope'; font-style: normal; font-weight: 300 800; font-display: swap; src: url(manrope.woff2) format('woff2'); }
 
@@ -71,19 +84,69 @@
   .ic-m { fill: currentColor; }
 
   /* ---------------------------------------------------------- topo */
-  .topo { position: sticky; top: 0; z-index: 40; background: rgba(5,6,7,.72); backdrop-filter: blur(16px) saturate(1.3); -webkit-backdrop-filter: blur(16px) saturate(1.3); border-bottom: 1px solid var(--linha); }
-  .topo .largura { display: flex; align-items: center; gap: 20px; height: 66px; }
-  .logo { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
-  .logo img { width: 32px; height: 32px; border-radius: 9px; box-shadow: 0 0 20px -4px var(--marca-brilho); }
-  .logo .nome { display: flex; flex-direction: column; line-height: 1.15; font-size: 13px; font-weight: 650; letter-spacing: .18em; text-transform: uppercase; }
-  .logo .por { font-size: 10px; font-weight: 600; letter-spacing: .14em; color: var(--texto3); margin-top: 1px; }
-  .menu { display: flex; gap: 20px; margin-left: auto; font-size: 14px; color: var(--texto2); }
-  .menu a { white-space: nowrap; transition: color .2s; }
-  .menu a:hover { color: var(--texto); }
-  .acoes-topo { display: flex; gap: 8px; align-items: center; }
-  @media (max-width: 1180px) { .menu .opc { display: none; } }
-  @media (max-width: 920px) { .menu { display: none; } .acoes-topo { margin-left: auto; } }
-  @media (max-width: 520px) { .estrelas-topo, .logo .nome { display: none !important; } .so-largo { display: none; } .topo .btn.p { padding: 7px 12px; } }
+  .topo { position: sticky; top: 14px; z-index: 40; padding: 0 18px; margin-top: 14px; }
+  .topo-caixa {
+    max-width: 1180px; margin: 0 auto; position: relative;
+    background: rgba(10, 12, 16, .82);
+    backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 99px;
+    padding: 10px 14px 10px 18px;
+    box-shadow: 0 22px 54px -18px rgba(0, 0, 0, .85), inset 0 1px 0 rgba(255, 255, 255, .1);
+    transition: border-radius .25s var(--suave), border-color .25s var(--suave), background .25s var(--suave);
+  }
+  .topo-caixa:hover { border-color: rgba(255, 255, 255, .18); }
+  .topo-linha { display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 50px; }
+  .logo { display: flex; align-items: center; gap: 12px; white-space: nowrap; flex-shrink: 0; }
+  .logo img { width: 36px; height: 36px; border-radius: 10px; box-shadow: 0 0 22px -4px var(--marca-brilho); transition: transform .25s var(--suave); }
+  .logo:hover img { transform: scale(1.05); }
+  .logo .nome { display: flex; flex-direction: column; line-height: 1.2; font-size: 13px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
+  .logo .por { display: flex; align-items: center; gap: 7px; font-size: 10.5px; font-weight: 600; letter-spacing: .1em; color: var(--texto3); margin-top: 2px; }
+  .logo .logo-v { font-size: 10px; font-weight: 750; letter-spacing: .03em; padding: 1px 7px; border-radius: 99px; background: var(--marca-fundo); border: 1px solid rgba(127, 178, 255, .28); color: var(--marca-claro); text-transform: lowercase; }
+  .menu {
+    display: flex; align-items: center; gap: 4px;
+    padding: 5px; border-radius: 99px;
+    background: rgba(255, 255, 255, .035);
+    border: 1px solid rgba(255, 255, 255, .07);
+  }
+  .menu a {
+    white-space: nowrap; padding: 8px 18px; border-radius: 99px;
+    font-size: 14px; font-weight: 650; color: var(--texto2);
+    transition: color .2s, background .2s, box-shadow .2s;
+  }
+  .menu a:hover { color: var(--texto); background: rgba(255, 255, 255, .06); }
+  .menu a.ativo {
+    color: var(--marca-claro);
+    background: var(--marca-fundo);
+    box-shadow: inset 0 0 0 1px rgba(127, 178, 255, .28);
+  }
+  .acoes-topo { display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
+  .acoes-topo .btn.p { padding: 9px 17px; font-size: 14px; }
+  .btn-menu-mob {
+    display: none; width: 40px; height: 40px; border-radius: 50%;
+    border: 1px solid var(--linha2); background: rgba(255, 255, 255, .06);
+    color: var(--texto); cursor: pointer; place-items: center;
+    transition: background .2s, border-color .2s;
+  }
+  .btn-menu-mob:hover { background: rgba(255, 255, 255, .12); }
+  .menu-mob {
+    display: none; flex-direction: column; gap: 4px;
+    margin-top: 12px; padding-top: 12px;
+    border-top: 1px solid var(--linha);
+  }
+  .menu-mob a {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; border-radius: 12px;
+    font-size: 14.5px; font-weight: 650; color: var(--texto2);
+    transition: background .2s, color .2s;
+  }
+  .menu-mob a:hover, .menu-mob a.ativo { background: var(--marca-fundo2); color: var(--texto); }
+  .menu-mob a svg { width: 15px; height: 15px; color: var(--texto3); }
+  .topo-caixa.aberto { border-radius: 26px; }
+  .topo-caixa.aberto .menu-mob { display: flex; }
+  @media (max-width: 960px) { .menu { display: none; } .acoes-topo { margin-left: auto; } .btn-menu-mob { display: grid; } }
+  @media (max-width: 600px) { .topo { padding: 0 10px; top: 8px; } .estrelas-topo, .logo .por { display: none !important; } .so-largo { display: none; } .acoes-topo .btn.p { padding: 8px 14px; } }
+  @media (max-width: 420px) { .logo .nome { display: none !important; } }
 
   /* ---------------------------------------------------------- botoes */
   .btn {
@@ -104,6 +167,8 @@
   .btn .coracao-i, .coracao-i { color: #ff5c86; }
   .btn.estrelar { background: linear-gradient(180deg, #ffd978, #f0b23c); color: #2a1d00; border-color: rgba(255,255,255,.25); font-weight: 750; }
   .btn.estrelar .estrela { color: #2a1d00; }
+  .btn.gh-btn { background: rgba(255,255,255,.09); color: var(--texto); border-color: rgba(255,255,255,.22); font-weight: 700; }
+  .btn.gh-btn:hover { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.36); }
   .btn.apoiar { background: linear-gradient(180deg, #e3eeff, #a9cbff); color: var(--sobre-marca); border-color: rgba(255,255,255,.35); font-weight: 750; }
   .btn.ig { background: linear-gradient(135deg, #f9ce34, #ee2a7b 45%, #6228d7); color: #fff; border-color: rgba(255,255,255,.2); font-weight: 750; }
   .btn.estrelar:hover, .btn.apoiar:hover, .btn.ig:hover { filter: brightness(1.06); }
@@ -131,7 +196,8 @@
   h1 em, h1 em.palavra { font-style: normal; background: linear-gradient(to bottom, #d6e7ff, var(--marca2) 55%, var(--marca)); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .hero p.sub { margin: 24px auto 34px; max-width: 37em; font-size: clamp(16px, 1.5vw, 19px); color: var(--texto2); }
   .acoes { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: center; }
-  .miudo { font-size: 13px; color: var(--texto3); margin-top: 16px; }
+  .miudo { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; font-size: 13px; color: var(--texto3); margin-top: 16px; }
+  .miudo b { color: var(--texto2); font-weight: 650; }
 
   /* faixa "funciona com" */
   .funciona { margin-top: 34px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
@@ -258,13 +324,28 @@
   }
 
   /* ---------------------------------------------------------- numeros */
-  .numeros .largura { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; border-radius: 20px; overflow: hidden; border: 1px solid var(--linha); background: var(--linha); padding: 0; max-width: 1156px; }
-  .numeros div { background: var(--superficie); padding: 22px 24px; display: flex; gap: 14px; align-items: center; }
-  .numeros div > svg { width: 22px; height: 22px; color: var(--marca2); flex: none; }
-  .numeros b { display: block; font-size: 24px; font-weight: 650; letter-spacing: -.03em; line-height: 1.1; }
-  .numeros span { font-size: 13px; color: var(--texto2); }
-  @media (max-width: 860px) { .numeros .largura { grid-template-columns: 1fr 1fr; margin: 0 22px; } }
-  @media (max-width: 480px) { .numeros div { padding: 16px; } .numeros b { font-size: 20px; } }
+  .numeros .largura { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; max-width: 1180px; }
+  .num-card {
+    background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.018));
+    border: 1px solid var(--linha2);
+    border-radius: 20px;
+    padding: 20px 22px;
+    display: flex; gap: 14px; align-items: center;
+    transition: transform .3s var(--suave), border-color .3s var(--suave), background .3s var(--suave);
+  }
+  .num-card:hover { transform: translateY(-3px); border-color: rgba(127,178,255,.38); background: rgba(61,139,255,.07); }
+  .num-card .n-ic {
+    width: 44px; height: 44px; border-radius: 13px; flex: none;
+    display: grid; place-items: center;
+    background: var(--marca-fundo); border: 1px solid rgba(127,178,255,.28); color: var(--marca-claro);
+    box-shadow: 0 10px 24px -10px var(--marca-brilho);
+  }
+  .num-card .n-ic svg { width: 20px; height: 20px; }
+  .num-card .n-txt { min-width: 0; }
+  .numeros b { display: block; font-size: 22px; font-weight: 750; letter-spacing: -.03em; line-height: 1.15; color: var(--texto); white-space: nowrap; }
+  .numeros span.n-sub { display: block; font-size: 13px; color: var(--texto2); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  @media (max-width: 980px) { .numeros .largura { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 520px) { .numeros .largura { grid-template-columns: 1fr; } .num-card { padding: 16px 18px; } }
 
   /* ---------------------------------------------------------- computacao local */
   #local { padding-bottom: 40px; }
@@ -375,7 +456,8 @@
   .garantias li { display: flex; gap: 10px; align-items: flex-start; font-size: 14.5px; color: var(--texto2); }
   .garantias li svg { color: var(--verde); margin-top: 3px; width: 17px; height: 17px; }
   .garantias b { color: var(--texto); }
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 22px; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 22px; }
+  @media (max-width: 520px) { .stats { grid-template-columns: repeat(2, 1fr); } }
   .stats div { padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,.035); border: 1px solid var(--linha); }
   .stats b { display: block; font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
   .stats span { font-size: 12px; color: var(--texto3); }
@@ -432,18 +514,76 @@
   .depo small svg.lucide { width: 12px; height: 12px; }
   .ver-video { text-align: center; margin-top: 10px; }
 
-  /* ---------------------------------------------------------- apoio (3 jeitos) */
+  /* ---------------------------------------------------------- apoio (niveis + comunidade) */
+  .niveis-apoio { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; text-align: left; align-items: stretch; }
+  @media (max-width: 1040px) { .niveis-apoio { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .niveis-apoio { grid-template-columns: 1fr; } }
+  .nivel-card {
+    display: flex; flex-direction: column; gap: 12px;
+    padding: 22px; border-radius: 20px;
+    border: 1px solid var(--linha2); background: var(--vidro);
+    transition: transform .3s var(--suave), border-color .3s var(--suave), background .3s var(--suave);
+  }
+  .nivel-card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,.24); background: var(--vidro2); }
+  .nivel-card.rec {
+    border-color: rgba(245,196,81,.48);
+    background: radial-gradient(ellipse 90% 70% at 100% 0%, rgba(245,196,81,.16), transparent 65%), rgba(245,196,81,.045);
+  }
+  .nivel-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 26px; }
+  .nivel-nome { display: inline-flex; align-items: center; gap: 8px; font-size: 16.5px; font-weight: 750; color: var(--texto); }
+  .nivel-nome svg { width: 18px; height: 18px; color: var(--marca2); }
+  .nivel-card.rec .nivel-nome svg { color: var(--estrela); }
+  .nivel-selo { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 99px; background: rgba(245,196,81,.16); border: 1px solid rgba(245,196,81,.4); color: var(--estrela); font-size: 11px; font-weight: 750; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
+  .nivel-selo svg { width: 12px; height: 12px; }
+  .nivel-preco { font-size: 28px; font-weight: 800; letter-spacing: -.03em; line-height: 1.1; color: var(--texto); }
+  .nivel-card.rec .nivel-preco { color: var(--estrela); }
+  .nivel-preco small { font-size: 12.5px; font-weight: 600; color: var(--texto3); letter-spacing: 0; margin-left: 4px; }
+  .nivel-desc { font-size: 13.5px; color: var(--texto2); line-height: 1.45; }
+  .nivel-lista { list-style: none; display: grid; gap: 7px; margin: 2px 0 6px; padding-top: 12px; border-top: 1px solid var(--linha); font-size: 13px; color: var(--texto2); line-height: 1.4; flex: 1; align-content: start; }
+  .nivel-lista li { display: grid; grid-template-columns: 16px 1fr; gap: 8px; align-items: start; }
+  .nivel-lista li svg { width: 15px; height: 15px; color: var(--marca2); margin-top: 2px; }
+  .nivel-card.rec .nivel-lista li svg { color: var(--estrela); }
+  .nivel-lista b { color: var(--texto); }
+  .nivel-card .btn { width: 100%; margin-top: auto; padding: 10px 14px; font-size: 13.5px; }
+
+  /* seletor compacto dos 4 niveis dentro dos modais */
+  .seletor-niveis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; margin: 2px 0; }
+  .nv-pill {
+    display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    padding: 8px 11px; border-radius: 11px;
+    border: 1px solid var(--linha2); background: rgba(5,6,7,.5);
+    font-size: 12.5px; font-weight: 650; color: var(--texto2);
+    cursor: pointer; text-align: left;
+    transition: border-color .2s, background .2s, color .2s, transform .2s;
+  }
+  .nv-pill:hover { border-color: rgba(245,196,81,.4); color: var(--texto); background: rgba(255,255,255,.05); }
+  .nv-pill[aria-pressed="true"] {
+    border-color: var(--estrela);
+    background: rgba(245,196,81,.15);
+    color: var(--texto);
+    box-shadow: inset 0 0 0 1px rgba(245,196,81,.35);
+  }
+  .nv-pill .nv-esq { display: inline-flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap; }
+  .nv-pill .nv-esq svg { width: 14px; height: 14px; color: var(--marca2); }
+  .nv-pill[aria-pressed="true"] .nv-esq svg { color: var(--estrela); }
+  .nv-pill .nv-val { font-weight: 800; color: var(--estrela); white-space: nowrap; font-size: 12.5px; }
+  .nv-pill .nv-rec { display: inline-flex; align-items: center; font-size: 10px; padding: 2px 5px; border-radius: 99px; background: rgba(245,196,81,.22); color: var(--estrela); font-weight: 750; }
+  .nv-pill .nv-rec svg { width: 10px; height: 10px; color: var(--estrela); }
+  @media (max-width: 440px) { .seletor-niveis { grid-template-columns: 1fr; } }
+
   .formas { display: grid; gap: 12px; text-align: left; }
-  .formas.lado { grid-template-columns: repeat(3, 1fr); }
+  .formas.lado { grid-template-columns: repeat(2, 1fr); }
   @media (max-width: 900px) { .formas.lado { grid-template-columns: 1fr; } }
   .forma { display: grid; grid-template-columns: 44px 1fr; gap: 14px; padding: 18px; border-radius: 18px; border: 1px solid var(--linha); background: var(--vidro); }
-  .formas.lado .forma { padding: 24px; }
+  .formas.lado .forma { padding: 22px; }
   .forma .f-ic { width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; }
   .forma .f-ic svg { width: 20px; height: 20px; }
-  .forma b { display: block; font-size: 16px; font-weight: 700; }
-  .forma > div > small { display: block; color: var(--texto3); font-size: 13.5px; line-height: 1.5; margin: 4px 0 14px; }
+  .forma b { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 16px; font-weight: 700; }
+  .forma > div > small { display: block; color: var(--texto3); font-size: 13.5px; line-height: 1.5; margin: 4px 0 12px; }
   .forma .btn { padding: 9px 16px; font-size: 14px; white-space: normal; }
-  .f-estrela .f-ic { color: var(--estrela); background: rgba(245,196,81,.1); border: 1px solid rgba(245,196,81,.3); }
+  .f-colab { border-color: rgba(245,196,81,.45); background: radial-gradient(ellipse 90% 70% at 100% 0%, rgba(245,196,81,.15), transparent 65%), rgba(245,196,81,.04); }
+  .f-colab .f-ic { color: #2a1d00; background: linear-gradient(180deg, #ffd978, #f0b23c); box-shadow: 0 8px 20px -6px rgba(245,196,81,.5); }
+  .f-estrela .f-ic { color: #000; background: #fff; border: 1px solid rgba(255,255,255,.3); }
   .f-pix { border-color: rgba(61,139,255,.35); background: var(--marca-fundo2); }
   .f-pix .f-ic { color: #ff6f91; background: var(--marca-fundo); border: 1px solid rgba(127,178,255,.3); }
   .f-insta .f-ic { color: #fff; background: linear-gradient(135deg, #f9ce34, #ee2a7b 45%, #6228d7); }
@@ -476,8 +616,18 @@
   .modal-fundo.on { opacity: 1; pointer-events: auto; }
   .modal { position: relative; width: 100%; max-width: 520px; margin: auto 0; padding: 30px 26px 22px; border-radius: 26px; text-align: center;
     background: radial-gradient(ellipse 90% 45% at 50% 0%, rgba(61,139,255,.16), transparent 70%), var(--superficie); border: 1px solid var(--linha2); box-shadow: 0 50px 100px -30px rgba(0,0,0,.95);
-    transform: translateY(14px) scale(.98); transition: transform .35s var(--suave); }
-  .modal-fundo.on .modal { transform: none; }
+    filter: blur(14px); transform: translateY(18px) scale(.98); transition: transform .55s var(--suave), filter .6s var(--suave); }
+  .modal-fundo.on .modal { transform: none; filter: blur(0); }
+  .modal-fundo.on .modal .opcao,
+  .modal-fundo.on .modal .forma,
+  .modal-fundo.on .modal .seguranca { animation: entrar .85s var(--suave) both; }
+  .modal-fundo.on .modal .opcoes-exe .opcao:nth-child(1),
+  .modal-fundo.on .modal .formas .forma:nth-child(1) { animation-delay: 70ms; }
+  .modal-fundo.on .modal .opcoes-exe .opcao:nth-child(2),
+  .modal-fundo.on .modal .formas .forma:nth-child(2) { animation-delay: 160ms; }
+  .modal-fundo.on .modal > .opcao,
+  .modal-fundo.on .modal .formas .forma:nth-child(3) { animation-delay: 250ms; }
+  .modal-fundo.on .modal .formas .forma:nth-child(4) { animation-delay: 340ms; }
   .modal h3 { font-size: 22px; font-weight: 650; letter-spacing: -.02em; }
   .modal > p { color: var(--texto2); font-size: 15px; margin: 8px 0 18px; }
   .modal .btn { white-space: normal; text-align: center; }
@@ -487,18 +637,38 @@
   .modal .dica b { color: var(--texto2); }
   .fechar-x { position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--linha); background: transparent; color: var(--texto3); cursor: pointer; display: grid; place-items: center; }
   .fechar-x:hover { color: var(--texto); border-color: var(--linha2); }
-  .modal.escolha { max-width: 640px; text-align: left; }
+  .modal.escolha { max-width: 880px; text-align: left; }
   .modal.escolha > h3, .modal.escolha > p { text-align: center; }
-  .opcao { padding: 20px; border-radius: 18px; border: 1px solid var(--linha); background: var(--vidro); display: grid; gap: 14px; }
+  .opcoes-exe { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: stretch; margin-bottom: 14px; }
+  .opcao { padding: 20px; border-radius: 18px; border: 1px solid var(--linha); background: var(--vidro); display: flex; flex-direction: column; gap: 14px; }
   .opcao + .opcao { margin-top: 12px; }
+  .opcoes-exe .opcao + .opcao { margin-top: 0; }
   .opcao.recomendada { border-color: rgba(61,139,255,.4); background: var(--marca-fundo2); }
-  .opcao-topo { display: flex; gap: 14px; align-items: center; }
-  .opcao-topo b { display: block; font-size: 16.5px; font-weight: 700; }
-  .opcao-topo div > span { display: block; font-size: 13px; color: var(--texto3); }
+  .opcao.apoiador { border-color: rgba(245,196,81,.45); background: radial-gradient(ellipse 90% 70% at 100% 0%, rgba(245,196,81,.15), transparent 65%), rgba(245,196,81,.04); }
+  .opcao .btn.grande { margin-top: auto; width: 100%; }
+  .apoiador-selo { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; min-height: 28px; }
+  .gratis-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 99px; background: rgba(134,211,164,.14); border: 1px solid rgba(134,211,164,.35); color: var(--verde); font-size: 12px; font-weight: 750; }
+  .gratis-pill svg { width: 13px; height: 13px; }
+  .tag-gratis { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 99px; background: var(--marca-fundo); border: 1px solid rgba(127,178,255,.3); color: var(--marca-claro); font-size: 11.5px; font-weight: 750; text-transform: uppercase; letter-spacing: .08em; }
+  .vagas-pill { display: inline-flex; align-items: center; gap: 7px; padding: 4px 11px; border-radius: 99px; background: rgba(255,77,94,.14); border: 1px solid rgba(255,77,94,.38); color: #ff9aa3; font-size: 12px; font-weight: 750; letter-spacing: .02em; }
+  .ponto-vaga { width: 7px; height: 7px; border-radius: 50%; background: var(--vivo); animation: pulsa 1.6s infinite; }
+  .tag-exclusivo { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 99px; background: rgba(245,196,81,.14); border: 1px solid rgba(245,196,81,.35); color: var(--estrela); font-size: 11.5px; font-weight: 750; text-transform: uppercase; letter-spacing: .08em; }
+  .tag-exclusivo svg { width: 13px; height: 13px; }
+  .opcao-topo { display: flex; gap: 13px; align-items: center; min-height: 46px; }
+  .opcao-topo div { min-width: 0; }
+  .opcao-topo b { display: block; font-size: 16px; font-weight: 750; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .opcao-topo div > span { display: block; font-size: 12.5px; color: var(--texto3); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
   .opcao-ic { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; flex: none; background: linear-gradient(180deg, var(--marca2), var(--marca)); color: var(--sobre-marca); }
   .opcao-ic svg { width: 20px; height: 20px; }
   .opcao-ic.github { background: #fff; color: #000; }
-  .seguranca { padding: 14px 16px; border-radius: 14px; background: rgba(245,196,81,.06); border: 1px solid rgba(245,196,81,.25); font-size: 14px; color: var(--texto2); }
+  .opcao-ic.apoiador-ic { background: linear-gradient(180deg, #ffd978, #f0b23c); color: #2a1d00; box-shadow: 0 10px 24px -8px rgba(245,196,81,.5); }
+  .beneficios-apoiador, .beneficios-gratis { flex: 1; list-style: none; display: grid; align-content: start; gap: 10px; padding: 14px 16px; border-radius: 14px; background: rgba(5,6,7,.45); border: 1px solid rgba(245,196,81,.22); font-size: 13.5px; color: var(--texto2); line-height: 1.45; }
+  .beneficios-gratis { border-color: rgba(61,139,255,.22); }
+  .beneficios-apoiador li, .beneficios-gratis li { display: grid; grid-template-columns: 18px 1fr; gap: 9px; align-items: start; }
+  .beneficios-apoiador li svg { width: 16px; height: 16px; color: var(--estrela); margin-top: 2px; }
+  .beneficios-gratis li svg { width: 16px; height: 16px; color: var(--marca2); margin-top: 2px; }
+  .beneficios-apoiador b, .beneficios-gratis b { color: var(--texto); }
+  .seguranca { padding: 14px 16px; border-radius: 14px; background: rgba(245,196,81,.06); border: 1px solid rgba(245,196,81,.25); font-size: 13.5px; color: var(--texto2); text-align: left; }
   .seguranca > b { display: flex; align-items: center; gap: 8px; color: var(--estrela); font-size: 14px; margin-bottom: 6px; }
   .seguranca p { margin: 0 0 8px; }
   .seguranca ol { padding-left: 20px; display: grid; gap: 4px; }
@@ -506,6 +676,7 @@
   .opcao-texto { font-size: 14px; color: var(--texto2); }
   .botoes-opcao { display: flex; flex-wrap: wrap; gap: 8px; }
   .botoes-opcao .btn { padding: 9px 15px; font-size: 14px; }
+  @media (max-width: 760px) { .opcoes-exe { grid-template-columns: 1fr; } }
   @media (max-width: 480px) { .botoes-opcao .btn { flex: 1 1 100%; } .opcao { padding: 16px; } .modal { padding: 26px 18px 18px; } }
 
   /* ---------------------------------------------------------- contorno girando nos destaques */
@@ -519,11 +690,22 @@
     animation: girar 4.5s linear infinite;
   }
   .contorno.brilha { box-shadow: 0 0 0 1px rgba(61,139,255,.08), 0 24px 70px -30px rgba(61,139,255,.55); }
+  .f-colab.contorno::before,
+  .opcao.apoiador.contorno::before,
+  .nivel-card.rec.contorno::before {
+    background: conic-gradient(from var(--giro), transparent 0deg, transparent 200deg, rgba(245,196,81,.9) 270deg, #fff6d6 310deg, rgba(255,217,120,.95) 330deg, transparent 360deg);
+  }
+  .f-colab.contorno.brilha,
+  .opcao.apoiador.contorno.brilha,
+  .nivel-card.rec.contorno.brilha {
+    box-shadow: 0 0 0 1px rgba(245,196,81,.14), 0 24px 70px -30px rgba(245,196,81,.48);
+  }
   @keyframes girar { to { --giro: 360deg; } }
 
   /* ---------------------------------------------------------- aparecer ao rolar: desfocado -> nitido */
-  .surge { opacity: 0; filter: blur(16px); transform: translateY(34px) scale(.985); transition: opacity 1s var(--suave), filter 1.1s var(--suave), transform 1.1s var(--suave); transition-delay: calc(var(--d, 0) * 1ms); }
+  .surge { opacity: 0; filter: blur(16px); transform: translateY(34px) scale(.985); transition: opacity 1s var(--suave), filter 1.1s var(--suave), transform 1.1s var(--suave), border-color .3s var(--suave), background .3s var(--suave); transition-delay: calc(var(--d, 0) * 1ms); }
   .surge.visto { opacity: 1; filter: blur(0); transform: none; }
+  .surge.visto:hover { transition-delay: 0ms; }
   .entra { animation: entrar 1.2s var(--suave) both; animation-delay: calc(var(--d, 0) * 1ms); }
   h1 .palavra { display: inline-block; animation: entrar 1.1s var(--suave) both; animation-delay: calc(var(--d, 0) * 1ms); }
   @keyframes entrar { from { opacity: 0; filter: blur(18px); transform: translateY(24px); } to { opacity: 1; filter: blur(0); transform: none; } }
@@ -543,25 +725,42 @@
   <symbol id="m-youtube" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></symbol>
   <symbol id="m-github" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></symbol>
   <symbol id="m-instagram" viewBox="0 0 24 24"><path d="M7.0301.084c-1.2768.0602-2.1487.264-2.911.5634-.7888.3075-1.4575.72-2.1228 1.3877-.6652.6677-1.075 1.3368-1.3802 2.127-.2954.7638-.4956 1.6365-.552 2.914-.0564 1.2775-.0689 1.6882-.0626 4.947.0062 3.2586.0206 3.6671.0825 4.9473.061 1.2765.264 2.1482.5635 2.9107.308.7889.72 1.4573 1.388 2.1228.6679.6655 1.3365 1.0743 2.1285 1.38.7632.295 1.6361.4961 2.9134.552 1.2773.056 1.6884.069 4.9462.0627 3.2578-.0062 3.668-.0207 4.9478-.0814 1.28-.0607 2.147-.2652 2.9098-.5633.7889-.3086 1.4578-.72 2.1228-1.3881.665-.6682 1.0745-1.3378 1.3795-2.1284.2957-.7632.4966-1.636.552-2.9124.056-1.2809.0692-1.6898.063-4.948-.0063-3.2583-.021-3.6668-.0817-4.9465-.0607-1.2797-.264-2.1487-.5633-2.9117-.3084-.7889-.72-1.4568-1.3876-2.1228C21.2982 1.33 20.628.9208 19.8378.6165 19.074.321 18.2017.1197 16.9244.0645 15.6471.0093 15.236-.005 11.977.0014 8.718.0076 8.31.0215 7.0301.0839m.1402 21.6932c-1.17-.0509-1.8053-.2453-2.2287-.408-.5606-.216-.96-.4771-1.3819-.895-.422-.4178-.6811-.8186-.9-1.378-.1644-.4234-.3624-1.058-.4171-2.228-.0595-1.2645-.072-1.6442-.079-4.848-.007-3.2037.0053-3.583.0607-4.848.05-1.169.2456-1.805.408-2.2282.216-.5613.4762-.96.895-1.3816.4188-.4217.8184-.6814 1.3783-.9003.423-.1651 1.0575-.3614 2.227-.4171 1.2655-.06 1.6447-.072 4.848-.079 3.2033-.007 3.5835.005 4.8495.0608 1.169.0508 1.8053.2445 2.228.408.5608.216.96.4754 1.3816.895.4217.4194.6816.8176.9005 1.3787.1653.4217.3617 1.056.4169 2.2263.0602 1.2655.0739 1.645.0796 4.848.0058 3.203-.0055 3.5834-.061 4.848-.051 1.17-.245 1.8055-.408 2.2294-.216.5604-.4763.96-.8954 1.3814-.419.4215-.8181.6811-1.3783.9-.4224.1649-1.0577.3617-2.2262.4174-1.2656.0595-1.6448.072-4.8493.079-3.2045.007-3.5825-.006-4.848-.0608M16.953 5.5864A1.44 1.44 0 1 0 18.39 4.144a1.44 1.44 0 0 0-1.437 1.4424M5.8385 12.012c.0067 3.4032 2.7706 6.1557 6.173 6.1493 3.4026-.0065 6.157-2.7701 6.1506-6.1733-.0065-3.4032-2.771-6.1565-6.174-6.1498-3.403.0067-6.156 2.771-6.1496 6.1738M8 12.0077a4 4 0 1 1 4.008 3.9921A3.9996 3.9996 0 0 1 8 12.0077"/></symbol>
+  <symbol id="m-whatsapp" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></symbol>
 </svg>
 
 <header class="topo">
-  <div class="largura">
-    <a class="logo" href="#"><img src="icone.png" alt=""><span class="nome">Cortador Automático<span class="por">por Gabriel Workspace</span></span></a>
-    <nav class="menu">
-      <a href="#painel">Painel</a>
-      <a href="#como">Como funciona</a>
-      <a href="#formatos">Formatos</a>
-      <a href="#recursos" class="opc">Recursos</a>
-      <a href="#codigo">Código aberto</a>
-      <a href="#requisitos" class="opc">Requisitos</a>
-      <a href="#apoiar">Apoiar</a>
-    </nav>
-    <div class="acoes-topo">
-      <a class="btn p estrelas-topo" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener" aria-label="Dar uma estrela no GitHub"><svg class="ic-m"><use href="#m-github"/></svg> <i data-lucide="star" class="estrela"></i> <span class="conta" data-estrelas hidden></span></a>
-      <button class="btn p abrir-apoio" type="button"><i data-lucide="heart" class="coracao-i"></i> <span class="so-largo">Apoiar</span></button>
-      <a class="btn principal p baixar" href="#"><i data-lucide="download"></i> Baixar grátis</a>
+  <div class="topo-caixa" id="topoCaixa">
+    <div class="topo-linha">
+      <a class="logo" href="#">
+        <img src="icone.png" alt="">
+        <span class="nome">
+          <span>Cortador Automático</span>
+          <span class="por">Gabriel Workspace <span class="logo-v">v<span data-versao-num>2.0.7</span></span></span>
+        </span>
+      </a>
+      <nav class="menu" aria-label="Navegação principal">
+        <a href="#painel" class="ativo">Painel</a>
+        <a href="#como">Como funciona</a>
+        <a href="#recursos">Recursos</a>
+        <a href="#duvidas">Dúvidas</a>
+      </nav>
+      <div class="acoes-topo">
+        <a class="btn p estrelas-topo" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener" aria-label="Dar uma estrela no GitHub"><svg class="ic-m"><use href="#m-github"/></svg> <i data-lucide="star" class="estrela"></i> <span class="conta" data-estrelas hidden></span></a>
+        <button class="btn p abrir-apoio" type="button"><i data-lucide="heart" class="coracao-i"></i> <span class="so-largo">Apoiar</span></button>
+        <a class="btn principal p baixar" href="#"><i data-lucide="download"></i> Baixar grátis</a>
+        <button class="btn-menu-mob" id="btnMenuMob" type="button" aria-label="Abrir menu" aria-expanded="false"><i data-lucide="menu"></i></button>
+      </div>
     </div>
+    <nav class="menu-mob" id="menuMob" aria-label="Menu móvel">
+      <a href="#painel">Painel interativo <i data-lucide="arrow-right"></i></a>
+      <a href="#como">Como funciona <i data-lucide="arrow-right"></i></a>
+      <a href="#formatos">Formatos de corte <i data-lucide="arrow-right"></i></a>
+      <a href="#recursos">Recursos <i data-lucide="arrow-right"></i></a>
+      <a href="#codigo">Código aberto <i data-lucide="arrow-right"></i></a>
+      <a href="#requisitos">Requisitos <i data-lucide="arrow-right"></i></a>
+      <a href="#apoiar">Apoiar e Colaborar <i data-lucide="arrow-right"></i></a>
+      <a href="#duvidas">Perguntas frequentes <i data-lucide="arrow-right"></i></a>
+    </nav>
   </div>
 </header>
 
@@ -580,8 +779,9 @@
         <div class="acoes entra" style="--d:850">
           <a class="btn principal grande baixar" href="#"><i data-lucide="download"></i> Baixar grátis para Windows</a>
           <a class="btn grande" href="#painel"><i data-lucide="mouse-pointer-click"></i> Ver o painel</a>
+          <a class="btn grande" href="https://www.youtube.com/watch?v=Tdh3GG2KA_o" target="_blank" rel="noopener"><svg class="ic-m" style="color:var(--youtube)"><use href="#m-youtube"/></svg> Ver em vídeo</a>
         </div>
-        <div class="miudo entra" style="--d:950">Windows 10 e 11 (64 bits) · instalador completo · <span data-versao>versão mais nova</span></div>
+        <div class="miudo entra" style="--d:950"><b data-downloads>+100 downloads</b> · Windows 10 e 11 (64 bits) · instalador completo · <span data-versao>versão mais nova</span></div>
         <div class="funciona entra" style="--d:1050">
           <span>Funciona com</span>
           <div class="plataformas">
@@ -651,10 +851,10 @@
 
   <div class="numeros">
     <div class="largura" data-escalonar>
-      <div><i data-lucide="timer"></i><span><b>~15 s</b>do lance ao clipe pronto, ao vivo</span></div>
-      <div><i data-lucide="gamepad-2"></i><span><b>Qualquer jogo</b>e qualquer live ou vídeo</span></div>
-      <div><i data-lucide="radio"></i><span><b>3 plataformas</b>Twitch, Kick e YouTube</span></div>
-      <div><i data-lucide="shield-check"></i><span><b>R$ 0</b>sem conta, sem assinatura, sem API</span></div>
+      <div class="num-card"><span class="n-ic"><i data-lucide="download"></i></span><div class="n-txt"><b data-downloads>+1.200 downloads</b><span class="n-sub">clipadores já usando no PC</span></div></div>
+      <div class="num-card"><span class="n-ic"><i data-lucide="timer"></i></span><div class="n-txt"><b>~15 segundos</b><span class="n-sub">do lance ao clipe ao vivo</span></div></div>
+      <div class="num-card"><span class="n-ic"><i data-lucide="gamepad-2"></i></span><div class="n-txt"><b>Qualquer jogo</b><span class="n-sub">Twitch, Kick, YouTube e PC</span></div></div>
+      <div class="num-card"><span class="n-ic"><i data-lucide="shield-check"></i></span><div class="n-txt"><b>100% Grátis</b><span class="n-sub">sem conta, assinatura ou API</span></div></div>
     </div>
   </div>
 
@@ -679,6 +879,50 @@
           <span class="preco">R$ 0</span>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== quem ja usa -->
+  <section id="comentarios">
+    <div class="largura">
+      <div class="titulo surge">
+        <span class="rot"><i data-lucide="messages-square"></i> Quem já usa</span>
+        <h2>O que a galera está falando.</h2>
+        <p>Comentários de verdade de quem baixou, deixados no vídeo do Cortador Automático no YouTube.</p>
+      </div>
+      <div class="depos" data-escalonar>
+          <figure class="depo destaque contorno brilha">
+            <i data-lucide="quote" class="aspas"></i>
+            <blockquote>Que Deus abençoe a sua vida meu irmão! tudo que eu achei pra cortes prometiam que era grátis, mas no final tinha que pagar algo. Com esse programa já fiz vários cortes e postei, muito obrigado</blockquote>
+            <figcaption><span class="avatar-letra">K</span><span><b>@kauann-pereira</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube</small></span></figcaption>
+          </figure>
+          <figure class="depo">
+            <i data-lucide="quote" class="aspas"></i>
+            <blockquote>… eu tava procurando isso há muito tempo! Você é uma lenda, irmão! Até me inscrevi, fera demais!!!</blockquote>
+            <figcaption><span class="avatar-letra">V</span><span><b>@ViceGamesOficial</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube</small></span></figcaption>
+          </figure>
+          <figure class="depo">
+            <i data-lucide="quote" class="aspas"></i>
+            <blockquote>top de mais eu já teste muito legal…</blockquote>
+            <figcaption><span class="avatar-letra">D</span><span><b>@DallasFitBurst</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube · <i data-lucide="thumbs-up"></i> 7</small></span></figcaption>
+          </figure>
+          <figure class="depo">
+            <i data-lucide="quote" class="aspas"></i>
+            <blockquote>po cara, faz tempo eu queria achar algo parecido, tentei, baixei um monte de paranaue no claude e nao consegui, isso que tu postou ai … atendeu minhas necessidades, valeu mesmo</blockquote>
+            <figcaption><span class="avatar-letra">I</span><span><b>@its_biles</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube</small></span></figcaption>
+          </figure>
+          <figure class="depo">
+            <i data-lucide="quote" class="aspas"></i>
+            <blockquote>deu bom aqui aliado, vídeo brabo</blockquote>
+            <figcaption><span class="avatar-letra">S</span><span><b>@straikdsgrm</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube · <i data-lucide="thumbs-up"></i> 2</small></span></figcaption>
+          </figure>
+          <figure class="depo">
+            <i data-lucide="quote" class="aspas"></i>
+            <blockquote>muito boa sua ferramenta, obrigado!</blockquote>
+            <figcaption><span class="avatar-letra">T</span><span><b>@TheCenturysGame</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube</small></span></figcaption>
+          </figure>
+      </div>
+      <div class="ver-video surge"><a class="btn" href="https://www.youtube.com/watch?v=Tdh3GG2KA_o" target="_blank" rel="noopener"><svg class="ic-m" style="color:var(--youtube)"><use href="#m-youtube"/></svg> Ver o vídeo e todos os comentários <i data-lucide="external-link"></i></a></div>
     </div>
   </section>
 
@@ -816,6 +1060,7 @@
           <h3>Dá pra conferir tudo</h3>
           <p>Antivírus reclamou? Ficou com dúvida? O código está lá, aberto, do jeito que vai no instalador.</p>
           <div class="stats">
+            <div><b data-downloads-num>+100</b><span>downloads</span></div>
             <div><b data-estrelas-num>—</b><span>estrelas</span></div>
             <div><b data-versao-num>—</b><span>versão</span></div>
             <div><b>R$ 0</b><span>sempre</span></div>
@@ -878,74 +1123,76 @@
     </div>
   </section>
 
-  <!-- ======================================================== quem ja usa -->
-  <section id="comentarios">
-    <div class="largura">
-      <div class="titulo surge">
-        <span class="rot"><i data-lucide="messages-square"></i> Quem já usa</span>
-        <h2>O que a galera está falando.</h2>
-        <p>Comentários de verdade de quem baixou, deixados no vídeo do Cortador Automático no YouTube.</p>
-      </div>
-      <div class="depos" data-escalonar>
-          <figure class="depo destaque contorno brilha">
-            <i data-lucide="quote" class="aspas"></i>
-            <blockquote>Que Deus abençoe a sua vida meu irmão! tudo que eu achei pra cortes prometiam que era grátis, mas no final tinha que pagar algo. Com esse programa já fiz vários cortes e postei, muito obrigado</blockquote>
-            <figcaption><span class="avatar-letra">K</span><span><b>@kauann-pereira</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube</small></span></figcaption>
-          </figure>
-          <figure class="depo">
-            <i data-lucide="quote" class="aspas"></i>
-            <blockquote>… eu tava procurando isso há muito tempo! Você é uma lenda, irmão! Até me inscrevi, fera demais!!!</blockquote>
-            <figcaption><span class="avatar-letra">V</span><span><b>@ViceGamesOficial</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube</small></span></figcaption>
-          </figure>
-          <figure class="depo">
-            <i data-lucide="quote" class="aspas"></i>
-            <blockquote>top de mais eu já teste muito legal…</blockquote>
-            <figcaption><span class="avatar-letra">D</span><span><b>@DallasFitBurst</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube · <i data-lucide="thumbs-up"></i> 7</small></span></figcaption>
-          </figure>
-          <figure class="depo">
-            <i data-lucide="quote" class="aspas"></i>
-            <blockquote>po cara, faz tempo eu queria achar algo parecido, tentei, baixei um monte de paranaue no claude e nao consegui, isso que tu postou ai … atendeu minhas necessidades, valeu mesmo</blockquote>
-            <figcaption><span class="avatar-letra">I</span><span><b>@its_biles</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube</small></span></figcaption>
-          </figure>
-          <figure class="depo">
-            <i data-lucide="quote" class="aspas"></i>
-            <blockquote>deu bom aqui aliado, vídeo brabo</blockquote>
-            <figcaption><span class="avatar-letra">S</span><span><b>@straikdsgrm</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube · <i data-lucide="thumbs-up"></i> 2</small></span></figcaption>
-          </figure>
-          <figure class="depo">
-            <i data-lucide="quote" class="aspas"></i>
-            <blockquote>muito boa sua ferramenta, obrigado!</blockquote>
-            <figcaption><span class="avatar-letra">T</span><span><b>@TheCenturysGame</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube</small></span></figcaption>
-          </figure>
-      </div>
-      <div class="ver-video surge"><a class="btn" href="https://www.youtube.com/watch?v=Tdh3GG2KA_o" target="_blank" rel="noopener"><svg class="ic-m" style="color:var(--youtube)"><use href="#m-youtube"/></svg> Ver o vídeo e todos os comentários <i data-lucide="external-link"></i></a></div>
-    </div>
-  </section>
-
   <!-- ======================================================== apoio -->
   <section id="apoiar">
     <div class="largura">
       <div class="titulo surge">
-        <span class="rot"><i data-lucide="heart-handshake"></i> Apoie o projeto</span>
-        <h2>Feito por uma pessoa. Grátis pra todo mundo.</h2>
-        <p>O Cortador é do Gabriel Workspace e vai continuar grátis. Se ele te ajudou, dá pra apoiar de três jeitos:</p>
+        <span class="rot"><i data-lucide="heart-handshake"></i> Apoie o código aberto</span>
+        <h2>O programa é grátis. Quem vê valor escolhe quanto quer apoiar.</h2>
+        <p>Já estamos chegando a 1.500 downloads e +50 estrelas no GitHub. A ferramenta continua 100% gratuita, mas você pode impulsionar o desenvolvimento escolhendo um nível de apoio:</p>
+      </div>
+      <div class="niveis-apoio" data-escalonar>
+        <div class="nivel-card">
+          <div class="nivel-topo">
+            <span class="nivel-nome"><i data-lucide="coffee"></i> Apoio</span>
+          </div>
+          <div class="nivel-preco">R$ 10 <small>contribuição</small></div>
+          <p class="nivel-desc">Ajuda a manter o projeto ativo e gratuito pra todo mundo.</p>
+          <ul class="nivel-lista">
+            <li><i data-lucide="circle-check"></i><span>Ajuda a manter o Cortador 100% grátis</span></li>
+            <li><i data-lucide="circle-check"></i><span>Apoia correções e manutenção contínua</span></li>
+          </ul>
+          <a class="btn" href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20contribuir%20com%20o%20n%C3%ADvel%20Apoio%20(R%24%2010)%20no%20Cortador%20Autom%C3%A1tico!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> Apoiar com R$ 10</a>
+        </div>
+        <div class="nivel-card rec contorno brilha">
+          <div class="nivel-topo">
+            <span class="nivel-nome"><i data-lucide="rocket"></i> Colaborador</span>
+            <span class="nivel-selo"><i data-lucide="star"></i> Recomendado</span>
+          </div>
+          <div class="nivel-preco">R$ 25 <small>contribuição</small></div>
+          <p class="nivel-desc">Ajuda no desenvolvimento e nas próximas atualizações.</p>
+          <ul class="nivel-lista">
+            <li><i data-lucide="circle-check"></i><span><b>Acesso antecipado</b> a ideias e novas versões</span></li>
+            <li><i data-lucide="circle-check"></i><span><b>Sugestões diretas</b> para as atualizações</span></li>
+            <li><i data-lucide="circle-check"></i><span><b>Seu nome no projeto</b> como colaborador</span></li>
+          </ul>
+          <a class="btn estrelar" href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20participar%20no%20n%C3%ADvel%20Colaborador%20(R%24%2025)%20do%20Cortador%20Autom%C3%A1tico!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> Ser Colaborador · R$ 25</a>
+        </div>
+        <div class="nivel-card">
+          <div class="nivel-topo">
+            <span class="nivel-nome"><i data-lucide="gem"></i> Apoiador</span>
+            <span class="vagas-pill" style="font-size:10.5px;padding:2px 8px"><span class="ponto-vaga"></span> 20 vagas</span>
+          </div>
+          <div class="nivel-preco">R$ 50 <small>contribuição</small></div>
+          <p class="nivel-desc">Para quem quer contribuir mais de perto com o projeto.</p>
+          <ul class="nivel-lista">
+            <li><i data-lucide="circle-check"></i><span><b>Tudo do Colaborador</b> + <b>Versão única exclusiva</b></span></li>
+            <li><i data-lucide="circle-check"></i><span><b>Prioridade nas sugestões</b> de novos recursos</span></li>
+            <li><i data-lucide="circle-check"></i><span><b>Seu nome em destaque</b> no projeto</span></li>
+          </ul>
+          <a class="btn" href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20participar%20no%20n%C3%ADvel%20Apoiador%20(R%24%2050)%20do%20Cortador%20Autom%C3%A1tico!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> Ser Apoiador · R$ 50</a>
+        </div>
+        <div class="nivel-card">
+          <div class="nivel-topo">
+            <span class="nivel-nome"><i data-lucide="wrench"></i> Patrocinador</span>
+          </div>
+          <div class="nivel-preco">R$ 100+ <small>contribuição</small></div>
+          <p class="nivel-desc">Para quem realmente quer financiar o desenvolvimento.</p>
+          <ul class="nivel-lista">
+            <li><i data-lucide="circle-check"></i><span><b>Tudo do Apoiador</b> + contato direto no WhatsApp</span></li>
+            <li><i data-lucide="circle-check"></i><span><b>Nome ou @canal</b> como patrocinador no projeto</span></li>
+            <li><i data-lucide="circle-check"></i><span><b>Prioridade máxima</b> em ajustes pro seu canal</span></li>
+          </ul>
+          <a class="btn" href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20apoiar%20como%20Patrocinador%20(R%24%20100%2B)%20do%20Cortador%20Autom%C3%A1tico!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> Ser Patrocinador · R$ 100+</a>
+        </div>
       </div>
       <div class="formas lado" data-escalonar>
       <div class="forma f-estrela">
-        <span class="f-ic"><i data-lucide="star"></i></span>
+        <span class="f-ic"><svg class="ic-m"><use href="#m-github"/></svg></span>
         <div>
           <b>Dê uma estrela no GitHub</b>
           <small>Grátis e leva 2 segundos. Faz o Cortador ser encontrado por mais clipadores.</small>
-          <a class="btn estrelar" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener"><i data-lucide="star" class="estrela"></i> Dar uma estrela <span class="conta" data-estrelas hidden></span></a>
-        </div>
-      </div>
-      <div class="forma f-pix apoio-pix contorno" hidden>
-        <span class="f-ic"><i data-lucide="heart"></i></span>
-        <div>
-          <b>Mande qualquer valor por Pix</b>
-          <small>Qualquer valor, de qualquer banco. Ajuda a manter o programa grátis e as atualizações saindo.</small>
-          <div class="pix" hidden><small>Chave Pix (aleatória)</small><code class="pix-chave"></code></div>
-          <button class="btn apoiar copiar-pix" type="button"><i data-lucide="copy"></i> Copiar a chave Pix</button>
+          <a class="btn gh-btn" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-github"/></svg> <i data-lucide="star" class="estrela"></i> Dar uma estrela <span class="conta" data-estrelas hidden></span></a>
         </div>
       </div>
       <div class="forma f-insta">
@@ -1012,22 +1259,48 @@
   <div class="modal escolha">
     <button class="fechar-x" type="button" data-fechar aria-label="Fechar"><i data-lucide="x"></i></button>
     <h3 id="escolherTitulo">Como você quer baixar?</h3>
-    <p>As duas opções são grátis e instalam o mesmo programa.</p>
-    <div class="opcao recomendada contorno">
-      <div class="opcao-topo">
-        <span class="opcao-ic"><i data-lucide="download"></i></span>
-        <div><b>Instalador para Windows (.exe)</b><span>Recomendado · tudo dentro, é só clicar em Avançar · ~770 MB</span></div>
+    <p>Compare a versão gratuita com a versão exclusiva de apoiador, ou baixe o código pelo GitHub.</p>
+    <div class="opcoes-exe">
+      <div class="opcao recomendada contorno">
+        <div class="apoiador-selo">
+          <span class="gratis-pill"><i data-lucide="download"></i> <span data-downloads>+100 downloads</span></span>
+          <span class="tag-gratis">100% Grátis</span>
+        </div>
+        <div class="opcao-topo">
+          <span class="opcao-ic"><i data-lucide="download"></i></span>
+          <div><b>Instalador (.exe) · Versão Gratuita</b><span>Grátis para sempre · é só clicar em Avançar · ~770 MB</span></div>
+        </div>
+        <ul class="beneficios-gratis">
+          <li><i data-lucide="circle-check"></i><span><b>Cortes ilimitados:</b> clipa lives ao vivo (Twitch, Kick, YouTube) e vídeos gravados do PC.</span></li>
+          <li><i data-lucide="circle-check"></i><span><b>Pronto pra postar:</b> enquadra rosto + jogo em 9:16 com legenda automática e título SEO.</span></li>
+          <li><i data-lucide="circle-check"></i><span><b>100% no seu PC:</b> sem marca d'água, sem cadastro, sem assinatura e sem chave de API.</span></li>
+          <li><i data-lucide="circle-check"></i><span><b>Instalador completo:</b> já traz tudo configurado para Windows 10 e 11 (64 bits).</span></li>
+        </ul>
+        <a class="btn principal grande" id="btnBaixarExe" href="#"><i data-lucide="download"></i> Baixar versão gratuita (.exe)</a>
       </div>
-      <div class="seguranca">
-        <b><i data-lucide="shield-alert"></i> Sobre o aviso do Windows</b>
-        <p>O Cortador Automático ainda <b>não tem certificado de assinatura digital</b>. O pedido já foi feito pra SignPath Foundation, que dá esse certificado de graça pra projetos de código aberto, e está em análise. Enquanto ele não sai, o Windows mostra <b>"O Windows protegeu o computador"</b> pra qualquer programa novo sem certificado. Isso não quer dizer que é vírus.</p>
-        <ol>
-          <li>Abra o instalador e clique em <b>Mais informações</b>.</li>
-          <li>Clique em <b>Executar assim mesmo</b>.</li>
-          <li>Se o antivírus reclamar, libere a pasta do Cortador Automático. O código é aberto: dá pra conferir tudo no GitHub.</li>
-        </ol>
+      <div class="opcao apoiador contorno brilha" data-grupo-nivel>
+        <div class="apoiador-selo">
+          <span class="vagas-pill"><span class="ponto-vaga"></span> 20 vagas restantes</span>
+          <span class="tag-exclusivo"><i data-lucide="star"></i> Recomendado</span>
+        </div>
+        <div class="opcao-topo">
+          <span class="opcao-ic apoiador-ic"><i data-lucide="crown"></i></span>
+          <div><b>Seja um Apoiador do Projeto</b><span>Escolha quanto quer contribuir com o desenvolvimento</span></div>
+        </div>
+        <div class="seletor-niveis" role="group" aria-label="Escolha o nível de apoio">
+          <button type="button" class="nv-pill" data-nivel="apoio" aria-pressed="false"><span class="nv-esq"><i data-lucide="coffee"></i> Apoio</span><span class="nv-val">R$ 10</span></button>
+          <button type="button" class="nv-pill" data-nivel="colaborador" aria-pressed="true"><span class="nv-esq"><i data-lucide="rocket"></i> Colaborador <span class="nv-rec"><i data-lucide="star"></i></span></span><span class="nv-val">R$ 25</span></button>
+          <button type="button" class="nv-pill" data-nivel="apoiador" aria-pressed="false"><span class="nv-esq"><i data-lucide="gem"></i> Apoiador</span><span class="nv-val">R$ 50</span></button>
+          <button type="button" class="nv-pill" data-nivel="patrocinador" aria-pressed="false"><span class="nv-esq"><i data-lucide="wrench"></i> Patrocinador</span><span class="nv-val">R$ 100+</span></button>
+        </div>
+        <ul class="beneficios-apoiador">
+          <li><i data-lucide="circle-check"></i><span data-nivel-resumo><b>Colaborador (R$ 25):</b> ajuda diretamente no desenvolvimento e nas próximas atualizações.</span></li>
+          <li><i data-lucide="circle-check"></i><span><b>Versão exclusiva + acesso antecipado:</b> receba novas versões e ideias antes de todo mundo.</span></li>
+          <li><i data-lucide="circle-check"></i><span><b>Sugestões para atualizações:</b> dê ideias, sugira funções e participe de cada atualização.</span></li>
+          <li><i data-lucide="circle-check"></i><span><b>Seu nome no projeto:</b> reconhecimento oficial com seu nome registrado no projeto.</span></li>
+        </ul>
+        <a class="btn estrelar grande" data-nivel-link href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20apoiar%20o%20Cortador%20Autom%C3%A1tico%20no%20n%C3%ADvel%20Colaborador%20(R%24%2025)%20e%20garantir%20minha%20vaga!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> <span data-nivel-btn>Ser Colaborador · R$ 25 (WhatsApp)</span></a>
       </div>
-      <a class="btn principal grande" id="btnBaixarExe" href="#"><i data-lucide="download"></i> Entendi, baixar o instalador</a>
     </div>
     <div class="opcao">
       <div class="opcao-topo">
@@ -1047,23 +1320,32 @@
 <div class="modal-fundo" id="obrigado" role="dialog" aria-modal="true" aria-labelledby="obrigadoTitulo">
   <div class="modal">
     <h3 id="obrigadoTitulo">Seu download começou!</h3>
-    <p>O Cortador é grátis e feito por uma pessoa. Se quiser ajudar a manter ele assim, escolha um jeito:</p>
+    <p>Enquanto o instalador baixa, veja como abrir rapidinho e como apoiar o projeto:</p>
+    <div class="seguranca" style="margin-bottom:14px">
+      <b><i data-lucide="shield-alert"></i> Como abrir o instalador no Windows</b>
+      <p>Enquanto o nosso certificado gratuito da SignPath Foundation está em análise, o Windows pode mostrar <b>"O Windows protegeu o computador"</b>. É só clicar em <b>Mais informações</b> e depois em <b>Executar assim mesmo</b>.</p>
+    </div>
     <div class="formas">
+      <div class="forma f-colab contorno" data-grupo-nivel>
+        <span class="f-ic"><i data-lucide="crown"></i></span>
+        <div>
+          <b>Apoie o desenvolvimento <span class="vagas-pill"><span class="ponto-vaga"></span> 20 vagas restantes</span></b>
+          <small data-nivel-resumo><b>Colaborador (R$ 25):</b> ajuda no desenvolvimento, com acesso antecipado, sugestões e seu nome no projeto.</small>
+          <div class="seletor-niveis" style="margin-bottom:12px" role="group" aria-label="Escolha o nível de apoio">
+            <button type="button" class="nv-pill" data-nivel="apoio" aria-pressed="false"><span class="nv-esq"><i data-lucide="coffee"></i> Apoio</span><span class="nv-val">R$ 10</span></button>
+            <button type="button" class="nv-pill" data-nivel="colaborador" aria-pressed="true"><span class="nv-esq"><i data-lucide="rocket"></i> Colaborador <span class="nv-rec"><i data-lucide="star"></i></span></span><span class="nv-val">R$ 25</span></button>
+            <button type="button" class="nv-pill" data-nivel="apoiador" aria-pressed="false"><span class="nv-esq"><i data-lucide="gem"></i> Apoiador</span><span class="nv-val">R$ 50</span></button>
+            <button type="button" class="nv-pill" data-nivel="patrocinador" aria-pressed="false"><span class="nv-esq"><i data-lucide="wrench"></i> Patrocinador</span><span class="nv-val">R$ 100+</span></button>
+          </div>
+          <a class="btn estrelar" data-nivel-link href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20apoiar%20o%20Cortador%20Autom%C3%A1tico%20no%20n%C3%ADvel%20Colaborador%20(R%24%2025)%20e%20garantir%20minha%20vaga!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> <span data-nivel-btn>Ser Colaborador · R$ 25 (WhatsApp)</span></a>
+        </div>
+      </div>
       <div class="forma f-estrela">
-        <span class="f-ic"><i data-lucide="star"></i></span>
+        <span class="f-ic"><svg class="ic-m"><use href="#m-github"/></svg></span>
         <div>
           <b>Dê uma estrela no GitHub</b>
           <small>Grátis e leva 2 segundos. Faz o Cortador ser encontrado por mais clipadores.</small>
-          <a class="btn estrelar" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener"><i data-lucide="star" class="estrela"></i> Dar uma estrela <span class="conta" data-estrelas hidden></span></a>
-        </div>
-      </div>
-      <div class="forma f-pix apoio-pix contorno" hidden>
-        <span class="f-ic"><i data-lucide="heart"></i></span>
-        <div>
-          <b>Mande qualquer valor por Pix</b>
-          <small>Qualquer valor, de qualquer banco. Ajuda a manter o programa grátis e as atualizações saindo.</small>
-          <div class="pix" hidden><small>Chave Pix (aleatória)</small><code class="pix-chave"></code></div>
-          <button class="btn apoiar copiar-pix" type="button"><i data-lucide="copy"></i> Copiar a chave Pix</button>
+          <a class="btn gh-btn" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-github"/></svg> <i data-lucide="star" class="estrela"></i> Dar uma estrela <span class="conta" data-estrelas hidden></span></a>
         </div>
       </div>
       <div class="forma f-insta">
@@ -1083,23 +1365,28 @@
 <div class="modal-fundo" id="apoio" role="dialog" aria-modal="true" aria-labelledby="apoioTitulo">
   <div class="modal">
     <h3 id="apoioTitulo">Apoie o Cortador Automático</h3>
-    <p>Obrigado por querer ajudar! Escolha um jeito, ou os três:</p>
+    <p>Obrigado por querer ajudar! Escolha como prefere apoiar ou participar:</p>
     <div class="formas">
+      <div class="forma f-colab contorno" data-grupo-nivel>
+        <span class="f-ic"><i data-lucide="crown"></i></span>
+        <div>
+          <b>Apoie o desenvolvimento <span class="vagas-pill"><span class="ponto-vaga"></span> 20 vagas restantes</span></b>
+          <small data-nivel-resumo><b>Colaborador (R$ 25):</b> ajuda no desenvolvimento, com acesso antecipado, sugestões e seu nome no projeto.</small>
+          <div class="seletor-niveis" style="margin-bottom:12px" role="group" aria-label="Escolha o nível de apoio">
+            <button type="button" class="nv-pill" data-nivel="apoio" aria-pressed="false"><span class="nv-esq"><i data-lucide="coffee"></i> Apoio</span><span class="nv-val">R$ 10</span></button>
+            <button type="button" class="nv-pill" data-nivel="colaborador" aria-pressed="true"><span class="nv-esq"><i data-lucide="rocket"></i> Colaborador <span class="nv-rec"><i data-lucide="star"></i></span></span><span class="nv-val">R$ 25</span></button>
+            <button type="button" class="nv-pill" data-nivel="apoiador" aria-pressed="false"><span class="nv-esq"><i data-lucide="gem"></i> Apoiador</span><span class="nv-val">R$ 50</span></button>
+            <button type="button" class="nv-pill" data-nivel="patrocinador" aria-pressed="false"><span class="nv-esq"><i data-lucide="wrench"></i> Patrocinador</span><span class="nv-val">R$ 100+</span></button>
+          </div>
+          <a class="btn estrelar" data-nivel-link href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20apoiar%20o%20Cortador%20Autom%C3%A1tico%20no%20n%C3%ADvel%20Colaborador%20(R%24%2025)%20e%20garantir%20minha%20vaga!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> <span data-nivel-btn>Ser Colaborador · R$ 25 (WhatsApp)</span></a>
+        </div>
+      </div>
       <div class="forma f-estrela">
-        <span class="f-ic"><i data-lucide="star"></i></span>
+        <span class="f-ic"><svg class="ic-m"><use href="#m-github"/></svg></span>
         <div>
           <b>Dê uma estrela no GitHub</b>
           <small>Grátis e leva 2 segundos. Faz o Cortador ser encontrado por mais clipadores.</small>
-          <a class="btn estrelar" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener"><i data-lucide="star" class="estrela"></i> Dar uma estrela <span class="conta" data-estrelas hidden></span></a>
-        </div>
-      </div>
-      <div class="forma f-pix apoio-pix contorno" hidden>
-        <span class="f-ic"><i data-lucide="heart"></i></span>
-        <div>
-          <b>Mande qualquer valor por Pix</b>
-          <small>Qualquer valor, de qualquer banco. Ajuda a manter o programa grátis e as atualizações saindo.</small>
-          <div class="pix" hidden><small>Chave Pix (aleatória)</small><code class="pix-chave"></code></div>
-          <button class="btn apoiar copiar-pix" type="button"><i data-lucide="copy"></i> Copiar a chave Pix</button>
+          <a class="btn gh-btn" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-github"/></svg> <i data-lucide="star" class="estrela"></i> Dar uma estrela <span class="conta" data-estrelas hidden></span></a>
         </div>
       </div>
       <div class="forma f-insta">
@@ -1172,7 +1459,7 @@
       var n = CORTES.indexOf(c);
       var vivo = /^Ao vivo/.test(c.origem);
       return '<button type="button" class="clipe" data-n="' + n + '" style="--d:' + (i * 60) + '" aria-pressed="false" aria-label="' + c.titulo + '">' +
-        '<span class="mini"><img src="' + c.capa + '" alt="" loading="lazy">' +
+        '<span class="mini"><img src="' + c.capa + '" alt="" width="270" height="480" decoding="async"' + (i > 3 ? ' loading="lazy"' : '') + '>' +
         '<span class="tag">' + (vivo ? '<span class="ponto"></span> Ao vivo' : '<i data-lucide="film"></i> Gravado') + '</span>' +
         '<span class="dur">' + c.dur + '</span><span class="play"><i data-lucide="play"></i></span></span>' +
         '<b>' + c.titulo + '</b><span class="sub">' + nomeJogo(c.jogo) + ' · ' + c.formato + '</span></button>';
@@ -1231,21 +1518,29 @@
     blur: { video: 'jogos/formato-blur.mp4', capa: 'jogos/formato-blur.jpg', nome: 'Fundo desfocado', tam: '1080×1920' },
     original: { video: 'jogos/formato-original.mp4', capa: 'jogos/formato-original.jpg', nome: 'Original', tam: 'deitado, como a live' },
   };
-  var fmtVisivel = false;
-  function mostrarFormato(id) {
+  var fmtVisivel = false, fmtAtual = 'split';
+  function carregarVideoFmt(id) {
     var f = FORMATOS[id]; if (!f) return;
+    var v = id === 'original' ? $('fmtDeitado') : $('fmtVideo');
+    if (v.getAttribute('src') !== f.video) { v.poster = f.capa; v.src = f.video; }
+    return v;
+  }
+  function mostrarFormato(id, carregarAgora) {
+    var f = FORMATOS[id]; if (!f) return;
+    fmtAtual = id;
     document.querySelectorAll('.fmt').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.fmt === id)); b.classList.toggle('contorno', b.dataset.fmt === id); });
     $('palcoFmt').classList.toggle('original', id === 'original');
     var v = id === 'original' ? $('fmtDeitado') : $('fmtVideo');
     var outro = id === 'original' ? $('fmtVideo') : $('fmtDeitado');
     outro.pause();
-    if (v.getAttribute('src') !== f.video) { v.poster = f.capa; v.src = f.video; }
+    v.poster = f.capa;
+    if (carregarAgora || fmtVisivel) carregarVideoFmt(id);
     v.parentNode.classList.remove('troca'); void v.parentNode.offsetWidth; v.parentNode.classList.add('troca');
     if (!semMovimento && fmtVisivel) { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
     $('fmtEtiqueta').innerHTML = '<b>' + f.nome + '</b> · ' + f.tam;
   }
-  document.querySelectorAll('.fmt').forEach(function (b) { b.addEventListener('click', function () { mostrarFormato(b.dataset.fmt); }); });
-  mostrarFormato('split');
+  document.querySelectorAll('.fmt').forEach(function (b) { b.addEventListener('click', function () { mostrarFormato(b.dataset.fmt, true); }); });
+  mostrarFormato('split', false);
 
   // ---------------------------------------------------------------- janelas
   function abrir(id) {
@@ -1268,6 +1563,40 @@
     m.addEventListener('click', function (e) { if (e.target === m || e.target.closest('[data-fechar]')) fechar(); });
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') fechar(); });
+
+  // ---------------------------------------------------------------- niveis de apoio interativos
+  var NIVEIS = {
+    apoio: {
+      resumo: '<b>Apoio (R$ 10):</b> ajuda a manter o projeto ativo e gratuito pra todo mundo.',
+      btn: 'Apoiar com R$ 10 (WhatsApp)',
+      msg: 'Olá Gabriel! Quero contribuir com o nível Apoio (R$ 10) no Cortador Automático!'
+    },
+    colaborador: {
+      resumo: '<b>Colaborador (R$ 25 · Recomendado):</b> ajuda no desenvolvimento, com acesso antecipado, sugestões e seu nome no projeto.',
+      btn: 'Ser Colaborador · R$ 25 (WhatsApp)',
+      msg: 'Olá Gabriel! Quero apoiar o Cortador Automático no nível Colaborador (R$ 25) e garantir minha vaga!'
+    },
+    apoiador: {
+      resumo: '<b>Apoiador (R$ 50):</b> para quem quer contribuir mais, com versão única exclusiva, prioridade em sugestões e nome em destaque no projeto.',
+      btn: 'Ser Apoiador · R$ 50 (WhatsApp)',
+      msg: 'Olá Gabriel! Quero apoiar o Cortador Automático no nível Apoiador (R$ 50) e garantir uma das 20 vagas!'
+    },
+    patrocinador: {
+      resumo: '<b>Patrocinador (R$ 100+):</b> para quem quer financiar o desenvolvimento, com contato direto e nome/@canal em destaque no projeto.',
+      btn: 'Ser Patrocinador · R$ 100+ (WhatsApp)',
+      msg: 'Olá Gabriel! Quero apoiar como Patrocinador (R$ 100+) do Cortador Automático!'
+    }
+  };
+  document.querySelectorAll('[data-grupo-nivel]').forEach(function (grupo) {
+    grupo.addEventListener('click', function (e) {
+      var pill = e.target.closest('.nv-pill'); if (!pill) return;
+      var id = pill.dataset.nivel, nv = NIVEIS[id]; if (!nv) return;
+      grupo.querySelectorAll('.nv-pill').forEach(function (b) { b.setAttribute('aria-pressed', String(b === pill)); });
+      var res = grupo.querySelector('[data-nivel-resumo]'); if (res) res.innerHTML = nv.resumo;
+      var btn = grupo.querySelector('[data-nivel-btn]'); if (btn) btn.textContent = nv.btn;
+      var lnk = grupo.querySelector('[data-nivel-link]'); if (lnk) lnk.href = 'https://wa.me/5521971296791?text=' + encodeURIComponent(nv.msg);
+    });
+  });
 
   // ---------------------------------------------------------------- Pix
   if (DOACAO.pix) {
@@ -1306,18 +1635,52 @@
     });
   });
 
-  // ---------------------------------------------------------------- GitHub: estrelas e versao
-  fetch('https://api.github.com/repos/' + REPO).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
-    if (!j || typeof j.stargazers_count !== 'number') return;
-    document.querySelectorAll('[data-estrelas]').forEach(function (el) { el.textContent = j.stargazers_count; el.hidden = false; });
-    document.querySelectorAll('[data-estrelas-num]').forEach(function (el) { el.textContent = j.stargazers_count; });
-  }).catch(function () {});
-  fetch('https://api.github.com/repos/' + REPO + '/releases/latest').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
-    if (!j || !j.tag_name) return;
-    var v = j.tag_name.replace(/^v/, '');
-    document.querySelectorAll('[data-versao]').forEach(function (el) { el.textContent = 'versão ' + v; });
-    document.querySelectorAll('[data-versao-num]').forEach(function (el) { el.textContent = v; });
-  }).catch(function () {});
+  // ---------------------------------------------------------------- GitHub: estrelas, versao e downloads (com cache de 15 min)
+  function aplicarDadosGh(d) {
+    if (!d) return;
+    if (typeof d.estrelas === 'number') {
+      document.querySelectorAll('[data-estrelas]').forEach(function (el) { el.textContent = d.estrelas; el.hidden = false; });
+      document.querySelectorAll('[data-estrelas-num]').forEach(function (el) { el.textContent = d.estrelas; });
+    }
+    if (d.versao) {
+      document.querySelectorAll('[data-versao]').forEach(function (el) { el.textContent = 'versão ' + d.versao; });
+      document.querySelectorAll('[data-versao-num]').forEach(function (el) { el.textContent = d.versao; });
+    }
+    if (typeof d.downloads === 'number' && d.downloads > 100) {
+      var txt = '+' + d.downloads.toLocaleString('pt-BR');
+      document.querySelectorAll('[data-downloads]').forEach(function (el) { el.textContent = txt + ' downloads'; });
+      document.querySelectorAll('[data-downloads-num]').forEach(function (el) { el.textContent = txt; });
+    }
+  }
+  var cacheGh = null;
+  try { cacheGh = JSON.parse(sessionStorage.getItem('cortador_gh') || 'null'); } catch (_) {}
+  if (cacheGh && cacheGh.ts && (Date.now() - cacheGh.ts < 900000)) {
+    aplicarDadosGh(cacheGh);
+  } else {
+    if (cacheGh) aplicarDadosGh(cacheGh);
+    var estadoGh = cacheGh || {};
+    var salvarGh = function () {
+      estadoGh.ts = Date.now();
+      try { sessionStorage.setItem('cortador_gh', JSON.stringify(estadoGh)); } catch (_) {}
+      aplicarDadosGh(estadoGh);
+    };
+    fetch('https://api.github.com/repos/' + REPO).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      if (!j || typeof j.stargazers_count !== 'number') return;
+      estadoGh.estrelas = j.stargazers_count;
+      salvarGh();
+    }).catch(function () {});
+    fetch('https://api.github.com/repos/' + REPO + '/releases').then(function (r) { return r.ok ? r.json() : null; }).then(function (lista) {
+      if (!Array.isArray(lista) || !lista.length) return;
+      var j = lista[0];
+      if (j && j.tag_name) estadoGh.versao = j.tag_name.replace(/^v/, '');
+      var total = 0;
+      lista.forEach(function (rel) {
+        if (Array.isArray(rel.assets)) rel.assets.forEach(function (a) { total += (a.download_count || 0); });
+      });
+      if (total > 100) estadoGh.downloads = total;
+      salvarGh();
+    }).catch(function () {});
+  }
 
   // ---------------------------------------------------------------- efeitos
   icones();
@@ -1378,15 +1741,44 @@
           if (painelVisivel && !semMovimento) { var p = v.play(); if (p && p.catch) p.catch(function () {}); } else v.pause();
         } else {
           fmtVisivel = it.isIntersecting;
-          var ativo = $('palcoFmt').classList.contains('original') ? $('fmtDeitado') : $('fmtVideo');
-          if (fmtVisivel && !semMovimento) { var q = ativo.play(); if (q && q.catch) q.catch(function () {}); } else ativo.pause();
+          var ativo = carregarVideoFmt(fmtAtual);
+          if (fmtVisivel && !semMovimento && ativo) { var q = ativo.play(); if (q && q.catch) q.catch(function () {}); } else if (ativo) ativo.pause();
         }
       });
     }, { threshold: 0.25 });
     obsVideo.observe($('painel'));
     obsVideo.observe($('formatos'));
+
+    // menu do topo: marca a secao ativa conforme rola a pagina
+    var linksTopo = document.querySelectorAll('.menu a, .menu-mob a');
+    var mapaTopo = { painel: '#painel', local: '#painel', comentarios: '#painel', como: '#como', formatos: '#como', recursos: '#recursos', codigo: '#recursos', requisitos: '#recursos', apoiar: '#duvidas', duvidas: '#duvidas' };
+    var obsSecao = new IntersectionObserver(function (itens) {
+      itens.forEach(function (it) {
+        if (!it.isIntersecting) return;
+        var alvo = mapaTopo[it.target.id] || ('#' + it.target.id);
+        linksTopo.forEach(function (a) { a.classList.toggle('ativo', a.getAttribute('href') === alvo || a.getAttribute('href') === ('#' + it.target.id)); });
+      });
+    }, { rootMargin: '-35% 0px -55% 0px' });
+    ['painel', 'local', 'comentarios', 'como', 'formatos', 'recursos', 'codigo', 'requisitos', 'apoiar', 'duvidas'].forEach(function (id) {
+      var el = $(id); if (el) obsSecao.observe(el);
+    });
   } else {
     document.querySelectorAll('.surge').forEach(function (el) { el.classList.add('visto'); });
+  }
+
+  // menu mobile (abrir/fechar)
+  var btnMob = $('btnMenuMob'), topoCaixa = $('topoCaixa');
+  if (btnMob && topoCaixa) {
+    btnMob.addEventListener('click', function () {
+      var abriu = topoCaixa.classList.toggle('aberto');
+      btnMob.setAttribute('aria-expanded', String(abriu));
+    });
+    document.querySelectorAll('#menuMob a').forEach(function (a) {
+      a.addEventListener('click', function () {
+        topoCaixa.classList.remove('aberto');
+        btnMob.setAttribute('aria-expanded', 'false');
+      });
+    });
   }
 })();
 </script>

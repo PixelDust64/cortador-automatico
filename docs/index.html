@@ -171,11 +171,16 @@
   /* ---------------------------------------------------------- hero */
   .hero { padding: 76px 0 24px; text-align: center; }
   .hero-texto { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
-  .selo { display: inline-flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 9px; padding: 7px 8px 7px 14px; border-radius: 99px; margin-bottom: 26px;
+  .selos-hero { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; margin-bottom: 26px; }
+  .selo { display: inline-flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 9px; padding: 7px 8px 7px 14px; border-radius: 99px;
     border: 1px solid var(--linha2); background: rgba(255,255,255,.04); backdrop-filter: blur(8px); color: var(--texto2); font-size: 13px; font-weight: 550; }
+  .selo-downloads { display: inline-flex; align-items: center; gap: 7px; padding: 7px 15px; border-radius: 99px;
+    border: 1px solid rgba(134,211,164,.38); background: rgba(134,211,164,.12); backdrop-filter: blur(8px); color: var(--verde); font-size: 13px; font-weight: 750; box-shadow: 0 10px 26px -10px rgba(134,211,164,.35); }
+  .selo-downloads svg { width: 15px; height: 15px; }
   .selo-link { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 99px; background: var(--marca-fundo); color: var(--marca-claro); font-weight: 650; }
   .selo-link:hover { background: rgba(61,139,255,.25); }
   .ponto { width: 9px; height: 9px; border-radius: 50%; background: var(--vivo); flex: none; animation: pulsa 1.6s infinite; }
+  .ponto-verde { width: 8px; height: 8px; border-radius: 50%; background: var(--verde); flex: none; box-shadow: 0 0 10px var(--verde); }
   @keyframes pulsa { 0% { box-shadow: 0 0 0 0 rgba(255,77,94,.55); } 70% { box-shadow: 0 0 0 9px rgba(255,77,94,0); } 100% { box-shadow: 0 0 0 0 rgba(255,77,94,0); } }
   h1 { font-size: clamp(40px, 6.6vw, 80px); line-height: 1.03; letter-spacing: -.05em; font-weight: 600; max-width: 13.5em; }
   h1, h1 .palavra { background: linear-gradient(to bottom, #fff, #fff 50%, rgba(255,255,255,.62)); -webkit-background-clip: text; background-clip: text; color: transparent; }
@@ -183,7 +188,8 @@
   h1 em, h1 em.palavra { font-style: normal; background: linear-gradient(to bottom, #d6e7ff, var(--marca2) 55%, var(--marca)); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .hero p.sub { margin: 24px auto 34px; max-width: 37em; font-size: clamp(16px, 1.5vw, 19px); color: var(--texto2); }
   .acoes { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: center; }
-  .miudo { font-size: 13px; color: var(--texto3); margin-top: 16px; }
+  .miudo { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; font-size: 13.5px; color: var(--texto3); margin-top: 18px; }
+  .miudo-dl { display: inline-flex; align-items: center; gap: 6px; padding: 3px 11px; border-radius: 99px; background: rgba(134,211,164,.13); border: 1px solid rgba(134,211,164,.35); color: var(--verde); font-weight: 750; font-size: 13px; }
 
   /* faixa "funciona com" */
   .funciona { margin-top: 34px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
@@ -663,18 +669,25 @@
   <div class="hero">
     <div class="largura">
       <div class="hero-texto">
-        <span class="selo entra" style="--d:0">
-          <span class="ponto"></span>
-          <span>Novo na versão 2.0.7: cartão com o nome do streamer</span>
-          <a class="selo-link" href="https://github.com/gabrielworkspace/cortador-automatico/releases/latest" target="_blank" rel="noopener">Ver novidades <i data-lucide="arrow-right"></i></a>
-        </span>
+        <div class="selos-hero entra" style="--d:0">
+          <span class="selo-downloads">
+            <span class="ponto-verde"></span>
+            <i data-lucide="download"></i>
+            <span>+ de 100 downloads</span>
+          </span>
+          <span class="selo">
+            <span class="ponto"></span>
+            <span>Novo na versão 2.0.7: cartão com o nome do streamer</span>
+            <a class="selo-link" href="https://github.com/gabrielworkspace/cortador-automatico/releases/latest" target="_blank" rel="noopener">Ver novidades <i data-lucide="arrow-right"></i></a>
+          </span>
+        </div>
         <h1 id="titulo">Sua live de qualquer jogo vira <em>corte em pé</em> sozinha.</h1>
         <p class="sub entra" style="--d:700">GTA, Valorant, CS, LoL, Fortnite, Minecraft... Cole o link da live ou do vídeo: o Cortador Automático acha os melhores momentos, enquadra rosto e jogo em 9:16 e entrega os clipes prontos pro TikTok, Reels e Shorts. Grátis, código aberto e no seu PC.</p>
         <div class="acoes entra" style="--d:850">
           <a class="btn principal grande baixar" href="#"><i data-lucide="download"></i> Baixar grátis para Windows</a>
           <a class="btn grande" href="#painel"><i data-lucide="mouse-pointer-click"></i> Ver o painel</a>
         </div>
-        <div class="miudo entra" style="--d:950"><b style="color:var(--verde)">Mais de 100 downloads</b> · Windows 10 e 11 (64 bits) · instalador completo · <span data-versao>versão mais nova</span></div>
+        <div class="miudo entra" style="--d:950"><span class="miudo-dl"><i data-lucide="download"></i> + de 100 downloads</span><span>Windows 10 e 11 (64 bits) · instalador completo · <span data-versao>versão mais nova</span></span></div>
         <div class="funciona entra" style="--d:1050">
           <span>Funciona com</span>
           <div class="plataformas">

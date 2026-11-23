@@ -169,6 +169,8 @@
   .btn .coracao-i, .coracao-i { color: #ff5c86; }
   .btn.estrelar { background: linear-gradient(180deg, #ffd978, #f0b23c); color: #2a1d00; border-color: rgba(255,255,255,.25); font-weight: 750; }
   .btn.estrelar .estrela { color: #2a1d00; }
+  .btn.gh-btn { background: rgba(255,255,255,.09); color: var(--texto); border-color: rgba(255,255,255,.22); font-weight: 700; }
+  .btn.gh-btn:hover { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.36); }
   .btn.apoiar { background: linear-gradient(180deg, #e3eeff, #a9cbff); color: var(--sobre-marca); border-color: rgba(255,255,255,.35); font-weight: 750; }
   .btn.ig { background: linear-gradient(135deg, #f9ce34, #ee2a7b 45%, #6228d7); color: #fff; border-color: rgba(255,255,255,.2); font-weight: 750; }
   .btn.estrelar:hover, .btn.apoiar:hover, .btn.ig:hover { filter: brightness(1.06); }
@@ -527,7 +529,7 @@
   .forma .btn { padding: 9px 16px; font-size: 14px; white-space: normal; }
   .f-colab { border-color: rgba(245,196,81,.45); background: radial-gradient(ellipse 90% 70% at 100% 0%, rgba(245,196,81,.15), transparent 65%), rgba(245,196,81,.04); }
   .f-colab .f-ic { color: #2a1d00; background: linear-gradient(180deg, #ffd978, #f0b23c); box-shadow: 0 8px 20px -6px rgba(245,196,81,.5); }
-  .f-estrela .f-ic { color: var(--estrela); background: rgba(245,196,81,.1); border: 1px solid rgba(245,196,81,.3); }
+  .f-estrela .f-ic { color: #000; background: #fff; border: 1px solid rgba(255,255,255,.3); }
   .f-pix { border-color: rgba(61,139,255,.35); background: var(--marca-fundo2); }
   .f-pix .f-ic { color: #ff6f91; background: var(--marca-fundo); border: 1px solid rgba(127,178,255,.3); }
   .f-insta .f-ic { color: #fff; background: linear-gradient(135deg, #f9ce34, #ee2a7b 45%, #6228d7); }
@@ -1070,7 +1072,7 @@
       </div>
       <div class="formas lado" data-escalonar>
       <div class="forma f-colab contorno brilha">
-        <span class="f-ic"><i data-lucide="sparkles"></i></span>
+        <span class="f-ic"><i data-lucide="crown"></i></span>
         <div>
           <b>Torne-se um colaborador <span class="vagas-pill"><span class="ponto-vaga"></span> 20 vagas restantes</span></b>
           <small>Acesso antecipado a ideias e novas versões, versão única exclusiva para apoiadores e seu nome no projeto.</small>
@@ -1078,11 +1080,11 @@
         </div>
       </div>
       <div class="forma f-estrela">
-        <span class="f-ic"><i data-lucide="star"></i></span>
+        <span class="f-ic"><svg class="ic-m"><use href="#m-github"/></svg></span>
         <div>
           <b>Dê uma estrela no GitHub</b>
           <small>Grátis e leva 2 segundos. Faz o Cortador ser encontrado por mais clipadores.</small>
-          <a class="btn estrelar" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener"><i data-lucide="star" class="estrela"></i> Dar uma estrela <span class="conta" data-estrelas hidden></span></a>
+          <a class="btn gh-btn" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-github"/></svg> <i data-lucide="star" class="estrela"></i> Dar uma estrela <span class="conta" data-estrelas hidden></span></a>
         </div>
       </div>
       <div class="forma f-pix apoio-pix contorno" hidden>
@@ -1220,7 +1222,7 @@
     </div>
     <div class="formas">
       <div class="forma f-colab contorno">
-        <span class="f-ic"><i data-lucide="sparkles"></i></span>
+        <span class="f-ic"><i data-lucide="crown"></i></span>
         <div>
           <b>Torne-se um colaborador <span class="vagas-pill"><span class="ponto-vaga"></span> 20 vagas restantes</span></b>
           <small>Acesso antecipado a ideias e novas versões, versão única exclusiva e seu nome no projeto.</small>
@@ -1228,11 +1230,11 @@
         </div>
       </div>
       <div class="forma f-estrela">
-        <span class="f-ic"><i data-lucide="star"></i></span>
+        <span class="f-ic"><svg class="ic-m"><use href="#m-github"/></svg></span>
         <div>
           <b>Dê uma estrela no GitHub</b>
           <small>Grátis e leva 2 segundos. Faz o Cortador ser encontrado por mais clipadores.</small>
-          <a class="btn estrelar" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener"><i data-lucide="star" class="estrela"></i> Dar uma estrela <span class="conta" data-estrelas hidden></span></a>
+          <a class="btn gh-btn" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-github"/></svg> <i data-lucide="star" class="estrela"></i> Dar uma estrela <span class="conta" data-estrelas hidden></span></a>
         </div>
       </div>
       <div class="forma f-pix apoio-pix contorno" hidden>
@@ -1264,7 +1266,7 @@
     <p>Obrigado por querer ajudar! Escolha como prefere apoiar ou participar:</p>
     <div class="formas">
       <div class="forma f-colab contorno">
-        <span class="f-ic"><i data-lucide="sparkles"></i></span>
+        <span class="f-ic"><i data-lucide="crown"></i></span>
         <div>
           <b>Torne-se um colaborador <span class="vagas-pill"><span class="ponto-vaga"></span> 20 vagas restantes</span></b>
           <small>Acesso antecipado a ideias e novas versões, versão única exclusiva e seu nome no projeto.</small>
@@ -1272,11 +1274,11 @@
         </div>
       </div>
       <div class="forma f-estrela">
-        <span class="f-ic"><i data-lucide="star"></i></span>
+        <span class="f-ic"><svg class="ic-m"><use href="#m-github"/></svg></span>
         <div>
           <b>Dê uma estrela no GitHub</b>
           <small>Grátis e leva 2 segundos. Faz o Cortador ser encontrado por mais clipadores.</small>
-          <a class="btn estrelar" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener"><i data-lucide="star" class="estrela"></i> Dar uma estrela <span class="conta" data-estrelas hidden></span></a>
+          <a class="btn gh-btn" href="https://github.com/gabrielworkspace/cortador-automatico" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-github"/></svg> <i data-lucide="star" class="estrela"></i> Dar uma estrela <span class="conta" data-estrelas hidden></span></a>
         </div>
       </div>
       <div class="forma f-pix apoio-pix contorno" hidden>

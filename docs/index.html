@@ -568,11 +568,13 @@
   .opcao-ic svg { width: 20px; height: 20px; }
   .opcao-ic.github { background: #fff; color: #000; }
   .opcao-ic.apoiador-ic { background: linear-gradient(180deg, #ffd978, #f0b23c); color: #2a1d00; box-shadow: 0 10px 24px -8px rgba(245,196,81,.5); }
-  .beneficios-apoiador { flex: 1; list-style: none; display: grid; align-content: start; gap: 10px; padding: 14px 16px; border-radius: 14px; background: rgba(5,6,7,.45); border: 1px solid rgba(245,196,81,.22); font-size: 13.5px; color: var(--texto2); line-height: 1.45; }
-  .beneficios-apoiador li { display: grid; grid-template-columns: 18px 1fr; gap: 9px; align-items: start; }
+  .beneficios-apoiador, .beneficios-gratis { flex: 1; list-style: none; display: grid; align-content: start; gap: 10px; padding: 14px 16px; border-radius: 14px; background: rgba(5,6,7,.45); border: 1px solid rgba(245,196,81,.22); font-size: 13.5px; color: var(--texto2); line-height: 1.45; }
+  .beneficios-gratis { border-color: rgba(61,139,255,.22); }
+  .beneficios-apoiador li, .beneficios-gratis li { display: grid; grid-template-columns: 18px 1fr; gap: 9px; align-items: start; }
   .beneficios-apoiador li svg { width: 16px; height: 16px; color: var(--estrela); margin-top: 2px; }
-  .beneficios-apoiador b { color: var(--texto); }
-  .seguranca { flex: 1; padding: 14px 16px; border-radius: 14px; background: rgba(245,196,81,.06); border: 1px solid rgba(245,196,81,.25); font-size: 13.5px; color: var(--texto2); }
+  .beneficios-gratis li svg { width: 16px; height: 16px; color: var(--marca2); margin-top: 2px; }
+  .beneficios-apoiador b, .beneficios-gratis b { color: var(--texto); }
+  .seguranca { padding: 14px 16px; border-radius: 14px; background: rgba(245,196,81,.06); border: 1px solid rgba(245,196,81,.25); font-size: 13.5px; color: var(--texto2); text-align: left; }
   .seguranca > b { display: flex; align-items: center; gap: 8px; color: var(--estrela); font-size: 14px; margin-bottom: 6px; }
   .seguranca p { margin: 0 0 8px; }
   .seguranca ol { padding-left: 20px; display: grid; gap: 4px; }
@@ -633,6 +635,7 @@
       </a>
       <nav class="menu" aria-label="Navegação principal">
         <a href="#painel" class="ativo">Painel</a>
+        <a href="#comentarios">Quem usa</a>
         <a href="#como">Como funciona</a>
         <a href="#formatos">Formatos</a>
         <a href="#recursos" class="opc">Recursos</a>
@@ -674,8 +677,9 @@
         <div class="acoes entra" style="--d:850">
           <a class="btn principal grande baixar" href="#"><i data-lucide="download"></i> Baixar grátis para Windows</a>
           <a class="btn grande" href="#painel"><i data-lucide="mouse-pointer-click"></i> Ver o painel</a>
+          <a class="btn grande" href="https://www.youtube.com/watch?v=Tdh3GG2KA_o" target="_blank" rel="noopener"><svg class="ic-m" style="color:var(--youtube)"><use href="#m-youtube"/></svg> Ver em vídeo</a>
         </div>
-        <div class="miudo entra" style="--d:950"><b>+100 downloads</b> · Windows 10 e 11 (64 bits) · instalador completo · <span data-versao>versão mais nova</span></div>
+        <div class="miudo entra" style="--d:950"><b data-downloads>+100 downloads</b> · Windows 10 e 11 (64 bits) · instalador completo · <span data-versao>versão mais nova</span></div>
         <div class="funciona entra" style="--d:1050">
           <span>Funciona com</span>
           <div class="plataformas">
@@ -745,7 +749,7 @@
 
   <div class="numeros">
     <div class="largura" data-escalonar>
-      <div><i data-lucide="download"></i><span><b>+100 downloads</b>clipadores já usando no PC</span></div>
+      <div><i data-lucide="download"></i><span><b data-downloads>+100 downloads</b>clipadores já usando no PC</span></div>
       <div><i data-lucide="timer"></i><span><b>~15 s</b>do lance ao clipe pronto, ao vivo</span></div>
       <div><i data-lucide="gamepad-2"></i><span><b>Qualquer jogo</b>Twitch, Kick, YouTube e PC</span></div>
       <div><i data-lucide="shield-check"></i><span><b>R$ 0</b>sem conta, sem assinatura, sem API</span></div>
@@ -773,6 +777,50 @@
           <span class="preco">R$ 0</span>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== quem ja usa -->
+  <section id="comentarios">
+    <div class="largura">
+      <div class="titulo surge">
+        <span class="rot"><i data-lucide="messages-square"></i> Quem já usa</span>
+        <h2>O que a galera está falando.</h2>
+        <p>Comentários de verdade de quem baixou, deixados no vídeo do Cortador Automático no YouTube.</p>
+      </div>
+      <div class="depos" data-escalonar>
+          <figure class="depo destaque contorno brilha">
+            <i data-lucide="quote" class="aspas"></i>
+            <blockquote>Que Deus abençoe a sua vida meu irmão! tudo que eu achei pra cortes prometiam que era grátis, mas no final tinha que pagar algo. Com esse programa já fiz vários cortes e postei, muito obrigado</blockquote>
+            <figcaption><span class="avatar-letra">K</span><span><b>@kauann-pereira</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube</small></span></figcaption>
+          </figure>
+          <figure class="depo">
+            <i data-lucide="quote" class="aspas"></i>
+            <blockquote>… eu tava procurando isso há muito tempo! Você é uma lenda, irmão! Até me inscrevi, fera demais!!!</blockquote>
+            <figcaption><span class="avatar-letra">V</span><span><b>@ViceGamesOficial</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube</small></span></figcaption>
+          </figure>
+          <figure class="depo">
+            <i data-lucide="quote" class="aspas"></i>
+            <blockquote>top de mais eu já teste muito legal…</blockquote>
+            <figcaption><span class="avatar-letra">D</span><span><b>@DallasFitBurst</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube · <i data-lucide="thumbs-up"></i> 7</small></span></figcaption>
+          </figure>
+          <figure class="depo">
+            <i data-lucide="quote" class="aspas"></i>
+            <blockquote>po cara, faz tempo eu queria achar algo parecido, tentei, baixei um monte de paranaue no claude e nao consegui, isso que tu postou ai … atendeu minhas necessidades, valeu mesmo</blockquote>
+            <figcaption><span class="avatar-letra">I</span><span><b>@its_biles</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube</small></span></figcaption>
+          </figure>
+          <figure class="depo">
+            <i data-lucide="quote" class="aspas"></i>
+            <blockquote>deu bom aqui aliado, vídeo brabo</blockquote>
+            <figcaption><span class="avatar-letra">S</span><span><b>@straikdsgrm</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube · <i data-lucide="thumbs-up"></i> 2</small></span></figcaption>
+          </figure>
+          <figure class="depo">
+            <i data-lucide="quote" class="aspas"></i>
+            <blockquote>muito boa sua ferramenta, obrigado!</blockquote>
+            <figcaption><span class="avatar-letra">T</span><span><b>@TheCenturysGame</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube</small></span></figcaption>
+          </figure>
+      </div>
+      <div class="ver-video surge"><a class="btn" href="https://www.youtube.com/watch?v=Tdh3GG2KA_o" target="_blank" rel="noopener"><svg class="ic-m" style="color:var(--youtube)"><use href="#m-youtube"/></svg> Ver o vídeo e todos os comentários <i data-lucide="external-link"></i></a></div>
     </div>
   </section>
 
@@ -910,7 +958,7 @@
           <h3>Dá pra conferir tudo</h3>
           <p>Antivírus reclamou? Ficou com dúvida? O código está lá, aberto, do jeito que vai no instalador.</p>
           <div class="stats">
-            <div><b>+100</b><span>downloads</span></div>
+            <div><b data-downloads-num>+100</b><span>downloads</span></div>
             <div><b data-estrelas-num>—</b><span>estrelas</span></div>
             <div><b data-versao-num>—</b><span>versão</span></div>
             <div><b>R$ 0</b><span>sempre</span></div>
@@ -970,50 +1018,6 @@
         <span><i data-lucide="wifi"></i> Internet só pra baixar as lives</span>
         <span><i data-lucide="circle-check"></i> Não precisa de placa de vídeo</span>
       </div>
-    </div>
-  </section>
-
-  <!-- ======================================================== quem ja usa -->
-  <section id="comentarios">
-    <div class="largura">
-      <div class="titulo surge">
-        <span class="rot"><i data-lucide="messages-square"></i> Quem já usa</span>
-        <h2>O que a galera está falando.</h2>
-        <p>Comentários de verdade de quem baixou, deixados no vídeo do Cortador Automático no YouTube.</p>
-      </div>
-      <div class="depos" data-escalonar>
-          <figure class="depo destaque contorno brilha">
-            <i data-lucide="quote" class="aspas"></i>
-            <blockquote>Que Deus abençoe a sua vida meu irmão! tudo que eu achei pra cortes prometiam que era grátis, mas no final tinha que pagar algo. Com esse programa já fiz vários cortes e postei, muito obrigado</blockquote>
-            <figcaption><span class="avatar-letra">K</span><span><b>@kauann-pereira</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube</small></span></figcaption>
-          </figure>
-          <figure class="depo">
-            <i data-lucide="quote" class="aspas"></i>
-            <blockquote>… eu tava procurando isso há muito tempo! Você é uma lenda, irmão! Até me inscrevi, fera demais!!!</blockquote>
-            <figcaption><span class="avatar-letra">V</span><span><b>@ViceGamesOficial</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube</small></span></figcaption>
-          </figure>
-          <figure class="depo">
-            <i data-lucide="quote" class="aspas"></i>
-            <blockquote>top de mais eu já teste muito legal…</blockquote>
-            <figcaption><span class="avatar-letra">D</span><span><b>@DallasFitBurst</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube · <i data-lucide="thumbs-up"></i> 7</small></span></figcaption>
-          </figure>
-          <figure class="depo">
-            <i data-lucide="quote" class="aspas"></i>
-            <blockquote>po cara, faz tempo eu queria achar algo parecido, tentei, baixei um monte de paranaue no claude e nao consegui, isso que tu postou ai … atendeu minhas necessidades, valeu mesmo</blockquote>
-            <figcaption><span class="avatar-letra">I</span><span><b>@its_biles</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube</small></span></figcaption>
-          </figure>
-          <figure class="depo">
-            <i data-lucide="quote" class="aspas"></i>
-            <blockquote>deu bom aqui aliado, vídeo brabo</blockquote>
-            <figcaption><span class="avatar-letra">S</span><span><b>@straikdsgrm</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube · <i data-lucide="thumbs-up"></i> 2</small></span></figcaption>
-          </figure>
-          <figure class="depo">
-            <i data-lucide="quote" class="aspas"></i>
-            <blockquote>muito boa sua ferramenta, obrigado!</blockquote>
-            <figcaption><span class="avatar-letra">T</span><span><b>@TheCenturysGame</b><small><svg class="ic-m yt"><use href="#m-youtube"/></svg> comentário no YouTube</small></span></figcaption>
-          </figure>
-      </div>
-      <div class="ver-video surge"><a class="btn" href="https://www.youtube.com/watch?v=Tdh3GG2KA_o" target="_blank" rel="noopener"><svg class="ic-m" style="color:var(--youtube)"><use href="#m-youtube"/></svg> Ver o vídeo e todos os comentários <i data-lucide="external-link"></i></a></div>
     </div>
   </section>
 
@@ -1115,26 +1119,23 @@
   <div class="modal escolha">
     <button class="fechar-x" type="button" data-fechar aria-label="Fechar"><i data-lucide="x"></i></button>
     <h3 id="escolherTitulo">Como você quer baixar?</h3>
-    <p>Escolha o instalador (.exe) na versão gratuita, seja um apoiador com versão exclusiva ou baixe pelo GitHub.</p>
+    <p>Compare a versão gratuita com a versão exclusiva de apoiador, ou baixe o código pelo GitHub.</p>
     <div class="opcoes-exe">
       <div class="opcao recomendada contorno">
         <div class="apoiador-selo">
-          <span class="gratis-pill"><i data-lucide="download"></i> +100 downloads</span>
+          <span class="gratis-pill"><i data-lucide="download"></i> <span data-downloads>+100 downloads</span></span>
           <span class="tag-gratis">100% Grátis</span>
         </div>
         <div class="opcao-topo">
           <span class="opcao-ic"><i data-lucide="download"></i></span>
           <div><b>Instalador (.exe) · Versão Gratuita</b><span>Grátis para sempre · é só clicar em Avançar · ~770 MB</span></div>
         </div>
-        <div class="seguranca">
-          <b><i data-lucide="shield-alert"></i> Sobre o aviso do Windows</b>
-          <p>O Cortador Automático ainda <b>não tem certificado de assinatura digital</b> (pedido em análise na SignPath Foundation). Por isso o Windows mostra <b>"O Windows protegeu o computador"</b>. Não é vírus:</p>
-          <ol>
-            <li>Abra o instalador e clique em <b>Mais informações</b>.</li>
-            <li>Clique em <b>Executar assim mesmo</b>.</li>
-            <li>Se o antivírus reclamar, libere a pasta do programa.</li>
-          </ol>
-        </div>
+        <ul class="beneficios-gratis">
+          <li><i data-lucide="circle-check"></i><span><b>Cortes ilimitados:</b> clipa lives ao vivo (Twitch, Kick, YouTube) e vídeos gravados do PC.</span></li>
+          <li><i data-lucide="circle-check"></i><span><b>Pronto pra postar:</b> enquadra rosto + jogo em 9:16 com legenda automática e título SEO.</span></li>
+          <li><i data-lucide="circle-check"></i><span><b>100% no seu PC:</b> sem marca d'água, sem cadastro, sem assinatura e sem chave de API.</span></li>
+          <li><i data-lucide="circle-check"></i><span><b>Instalador completo:</b> já traz tudo configurado para Windows 10 e 11 (64 bits).</span></li>
+        </ul>
         <a class="btn principal grande" id="btnBaixarExe" href="#"><i data-lucide="download"></i> Baixar versão gratuita (.exe)</a>
       </div>
       <div class="opcao apoiador contorno brilha">
@@ -1147,12 +1148,12 @@
           <div><b>Seja um Apoiador do Projeto</b><span>Versão única disponibilizada apenas para apoiadores</span></div>
         </div>
         <ul class="beneficios-apoiador">
-          <li><i data-lucide="circle-check"></i><span><b>Versão única exclusiva:</b> uma versão especial disponibilizada apenas para os apoiadores do projeto.</span></li>
+          <li><i data-lucide="circle-check"></i><span><b>Tudo da gratuita + versão única:</b> uma versão especial disponibilizada apenas para apoiadores.</span></li>
           <li><i data-lucide="circle-check"></i><span><b>Acesso antecipado:</b> receba novas versões, ideias e projetos antes de todo mundo.</span></li>
           <li><i data-lucide="circle-check"></i><span><b>Sugestões para atualizações:</b> dê ideias, sugira funções e participe de cada atualização.</span></li>
           <li><i data-lucide="circle-check"></i><span><b>Nome no projeto:</b> seu nome registrado oficialmente no projeto pela sua contribuição.</span></li>
         </ul>
-        <a class="btn estrelar grande" href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20ser%20um%20apoiador%20do%20projeto%20Cortador%20Autom%C3%A1tico%20e%20garantir%20uma%20das%2020%20vagas!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> Seja um apoiador (WhatsApp)</a>
+        <a class="btn estrelar grande" href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20ser%20um%20apoiador%20do%20projeto%20Cortador%20Autom%C3%A1tico%20e%20garantir%20uma%20das%2020%20vagas!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> Garantir minha vaga no WhatsApp</a>
       </div>
     </div>
     <div class="opcao">
@@ -1173,7 +1174,11 @@
 <div class="modal-fundo" id="obrigado" role="dialog" aria-modal="true" aria-labelledby="obrigadoTitulo">
   <div class="modal">
     <h3 id="obrigadoTitulo">Seu download começou!</h3>
-    <p>O Cortador é grátis e feito por uma pessoa. Se quiser ajudar a manter ele assim, escolha um jeito:</p>
+    <p>Enquanto o instalador baixa, veja como abrir rapidinho e como apoiar o projeto:</p>
+    <div class="seguranca" style="margin-bottom:14px">
+      <b><i data-lucide="shield-alert"></i> Como abrir o instalador no Windows</b>
+      <p>Enquanto o nosso certificado gratuito da SignPath Foundation está em análise, o Windows pode mostrar <b>"O Windows protegeu o computador"</b>. É só clicar em <b>Mais informações</b> e depois em <b>Executar assim mesmo</b>.</p>
+    </div>
     <div class="formas">
       <div class="forma f-colab contorno">
         <span class="f-ic"><i data-lucide="sparkles"></i></span>
@@ -1454,11 +1459,23 @@
     document.querySelectorAll('[data-estrelas]').forEach(function (el) { el.textContent = j.stargazers_count; el.hidden = false; });
     document.querySelectorAll('[data-estrelas-num]').forEach(function (el) { el.textContent = j.stargazers_count; });
   }).catch(function () {});
-  fetch('https://api.github.com/repos/' + REPO + '/releases/latest').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
-    if (!j || !j.tag_name) return;
-    var v = j.tag_name.replace(/^v/, '');
-    document.querySelectorAll('[data-versao]').forEach(function (el) { el.textContent = 'versão ' + v; });
-    document.querySelectorAll('[data-versao-num]').forEach(function (el) { el.textContent = v; });
+  fetch('https://api.github.com/repos/' + REPO + '/releases').then(function (r) { return r.ok ? r.json() : null; }).then(function (lista) {
+    if (!Array.isArray(lista) || !lista.length) return;
+    var j = lista[0];
+    if (j && j.tag_name) {
+      var v = j.tag_name.replace(/^v/, '');
+      document.querySelectorAll('[data-versao]').forEach(function (el) { el.textContent = 'versão ' + v; });
+      document.querySelectorAll('[data-versao-num]').forEach(function (el) { el.textContent = v; });
+    }
+    var total = 0;
+    lista.forEach(function (rel) {
+      if (Array.isArray(rel.assets)) rel.assets.forEach(function (a) { total += (a.download_count || 0); });
+    });
+    if (total > 100) {
+      var txt = '+' + total.toLocaleString('pt-BR');
+      document.querySelectorAll('[data-downloads]').forEach(function (el) { el.textContent = txt + ' downloads'; });
+      document.querySelectorAll('[data-downloads-num]').forEach(function (el) { el.textContent = txt; });
+    }
   }).catch(function () {});
 
   // ---------------------------------------------------------------- efeitos
@@ -1537,7 +1554,7 @@
         linksTopo.forEach(function (a) { a.classList.toggle('ativo', a.getAttribute('href') === id); });
       });
     }, { rootMargin: '-35% 0px -55% 0px' });
-    ['painel', 'como', 'formatos', 'recursos', 'codigo', 'requisitos', 'apoiar', 'duvidas'].forEach(function (id) {
+    ['painel', 'comentarios', 'como', 'formatos', 'recursos', 'codigo', 'requisitos', 'apoiar', 'duvidas'].forEach(function (id) {
       var el = $(id); if (el) obsSecao.observe(el);
     });
   } else {

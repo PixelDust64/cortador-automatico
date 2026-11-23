@@ -5,12 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cortador Automático · Gabriel Workspace</title>
 <meta name="description" content="Transforma lives e vídeos de qualquer jogo, da Twitch, Kick e YouTube, em cortes verticais prontos pro TikTok, Reels e Shorts. Gravado ou ao vivo. Grátis, código aberto, no seu PC.">
-<meta property="og:title" content="Cortador Automático">
-<meta property="og:description" content="Lives e vídeos de qualquer jogo viram cortes em pé, sozinhos. Grátis e código aberto, no seu PC.">
+<link rel="canonical" href="https://gabrielworkspace.github.io/cortador-automatico/">
+<link rel="preload" href="manrope.woff2" as="font" type="font/woff2" crossorigin>
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:site_name" content="Cortador Automático · Gabriel Workspace">
+<meta property="og:url" content="https://gabrielworkspace.github.io/cortador-automatico/">
+<meta property="og:title" content="Cortador Automático · Lives viram cortes 9:16 sozinhas">
+<meta property="og:description" content="Lives e vídeos de qualquer jogo viram cortes em pé, sozinhos. Grátis, 100% local e código aberto no seu PC.">
 <meta property="og:image" content="https://gabrielworkspace.github.io/cortador-automatico/icone.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Cortador Automático · Gabriel Workspace">
+<meta name="twitter:description" content="Transforma lives e vídeos da Twitch, Kick e YouTube em cortes 9:16 prontos pro TikTok, Reels e Shorts. Grátis e 100% no seu PC.">
+<meta name="twitter:image" content="https://gabrielworkspace.github.io/cortador-automatico/icone.png">
 <meta name="theme-color" content="#050607">
 <meta name="author" content="Gabriel Workspace">
 <link rel="icon" type="image/png" href="icone.png">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Cortador Automático","operatingSystem":"Windows 10, Windows 11 (64-bit)","applicationCategory":"MultimediaApplication","softwareVersion":"2.0.7","description":"Transforma lives e vídeos de qualquer jogo, da Twitch, Kick e YouTube, em cortes verticais 9:16 prontos para TikTok, Reels e Shorts. Roda 100% localmente no PC.","url":"https://gabrielworkspace.github.io/cortador-automatico/","downloadUrl":"https://github.com/gabrielworkspace/cortador-automatico/releases/latest/download/Instalar-Cortador-Automatico.exe","author":{"@type":"Organization","name":"Gabriel Workspace","url":"https://github.com/gabrielworkspace"},"offers":{"@type":"Offer","price":"0","priceCurrency":"BRL"}}
+</script>
 <style>
   @font-face { font-family: 'Manrope'; font-style: normal; font-weight: 300 800; font-display: swap; src: url(manrope.woff2) format('woff2'); }
 
@@ -1345,7 +1358,7 @@
       var n = CORTES.indexOf(c);
       var vivo = /^Ao vivo/.test(c.origem);
       return '<button type="button" class="clipe" data-n="' + n + '" style="--d:' + (i * 60) + '" aria-pressed="false" aria-label="' + c.titulo + '">' +
-        '<span class="mini"><img src="' + c.capa + '" alt="" loading="lazy">' +
+        '<span class="mini"><img src="' + c.capa + '" alt="" width="270" height="480" decoding="async"' + (i > 3 ? ' loading="lazy"' : '') + '>' +
         '<span class="tag">' + (vivo ? '<span class="ponto"></span> Ao vivo' : '<i data-lucide="film"></i> Gravado') + '</span>' +
         '<span class="dur">' + c.dur + '</span><span class="play"><i data-lucide="play"></i></span></span>' +
         '<b>' + c.titulo + '</b><span class="sub">' + nomeJogo(c.jogo) + ' · ' + c.formato + '</span></button>';
@@ -1404,21 +1417,29 @@
     blur: { video: 'jogos/formato-blur.mp4', capa: 'jogos/formato-blur.jpg', nome: 'Fundo desfocado', tam: '1080×1920' },
     original: { video: 'jogos/formato-original.mp4', capa: 'jogos/formato-original.jpg', nome: 'Original', tam: 'deitado, como a live' },
   };
-  var fmtVisivel = false;
-  function mostrarFormato(id) {
+  var fmtVisivel = false, fmtAtual = 'split';
+  function carregarVideoFmt(id) {
     var f = FORMATOS[id]; if (!f) return;
+    var v = id === 'original' ? $('fmtDeitado') : $('fmtVideo');
+    if (v.getAttribute('src') !== f.video) { v.poster = f.capa; v.src = f.video; }
+    return v;
+  }
+  function mostrarFormato(id, carregarAgora) {
+    var f = FORMATOS[id]; if (!f) return;
+    fmtAtual = id;
     document.querySelectorAll('.fmt').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.fmt === id)); b.classList.toggle('contorno', b.dataset.fmt === id); });
     $('palcoFmt').classList.toggle('original', id === 'original');
     var v = id === 'original' ? $('fmtDeitado') : $('fmtVideo');
     var outro = id === 'original' ? $('fmtVideo') : $('fmtDeitado');
     outro.pause();
-    if (v.getAttribute('src') !== f.video) { v.poster = f.capa; v.src = f.video; }
+    v.poster = f.capa;
+    if (carregarAgora || fmtVisivel) carregarVideoFmt(id);
     v.parentNode.classList.remove('troca'); void v.parentNode.offsetWidth; v.parentNode.classList.add('troca');
     if (!semMovimento && fmtVisivel) { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
     $('fmtEtiqueta').innerHTML = '<b>' + f.nome + '</b> · ' + f.tam;
   }
-  document.querySelectorAll('.fmt').forEach(function (b) { b.addEventListener('click', function () { mostrarFormato(b.dataset.fmt); }); });
-  mostrarFormato('split');
+  document.querySelectorAll('.fmt').forEach(function (b) { b.addEventListener('click', function () { mostrarFormato(b.dataset.fmt, true); }); });
+  mostrarFormato('split', false);
 
   // ---------------------------------------------------------------- janelas
   function abrir(id) {
@@ -1479,30 +1500,52 @@
     });
   });
 
-  // ---------------------------------------------------------------- GitHub: estrelas e versao
-  fetch('https://api.github.com/repos/' + REPO).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
-    if (!j || typeof j.stargazers_count !== 'number') return;
-    document.querySelectorAll('[data-estrelas]').forEach(function (el) { el.textContent = j.stargazers_count; el.hidden = false; });
-    document.querySelectorAll('[data-estrelas-num]').forEach(function (el) { el.textContent = j.stargazers_count; });
-  }).catch(function () {});
-  fetch('https://api.github.com/repos/' + REPO + '/releases').then(function (r) { return r.ok ? r.json() : null; }).then(function (lista) {
-    if (!Array.isArray(lista) || !lista.length) return;
-    var j = lista[0];
-    if (j && j.tag_name) {
-      var v = j.tag_name.replace(/^v/, '');
-      document.querySelectorAll('[data-versao]').forEach(function (el) { el.textContent = 'versão ' + v; });
-      document.querySelectorAll('[data-versao-num]').forEach(function (el) { el.textContent = v; });
+  // ---------------------------------------------------------------- GitHub: estrelas, versao e downloads (com cache de 15 min)
+  function aplicarDadosGh(d) {
+    if (!d) return;
+    if (typeof d.estrelas === 'number') {
+      document.querySelectorAll('[data-estrelas]').forEach(function (el) { el.textContent = d.estrelas; el.hidden = false; });
+      document.querySelectorAll('[data-estrelas-num]').forEach(function (el) { el.textContent = d.estrelas; });
     }
-    var total = 0;
-    lista.forEach(function (rel) {
-      if (Array.isArray(rel.assets)) rel.assets.forEach(function (a) { total += (a.download_count || 0); });
-    });
-    if (total > 100) {
-      var txt = '+' + total.toLocaleString('pt-BR');
+    if (d.versao) {
+      document.querySelectorAll('[data-versao]').forEach(function (el) { el.textContent = 'versão ' + d.versao; });
+      document.querySelectorAll('[data-versao-num]').forEach(function (el) { el.textContent = d.versao; });
+    }
+    if (typeof d.downloads === 'number' && d.downloads > 100) {
+      var txt = '+' + d.downloads.toLocaleString('pt-BR');
       document.querySelectorAll('[data-downloads]').forEach(function (el) { el.textContent = txt + ' downloads'; });
       document.querySelectorAll('[data-downloads-num]').forEach(function (el) { el.textContent = txt; });
     }
-  }).catch(function () {});
+  }
+  var cacheGh = null;
+  try { cacheGh = JSON.parse(sessionStorage.getItem('cortador_gh') || 'null'); } catch (_) {}
+  if (cacheGh && cacheGh.ts && (Date.now() - cacheGh.ts < 900000)) {
+    aplicarDadosGh(cacheGh);
+  } else {
+    if (cacheGh) aplicarDadosGh(cacheGh);
+    var estadoGh = cacheGh || {};
+    var salvarGh = function () {
+      estadoGh.ts = Date.now();
+      try { sessionStorage.setItem('cortador_gh', JSON.stringify(estadoGh)); } catch (_) {}
+      aplicarDadosGh(estadoGh);
+    };
+    fetch('https://api.github.com/repos/' + REPO).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      if (!j || typeof j.stargazers_count !== 'number') return;
+      estadoGh.estrelas = j.stargazers_count;
+      salvarGh();
+    }).catch(function () {});
+    fetch('https://api.github.com/repos/' + REPO + '/releases').then(function (r) { return r.ok ? r.json() : null; }).then(function (lista) {
+      if (!Array.isArray(lista) || !lista.length) return;
+      var j = lista[0];
+      if (j && j.tag_name) estadoGh.versao = j.tag_name.replace(/^v/, '');
+      var total = 0;
+      lista.forEach(function (rel) {
+        if (Array.isArray(rel.assets)) rel.assets.forEach(function (a) { total += (a.download_count || 0); });
+      });
+      if (total > 100) estadoGh.downloads = total;
+      salvarGh();
+    }).catch(function () {});
+  }
 
   // ---------------------------------------------------------------- efeitos
   icones();
@@ -1563,8 +1606,8 @@
           if (painelVisivel && !semMovimento) { var p = v.play(); if (p && p.catch) p.catch(function () {}); } else v.pause();
         } else {
           fmtVisivel = it.isIntersecting;
-          var ativo = $('palcoFmt').classList.contains('original') ? $('fmtDeitado') : $('fmtVideo');
-          if (fmtVisivel && !semMovimento) { var q = ativo.play(); if (q && q.catch) q.catch(function () {}); } else ativo.pause();
+          var ativo = carregarVideoFmt(fmtAtual);
+          if (fmtVisivel && !semMovimento && ativo) { var q = ativo.play(); if (q && q.catch) q.catch(function () {}); } else if (ativo) ativo.pause();
         }
       });
     }, { threshold: 0.25 });

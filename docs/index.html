@@ -312,27 +312,27 @@
 
   /* ---------------------------------------------------------- numeros */
   .numeros .largura { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; max-width: 1180px; }
-  .numeros .num-card {
+  .num-card {
     background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.018));
     border: 1px solid var(--linha2);
     border-radius: 20px;
     padding: 20px 22px;
     display: flex; gap: 14px; align-items: center;
-    transition: transform .25s var(--suave), border-color .25s var(--suave), background .25s var(--suave);
+    transition: transform .3s var(--suave), border-color .3s var(--suave), background .3s var(--suave);
   }
-  .numeros .num-card:hover { transform: translateY(-3px); border-color: rgba(127,178,255,.38); background: rgba(61,139,255,.07); }
-  .numeros .n-ic {
+  .num-card:hover { transform: translateY(-3px); border-color: rgba(127,178,255,.38); background: rgba(61,139,255,.07); }
+  .num-card .n-ic {
     width: 44px; height: 44px; border-radius: 13px; flex: none;
     display: grid; place-items: center;
     background: var(--marca-fundo); border: 1px solid rgba(127,178,255,.28); color: var(--marca-claro);
     box-shadow: 0 10px 24px -10px var(--marca-brilho);
   }
-  .numeros .n-ic svg { width: 20px; height: 20px; }
-  .numeros .n-txt { min-width: 0; }
+  .num-card .n-ic svg { width: 20px; height: 20px; }
+  .num-card .n-txt { min-width: 0; }
   .numeros b { display: block; font-size: 22px; font-weight: 750; letter-spacing: -.03em; line-height: 1.15; color: var(--texto); white-space: nowrap; }
   .numeros span.n-sub { display: block; font-size: 13px; color: var(--texto2); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   @media (max-width: 980px) { .numeros .largura { grid-template-columns: 1fr 1fr; } }
-  @media (max-width: 520px) { .numeros .largura { grid-template-columns: 1fr; } .numeros .num-card { padding: 16px 18px; } }
+  @media (max-width: 520px) { .numeros .largura { grid-template-columns: 1fr; } .num-card { padding: 16px 18px; } }
 
   /* ---------------------------------------------------------- computacao local */
   #local { padding-bottom: 40px; }
@@ -547,8 +547,18 @@
   .modal-fundo.on { opacity: 1; pointer-events: auto; }
   .modal { position: relative; width: 100%; max-width: 520px; margin: auto 0; padding: 30px 26px 22px; border-radius: 26px; text-align: center;
     background: radial-gradient(ellipse 90% 45% at 50% 0%, rgba(61,139,255,.16), transparent 70%), var(--superficie); border: 1px solid var(--linha2); box-shadow: 0 50px 100px -30px rgba(0,0,0,.95);
-    transform: translateY(14px) scale(.98); transition: transform .35s var(--suave); }
-  .modal-fundo.on .modal { transform: none; }
+    filter: blur(14px); transform: translateY(18px) scale(.98); transition: transform .55s var(--suave), filter .6s var(--suave); }
+  .modal-fundo.on .modal { transform: none; filter: blur(0); }
+  .modal-fundo.on .modal .opcao,
+  .modal-fundo.on .modal .forma,
+  .modal-fundo.on .modal .seguranca { animation: entrar .85s var(--suave) both; }
+  .modal-fundo.on .modal .opcoes-exe .opcao:nth-child(1),
+  .modal-fundo.on .modal .formas .forma:nth-child(1) { animation-delay: 70ms; }
+  .modal-fundo.on .modal .opcoes-exe .opcao:nth-child(2),
+  .modal-fundo.on .modal .formas .forma:nth-child(2) { animation-delay: 160ms; }
+  .modal-fundo.on .modal > .opcao,
+  .modal-fundo.on .modal .formas .forma:nth-child(3) { animation-delay: 250ms; }
+  .modal-fundo.on .modal .formas .forma:nth-child(4) { animation-delay: 340ms; }
   .modal h3 { font-size: 22px; font-weight: 650; letter-spacing: -.02em; }
   .modal > p { color: var(--texto2); font-size: 15px; margin: 8px 0 18px; }
   .modal .btn { white-space: normal; text-align: center; }
@@ -614,8 +624,9 @@
   @keyframes girar { to { --giro: 360deg; } }
 
   /* ---------------------------------------------------------- aparecer ao rolar: desfocado -> nitido */
-  .surge { opacity: 0; filter: blur(16px); transform: translateY(34px) scale(.985); transition: opacity 1s var(--suave), filter 1.1s var(--suave), transform 1.1s var(--suave); transition-delay: calc(var(--d, 0) * 1ms); }
+  .surge { opacity: 0; filter: blur(16px); transform: translateY(34px) scale(.985); transition: opacity 1s var(--suave), filter 1.1s var(--suave), transform 1.1s var(--suave), border-color .3s var(--suave), background .3s var(--suave); transition-delay: calc(var(--d, 0) * 1ms); }
   .surge.visto { opacity: 1; filter: blur(0); transform: none; }
+  .surge.visto:hover { transition-delay: 0ms; }
   .entra { animation: entrar 1.2s var(--suave) both; animation-delay: calc(var(--d, 0) * 1ms); }
   h1 .palavra { display: inline-block; animation: entrar 1.1s var(--suave) both; animation-delay: calc(var(--d, 0) * 1ms); }
   @keyframes entrar { from { opacity: 0; filter: blur(18px); transform: translateY(24px); } to { opacity: 1; filter: blur(0); transform: none; } }

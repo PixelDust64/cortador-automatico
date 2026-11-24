@@ -68,6 +68,11 @@ jobs:
           gh release view $tag 2>$null
           if ($LASTEXITCODE -eq 0) {
             gh release upload $tag $exe --clobber
+            if (Test-Path 'LEIA-ME-NOVIDADES.txt') { gh release edit $tag --notes-file 'LEIA-ME-NOVIDADES.txt' }
           } else {
-            gh release create $tag $exe --title "Cortador Automatico $tag" --notes "Baixe o Instalar-Cortador-Automatico.exe e instale. Tudo vem dentro: nao precisa instalar mais nada."
+            if (Test-Path 'LEIA-ME-NOVIDADES.txt') {
+              gh release create $tag $exe --title "Cortador Automatico $tag" --notes-file 'LEIA-ME-NOVIDADES.txt'
+            } else {
+              gh release create $tag $exe --title "Cortador Automatico $tag" --notes "Baixe o Instalar-Cortador-Automatico.exe e instale. Tudo vem dentro: nao precisa instalar mais nada."
+            }
           }

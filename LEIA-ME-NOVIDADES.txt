@@ -16,9 +16,10 @@ O QUE FOI ATUALIZADO E MELHORADO NESTA VERSAO:
      Pro usam em videos e lives inteiras sem limite de tempo.
    - Motor Local continua 100% gratuito, offline e ilimitado.
 
-2. SINCRONIA ZERO-ATRASO DE AUDIO (YOUTUBE, KICK E TWITCH)
+2. SINCRONIA ZERO-ATRASO DE AUDIO E VIDEO FLUIDO (YOUTUBE, KICK E TWITCH)
    - Leitura dupla sincronizada por sequencia de transmissao no YouTube
-     ao vivo (fim do atraso de 5s na voz).
+     ao vivo com normalizacao de timestamps (fim do atraso na voz e fim
+     do video travado em quadro fixo nos cortes de live).
    - Trava de quadros constantes (CFR) + compensacao ativa de audio
      (aresample async=1000) em VODs e lives para eliminar atrasos mesmo
      quando o OBS do streamer perde quadros.

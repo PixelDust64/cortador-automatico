@@ -1204,7 +1204,7 @@
           <div class="dl-fases" id="dlFases">
             <div class="dl-fase ativa" data-dl-fase="conectando"><i data-lucide="wifi" class="i"></i> Conectando</div>
             <div class="dl-fase" data-dl-fase="baixando"><i data-lucide="download" class="i"></i> Baixando vídeo</div>
-            <div class="dl-fase" data-dl-fase="sincronizando"><i data-lucide="audio-lines" class="i"></i> Áudio 0ms Sync</div>
+            <div class="dl-fase" data-dl-fase="sincronizando"><i data-lucide="audio-lines" class="i"></i> Sincronizando áudio</div>
           </div>
         </div>
       </div>
@@ -1894,109 +1894,112 @@
   <div class="dsp-caixa tut-caixa">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px">
       <div>
-        <span class="pilula-pro">Guia Rápido · 1 minuto</span>
+        <span class="pilula-pro">Como usar · Guia rápido</span>
         <h2 id="tutTitulo" style="margin-top:8px">Bem-vindo ao Cortador Automático!</h2>
       </div>
       <button class="btn p" id="btnFecharTutorial" type="button" aria-label="Fechar tutorial"><i data-lucide="x" class="i"></i></button>
     </div>
-    <p style="margin:4px 0 0; color:var(--texto2); font-size:var(--t5)">Veja em 4 passos simples como transformar qualquer vídeo ou live em cortes verticais prontos pra viralizar:</p>
+    <p style="margin:4px 0 0; color:var(--texto2); font-size:var(--t5)">Veja em 4 passos rápidos como transformar qualquer vídeo ou live em cortes prontos para postar:</p>
 
     <div class="tut-passos-barra" id="tutBarraPassos">
       <button type="button" class="tut-passo-btn ativo" data-tut-ir="0"><span class="n">1</span><span>Vídeo ou Live</span></button>
-      <button type="button" class="tut-passo-btn" data-tut-ir="1"><span class="n">2</span><span>Enquadrar 9:16</span></button>
-      <button type="button" class="tut-passo-btn" data-tut-ir="2"><span class="n">3</span><span>Grátis vs IA Pro</span></button>
+      <button type="button" class="tut-passo-btn" data-tut-ir="1"><span class="n">2</span><span>Formato em pé</span></button>
+      <button type="button" class="tut-passo-btn" data-tut-ir="2"><span class="n">3</span><span>Grátis ou Pro</span></button>
       <button type="button" class="tut-passo-btn" data-tut-ir="3"><span class="n">4</span><span>Editar e Postar</span></button>
     </div>
 
     <div class="tut-slide ativo" data-tut-slide="0">
       <div class="tut-heroi">
-        <h3><i data-lucide="clapperboard" class="i"></i> Passo 1: Escolha de onde vêm seus cortes</h3>
-        <p>Logo no topo da tela você escolhe entre cortar um vídeo que já existe ou acompanhar uma transmissão que está acontecendo agora:</p>
+        <h3><i data-lucide="clapperboard" class="i"></i> 1. Vídeo gravado ou Live ao vivo?</h3>
+        <p>Logo no início, escolha se você quer tirar cortes de um vídeo já gravado ou de uma live que está acontecendo agora:</p>
       </div>
       <div class="tut-grade2">
         <div class="tut-card">
-          <b><i data-lucide="film" class="i" style="color:var(--marca)"></i> Vídeo gravado (VOD ou PC)</b>
-          Cole o link do <b>YouTube, Twitch ou Kick</b> (você escolhe a resolução de 480p até 4K antes de baixar!) ou selecione um arquivo `.mp4`/`.mkv` salvo no seu computador.
+          <b><i data-lucide="film" class="i" style="color:var(--marca)"></i> Vídeo gravado</b>
+          Cole o link da <b>Twitch, Kick ou YouTube</b> (você escolhe a qualidade, de 480p até 4K, antes de baixar) ou escolha um vídeo salvo no seu computador.
         </div>
         <div class="tut-card">
-          <b><span class="ponto-vivo"></span> Ao vivo agora (Live)</b>
-          Cole o link do canal em live! O programa grava junto com você, corta sozinho quando o streamer grita ou o chat explode, ou corta na hora quando você aperta <b>CLIPAR</b> (tecla <kbd>C</kbd>).
+          <b><span class="ponto-vivo"></span> Ao vivo agora</b>
+          Cole o link do canal em live. O programa grava junto com você e corta sozinho quando o streamer reage ou o chat explode — ou na hora em que você apertar <b>CLIPAR</b> (tecla <kbd>C</kbd>).
         </div>
       </div>
       <div class="tut-dica">
         <i data-lucide="zap" class="i"></i>
-        <span><b>Atalho rápido:</b> você também pode colar qualquer link direto na barra lá no topo da janela — o programa descobre sozinho se é vídeo gravado ou live ao vivo!</span>
+        <span><b>Dica rápida:</b> se você colar o link direto na barra lá no topo da tela, o programa descobre sozinho se é um vídeo gravado ou uma live ao vivo.</span>
       </div>
     </div>
 
     <div class="tut-slide" data-tut-slide="1">
       <div class="tut-heroi">
-        <h3><i data-lucide="smartphone" class="i"></i> Passo 2: Enquadre Rosto + Jogo em pé (9:16)</h3>
-        <p>Transforme a tela deitada (16:9) no formato vertical perfeito para TikTok, Shorts e Reels com prévia ao vivo ao lado:</p>
+        <h3><i data-lucide="smartphone" class="i"></i> 2. Monte o formato em pé (Rosto + Jogo)</h3>
+        <p>Ajuste como o vídeo vai ficar na tela do celular, acompanhando o resultado na prévia ao lado:</p>
       </div>
       <div class="tut-grade2">
         <div class="tut-card">
-          <b><i data-lucide="scan-face" class="i" style="color:var(--marca)"></i> Rosto + Jogo automático</b>
-          Clique em <b>Detectar webcam sozinho</b> para achar a câmera do streamer automaticamente (ou arraste a <b>caixa azul</b> no rosto e a <b>caixa verde</b> no jogo).
+          <b><i data-lucide="scan-face" class="i" style="color:var(--marca)"></i> Rosto + jogo</b>
+          Clique em <b>Detectar sozinho</b> para encontrar a webcam automaticamente — ou arraste a <b>caixa azul</b> até o rosto e a <b>caixa verde</b> até a parte do jogo.
         </div>
         <div class="tut-card">
-          <b><i data-lucide="layout-template" class="i" style="color:var(--verde)"></i> Outros formatos prontos</b>
-          Live sem webcam? Escolha <b>Tela cheia</b>, <b>Só uma área (Foco)</b> ou <b>Não mexer</b> (mantém deitado para editar depois).
+          <b><i data-lucide="layout-template" class="i" style="color:var(--verde)"></i> Outros formatos</b>
+          Não tem webcam na tela? Você pode usar <b>Tela cheia</b>, <b>Só uma área</b> (para focar uma parte específica) ou <b>Não mexer</b> (mantém o vídeo deitado).
         </div>
       </div>
       <div class="tut-dica">
         <i data-lucide="audio-lines" class="i"></i>
-        <span><b>Áudio 0ms Sync:</b> todos os cortes já saem com trava de quadros constantes para a boca do streamer nunca ficar atrasada em relação à voz.</span>
+        <span><b>Áudio sempre no tempo certo:</b> os cortes já saem ajustados para a voz nunca ficar atrasada em relação à imagem, seja no YouTube, na Kick ou na Twitch.</span>
       </div>
     </div>
 
     <div class="tut-slide" data-tut-slide="2">
       <div class="tut-heroi">
-        <h3><i data-lucide="sparkles" class="i"></i> Passo 3: Motor Local Grátis ou Diretor IA Pro</h3>
-        <p>Você escolhe qual inteligência seleciona os melhores momentos da live ou do vídeo:</p>
+        <h3><i data-lucide="sparkles" class="i"></i> 3. Escolha o motor: Grátis ou Diretor IA Pro</h3>
+        <p>Você decide qual inteligência vai analisar a conversa e separar os melhores momentos:</p>
       </div>
       <div class="tut-grade2">
         <div class="tut-card">
           <b><i data-lucide="cpu" class="i" style="color:var(--verde)"></i> Motor Local · 100% Grátis</b>
-          Roda <b>100% offline no seu PC</b>, sem conta e <b>sem limite de cortes para sempre</b>. Encontra os picos de emoção, voz, risadas e reação do chat.
+          Funciona direto no seu computador, sem cadastro e <b>sem limite de cortes para sempre</b>. Identifica picos de voz, risadas, reações e agitação do chat.
         </div>
         <div class="tut-card destaque-pro">
-          <b><i data-lucide="sparkles" class="i" style="color:var(--amarelo)"></i> Diretor IA Pro · 3 Testes Grátis</b>
-          Lê a história inteira com IA (Gemini nativo incluso, ou sua chave Claude/ChatGPT) e cria gancho + títulos virais. Você ganha <b>3 cortes grátis</b>: use até 3 em vídeos, ou 2 em vídeos + <b>1 live de 15 min</b>!
+          <b><i data-lucide="sparkles" class="i" style="color:var(--amarelo)"></i> Diretor IA Pro · 3 usos grátis</b>
+          Entende o contexto inteiro da conversa, corta no ponto certo da história e cria ganchos e títulos fortes. Você tem <b>3 usos grátis</b>: pode usar 2 em vídeos e escolher se usa o 3º em mais 1 vídeo ou em <b>1 live por 15 minutos</b>.
         </div>
       </div>
       <div class="tut-dica">
         <i data-lucide="crown" class="i"></i>
-        <span>Quem ativa o <b>Plano Pro</b> (via Pix ou Cartão dentro do próprio app) usa o Diretor IA em vídeos e durante a live inteira sem limite de 15 minutos!</span>
+        <span>Quem assina o <b>Plano Pro</b> (via Pix ou Cartão aqui mesmo no programa) usa o Diretor IA em vídeos e durante toda a live, sem limite de 15 minutos!</span>
       </div>
     </div>
 
     <div class="tut-slide" data-tut-slide="3">
       <div class="tut-heroi">
-        <h3><i data-lucide="rocket" class="i"></i> Passo 4: Revise, copie o SEO e poste primeiro!</h3>
-        <p>Assim que os cortes ficam prontos, tudo o que você precisa para postar e viralizar já aparece no card de cada clipe:</p>
+        <h3><i data-lucide="rocket" class="i"></i> 4. Ajuste se quiser, copie a legenda e poste!</h3>
+        <p>Quando os cortes ficam prontos, cada um já vem preparado para você publicar nas redes sociais:</p>
       </div>
       <div class="tut-grade2">
         <div class="tut-card">
-          <b><i data-lucide="hash" class="i" style="color:var(--marca)"></i> SEO por Rede em 1 Clique</b>
-          Cada corte traz botões dedicados para copiar título + legenda + hashtags otimizados pro algoritmo do <b>TikTok</b>, <b>YouTube Shorts</b> e <b>Instagram Reels</b>.
+          <b><i data-lucide="hash" class="i" style="color:var(--marca)"></i> Legendas prontas por rede</b>
+          Em cada corte há botões rápidos para copiar título, descrição e hashtags pensados para o <b>TikTok</b>, <b>YouTube Shorts</b> e <b>Instagram Reels</b>.
         </div>
         <div class="tut-card">
-          <b><i data-lucide="sliders-horizontal" class="i" style="color:var(--verde)"></i> Editor Rápido + Pasta no PC</b>
-          Quer puxar 2 segundos antes ou corrigir uma palavra da legenda amarela? Clique em <b>Editar</b> no card. Seus vídeos ficam salvos em <b>Vídeos &gt; Cortador Automatico</b>!
+          <b><i data-lucide="sliders-horizontal" class="i" style="color:var(--verde)"></i> Edição fácil e pasta no PC</b>
+          Quer mudar o segundo inicial, o final ou corrigir alguma palavra da legenda? Clique em <b>Editar</b>. Todos os cortes ficam salvos em <b>Vídeos &gt; Cortador Automatico</b>.
         </div>
       </div>
       <div class="tut-dica">
-        <i data-lucide="circle-help" class="i"></i>
-        <span>Sempre que quiser rever este guia, é só clicar no botão <b>Como usar</b> lá no topo da tela.</span>
+        <i data-lucide="refresh-cw" class="i"></i>
+        <span><b>Sempre atualizado:</b> o aplicativo verifica e instala melhorias sozinho ao abrir! Para rever este guia depois, clique em <b>Como usar</b> no topo da tela.</span>
       </div>
     </div>
 
     <div class="tut-rodape">
-      <button class="btn p" id="btnTutPular" type="button">Pular tutorial</button>
       <div style="display:flex; gap:8px; align-items:center">
-        <button class="btn p" id="btnTutVoltar" type="button" hidden><i data-lucide="chevron-left" class="i"></i> Anterior</button>
-        <button class="btn principal" id="btnTutProximo" type="button">Próximo passo <i data-lucide="chevron-right" class="i"></i></button>
+        <button class="btn p" id="btnTutPular" type="button">Pular guia</button>
+        <button class="btn p" id="btnTutVerNovidades" type="button"><i data-lucide="gift" class="i"></i> Ver novidades da v2.0.8</button>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center">
+        <button class="btn p" id="btnTutVoltar" type="button" hidden><i data-lucide="chevron-left" class="i"></i> Voltar</button>
+        <button class="btn principal" id="btnTutProximo" type="button">Próximo <i data-lucide="chevron-right" class="i"></i></button>
       </div>
     </div>
   </div>
@@ -2006,20 +2009,22 @@
   <div class="dsp-caixa nov-caixa">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px">
       <div>
-        <span class="pilula-pro">Atualização v2.0.8 · Notas da Versão</span>
-        <h2 id="novTitulo" style="margin-top:8px">O que foi atualizado e melhorado</h2>
+        <span class="pilula-pro">Atualização v2.0.8 · O que mudou</span>
+        <h2 id="novTitulo" style="margin-top:8px">Novidades e melhorias desta versão</h2>
       </div>
       <button class="btn p" id="btnFecharNovidades" type="button" aria-label="Fechar"><i data-lucide="x" class="i"></i></button>
     </div>
-    <p style="margin:6px 0 0; color:var(--texto2)">Confira tudo o que entrou nesta versão para deixar seus cortes mais rápidos, sincronizados e prontos pros algoritmos:</p>
+    <p style="margin:6px 0 0; color:var(--texto2)">Confira tudo o que foi atualizado para deixar seus cortes mais precisos, sincronizados e prontos para viralizar:</p>
     <ul class="nov-lista">
-      <li><i data-lucide="sparkles" class="i"></i><div><b>Diretor IA Pro em Vídeo e em Live (3 testes grátis inclusos)</b>Use seus 3 testes grátis em vídeos (ou 2 em vídeos + 1 sessão de 15 minutos na Live). Traz Google Gemini nativo incluso ou suporte à sua chave do Claude / ChatGPT. Quem tem o Plano Pro usa em vídeos e lives inteiras sem limite!</div></li>
-      <li><i data-lucide="audio-lines" class="i"></i><div><b>Sincronia Zero-Atraso de Áudio (YouTube, Kick e Twitch)</b>Novo motor CFR + compensação ativa de amostras e timestamps de broadcast na live do YouTube, Twitch e Kick para a voz nunca atrasar.</div></li>
-      <li><i data-lucide="monitor-play" class="i"></i><div><b>Pré-visualização Imersiva e Escolha de Resolução</b>Veja capa, canal e duração antes de baixar, escolha a resolução ideal (720p, 1080p, 1440p, 4K) e acompanhe velocidade e tempo restante em qualquer tipo de internet (IPv4/IPv6).</div></li>
-      <li><i data-lucide="flame" class="i"></i><div><b>Detector de Live Calibrado + Filtro Viral e SEO por Rede</b>Calibragem à prova de compressor/limiter do OBS (gera muito mais cortes reais na live), abertura cold-open sem silêncio e botões prontos de SEO para <b>TikTok, Shorts e Reels</b>.</div></li>
-      <li><i data-lucide="scan-face" class="i"></i><div><b>Detecção Inteligente da Webcam (6 posições)</b>Reconhece webcams nos 4 cantos e também nas laterais (meio-esquerda/direita), tanto em vídeos gravados quanto em lives ao vivo.</div></li>
+      <li><i data-lucide="refresh-cw" class="i"></i><div><b>Agora o aplicativo atualiza sozinho!</b>Sempre que sair uma melhoria ou correção nova no GitHub, o próprio programa avisa, baixa em segundos com tela de progresso e reinicia atualizado — sem precisar baixar o instalador de novo.</div></li>
+      <li><i data-lucide="sparkles" class="i"></i><div><b>Diretor IA Pro em Vídeo e em Live (3 usos grátis inclusos)</b>Entende a conversa inteira, corta no início e fim exatos da história e cria ganchos e títulos virais (com Gemini nativo incluso ou sua chave Claude/ChatGPT). Use seus 3 testes grátis (2 em vídeos + 1 vídeo ou 1 live de 15 min) — e no Plano Pro use na live inteira sem limite!</div></li>
+      <li><i data-lucide="audio-lines" class="i"></i><div><b>Áudio 100% sincronizado (YouTube, Kick e Twitch)</b>Nova sincronização de áudio e vídeo tanto em vídeos gravados quanto em lives ao vivo, eliminando qualquer atraso na voz do streamer.</div></li>
+      <li><i data-lucide="monitor-play" class="i"></i><div><b>Prévia do vídeo + Escolha de resolução antes de baixar</b>Veja capa, canal e duração na hora, escolha entre 480p, 720p, 1080p, 1440p ou 4K e acompanhe velocidade e tempo restante em qualquer conexão de internet.</div></li>
+      <li><i data-lucide="flame" class="i"></i><div><b>Detector de Live mais esperto + Títulos prontos por rede</b>Reconhece muito melhor os momentos de reação na live, corta silêncios no início e entrega botões prontos de legenda e hashtags para <b>TikTok, Shorts e Reels</b>.</div></li>
+      <li><i data-lucide="scan-face" class="i"></i><div><b>Detecção automática da webcam em 6 posições</b>Encontra a câmera do streamer nos 4 cantos e também nas laterais da tela, tanto em vídeos gravados quanto nas lives ao vivo.</div></li>
     </ul>
-    <div style="display:flex; justify-content:flex-end">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap">
+      <button class="btn p" id="btnNovAbrirTutorial" type="button"><i data-lucide="circle-help" class="i"></i> Ver tutorial passo a passo</button>
       <button class="btn principal" id="btnEntendiNovidades" type="button"><i data-lucide="check" class="i"></i> Bora cortar!</button>
     </div>
   </div>
@@ -5674,8 +5679,8 @@
   }
 
   // ---- modal de Tutorial de Boas-Vindas (abre automaticamente na 1a vez que abre o app)
-  const CHAVE_TUTORIAL = 'cortador_tutorial_v1';
-  const CHAVE_NOVIDADES = 'cortador_novidades_v2_0_8';
+  const CHAVE_TUTORIAL = 'cortador_tutorial_v2';
+  const CHAVE_NOVIDADES = 'cortador_novidades_v2_0_8_r2';
   let passoTutorial = 0;
   const TOTAL_PASSOS_TUT = 4;
 
@@ -5690,14 +5695,15 @@
     });
     $('btnTutVoltar').hidden = passoTutorial === 0;
     const ultimo = passoTutorial === TOTAL_PASSOS_TUT - 1;
-    $('btnTutPular').style.visibility = ultimo ? 'hidden' : 'visible';
+    $('btnTutPular').hidden = ultimo;
     $('btnTutProximo').innerHTML = ultimo
-      ? '<i data-lucide="check" class="i"></i> Começar a cortar agora!'
-      : 'Próximo passo <i data-lucide="chevron-right" class="i"></i>';
+      ? '<i data-lucide="check" class="i"></i> Começar a cortar!'
+      : 'Próximo <i data-lucide="chevron-right" class="i"></i>';
     icones($('modalTutorial'));
   }
 
   function abrirTutorial(inicio) {
+    $('modalNovidades').hidden = true;
     irPassoTutorial(inicio != null ? inicio : 0);
     $('modalTutorial').hidden = false;
     icones($('modalTutorial'));
@@ -5707,7 +5713,6 @@
     $('modalTutorial').hidden = true;
     try {
       localStorage.setItem(CHAVE_TUTORIAL, '1');
-      localStorage.setItem(CHAVE_NOVIDADES, '1');
     } catch (_) {}
   }
 
@@ -5722,6 +5727,12 @@
   });
   $('btnTutPular').addEventListener('click', fecharTutorial);
   $('btnFecharTutorial').addEventListener('click', fecharTutorial);
+  if ($('btnTutVerNovidades')) {
+    $('btnTutVerNovidades').addEventListener('click', () => {
+      fecharTutorial();
+      abrirNovidades();
+    });
+  }
   $('modalTutorial').addEventListener('click', (e) => { if (e.target === $('modalTutorial')) fecharTutorial(); });
   if ($('btnTopoTutorial')) $('btnTopoTutorial').addEventListener('click', () => abrirTutorial(0));
   if ($('btnVerTutorialAjustes')) $('btnVerTutorialAjustes').addEventListener('click', () => { abrir(false); abrirTutorial(0); });
@@ -5732,8 +5743,9 @@
     else if (e.key === 'ArrowLeft' && passoTutorial > 0) irPassoTutorial(passoTutorial - 1);
   });
 
-  // ---- modal de Novidades da Versao (aparece para quem ja conhecia o app e atualizou)
+  // ---- modal de Novidades da Versao
   function abrirNovidades() {
+    $('modalTutorial').hidden = true;
     $('modalNovidades').hidden = false;
     icones($('modalNovidades'));
   }
@@ -5742,6 +5754,7 @@
     try { localStorage.setItem(CHAVE_NOVIDADES, '1'); } catch (_) {}
   }
   if ($('btnVerNovidades')) $('btnVerNovidades').addEventListener('click', () => { abrir(false); abrirNovidades(); });
+  if ($('btnNovAbrirTutorial')) $('btnNovAbrirTutorial').addEventListener('click', () => { fecharNovidades(); abrirTutorial(0); });
   if ($('btnFecharNovidades')) $('btnFecharNovidades').addEventListener('click', fecharNovidades);
   if ($('btnEntendiNovidades')) $('btnEntendiNovidades').addEventListener('click', fecharNovidades);
   if ($('modalNovidades')) $('modalNovidades').addEventListener('click', (e) => { if (e.target === $('modalNovidades')) fecharNovidades(); });

@@ -45,10 +45,10 @@ O QUE FOI ATUALIZADO E MELHORADO NESTA VERSAO:
      estabilidade temporal, textura interna e borda da moldura, tanto em
      videos gravados quanto nas lives ao vivo.
 
-6. AUTO-UPDATE AUTOMATICO SEMPRE QUE SAIR GIT NOVO
-   - O programa verifica commits novos no GitHub ao abrir e a cada 2
-     minutos, atualizando e reiniciando sozinho em segundos com tela de
-     progresso dedicada.
+6. AGORA O APLICATIVO ATUALIZA SOZINHO
+   - Sempre que sair uma melhoria ou correcao nova no GitHub, o proprio
+     programa verifica ao abrir, baixa em segundos com tela de progresso
+     e reinicia atualizado - sem precisar baixar o instalador de novo.
 
 Duvidas e novidades: https://www.instagram.com/gabriel.workspace/
 ======================================================================

@@ -1095,23 +1095,43 @@
     transition: background .15s, color .15s;
   }
   .of-x:hover { background: rgba(255,255,255,.09); color: var(--texto); }
-  .of-titulo {
-    font-size: 26px; line-height: 1.18; font-weight: 600; letter-spacing: -.035em; margin: 0 0 8px;
+  .dsp-caixa.of-caixa .of-titulo {
+    font-size: 25px; line-height: 1.18; font-weight: 600; letter-spacing: -.035em; margin: 0 0 8px;
     color: #f6f8fc; text-align: left;
   }
-  .of-sub { margin: 0 0 22px; color: var(--texto2); font-size: 14.5px; font-weight: 400; line-height: 1.55; text-align: left; }
-  .of-grade { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-  .of-feat {
-    padding: 13px 14px; border-radius: 13px; background: rgba(255,255,255,.028);
-    border: 1px solid rgba(255,255,255,.07); display: flex; align-items: flex-start; gap: 10px;
+  .dsp-caixa.of-caixa .of-sub { margin: 0 0 20px; color: var(--texto2); font-size: 14px; font-weight: 400; line-height: 1.55; text-align: left; }
+  .of-tabela {
+    border-radius: 14px; overflow: hidden; margin-bottom: 14px;
+    border: 1px solid rgba(255,255,255,.09); background: rgba(255,255,255,.02);
   }
-  .of-feat-ic {
-    width: 28px; height: 28px; border-radius: 8px; flex: none; display: grid; place-items: center;
-    background: rgba(61,139,255,.12); color: #7fb2ff; margin-top: 1px;
+  .of-t-row {
+    display: grid; grid-template-columns: 1.15fr .85fr 1.15fr; align-items: center;
+    padding: 10px 14px; gap: 10px; font-size: 12.5px; border-top: 1px solid rgba(255,255,255,.06);
   }
-  .of-feat-ic svg { width: 15px; height: 15px; }
-  .of-feat strong { display: block; font-size: 13px; font-weight: 600; color: var(--texto); margin-bottom: 2px; letter-spacing: -.01em; }
-  .of-feat span { display: block; font-size: 12px; font-weight: 400; color: var(--texto3); line-height: 1.45; }
+  .of-t-row.cab {
+    border-top: 0; padding: 9px 14px; background: rgba(255,255,255,.035);
+    font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--texto3);
+  }
+  .of-t-row.cab .c-pro { color: #8ec0ff; }
+  .of-t-row .c-rec { color: var(--texto); font-weight: 500; display: flex; align-items: center; gap: 8px; }
+  .of-t-row .c-rec svg { width: 14px; height: 14px; color: #7fb2ff; flex: none; margin: 0; vertical-align: 0; }
+  .of-t-row .c-loc { color: var(--texto3); font-weight: 400; }
+  .of-t-row .c-pro { color: #dceaff; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+  .of-t-row .c-pro svg { width: 14px; height: 14px; color: #5da0ff; flex: none; margin: 0; vertical-align: 0; }
+  .of-ias {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+    padding: 10px 14px; border-radius: 12px; margin-bottom: 14px;
+    background: rgba(61,139,255,.06); border: 1px solid rgba(127,178,255,.16);
+  }
+  .of-ias-rot { font-size: 11.5px; font-weight: 500; color: var(--texto2); display: inline-flex; align-items: center; gap: 6px; }
+  .of-ias-rot svg { width: 13px; height: 13px; color: #7fb2ff; margin: 0; vertical-align: 0; }
+  .of-ias-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .of-ia-pill {
+    display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 99px;
+    background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.10);
+    font-size: 11.5px; font-weight: 500; color: var(--texto);
+  }
+  .of-ia-pill small { color: #8ec0ff; font-size: 10.5px; font-weight: 500; }
   .of-preco-box {
     display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
     padding: 16px 18px; border-radius: 14px; margin-bottom: 16px;
@@ -2021,39 +2041,50 @@
       <button class="of-x" id="btnFecharOferta20X" type="button" aria-label="Fechar"><i data-lucide="x" class="i"></i></button>
     </div>
 
-    <h2 class="of-titulo" id="oferta20Titulo">Desbloqueie o Diretor IA Pro.</h2>
+    <h2 class="of-titulo" id="oferta20Titulo">Diretor IA Pro com condição exclusiva.</h2>
     <p class="of-sub">
-      Cortes com leitura completa da conversa, lives inteiras sem limite de tempo e títulos prontos. Ao fechar esta mensagem, o valor volta para R$&nbsp;24,90.
+      Cortes com mais precisão de contexto, integração com as melhores IAs e lives inteiras sem limite de tempo. Ao fechar esta tela, o valor volta para R$&nbsp;24,90.
     </p>
 
-    <div class="of-grade">
-      <div class="of-feat">
-        <span class="of-feat-ic"><i data-lucide="brain" class="i"></i></span>
-        <div>
-          <strong>Contexto real da história</strong>
-          <span>Acerta o início e o fim exatos sem cortar frases pela metade.</span>
-        </div>
+    <div class="of-tabela">
+      <div class="of-t-row cab">
+        <span>Recurso</span>
+        <span>Grátis (Local)</span>
+        <span class="c-pro">Diretor IA Pro</span>
       </div>
-      <div class="of-feat">
-        <span class="of-feat-ic"><i data-lucide="radio" class="i"></i></span>
-        <div>
-          <strong>Lives inteiras sem trava</strong>
-          <span>Sem limite de 15 min ao vivo + até 80 vídeos por mês.</span>
-        </div>
+      <div class="of-t-row">
+        <span class="c-rec"><i data-lucide="sparkles" class="i"></i> Precisão dos cortes</span>
+        <span class="c-loc">Volume e chat</span>
+        <span class="c-pro"><i data-lucide="check" class="i"></i> Lê a história inteira</span>
       </div>
-      <div class="of-feat">
-        <span class="of-feat-ic"><i data-lucide="hash" class="i"></i></span>
-        <div>
-          <strong>Gancho e SEO por rede</strong>
-          <span>Gancho de 4s na tela + legendas para TikTok, Shorts e Reels.</span>
-        </div>
+      <div class="of-t-row">
+        <span class="c-rec"><i data-lucide="scissors" class="i"></i> Início e fim exatos</span>
+        <span class="c-loc">Aproximado</span>
+        <span class="c-pro"><i data-lucide="check" class="i"></i> Alinhado na frase real</span>
       </div>
-      <div class="of-feat">
-        <span class="of-feat-ic"><i data-lucide="search" class="i"></i></span>
-        <div>
-          <strong>Busca pelo que você pedir</strong>
-          <span>Descreva o momento e a IA encontra. Gemini incluso ou sua API.</span>
-        </div>
+      <div class="of-t-row">
+        <span class="c-rec"><i data-lucide="radio" class="i"></i> IA na Live ao vivo</span>
+        <span class="c-loc">15 min de teste</span>
+        <span class="c-pro"><i data-lucide="check" class="i"></i> Live inteira sem limite</span>
+      </div>
+      <div class="of-t-row">
+        <span class="c-rec"><i data-lucide="hash" class="i"></i> Gancho, título e SEO</span>
+        <span class="c-loc">Padrão local</span>
+        <span class="c-pro"><i data-lucide="check" class="i"></i> Sob medida por rede</span>
+      </div>
+      <div class="of-t-row">
+        <span class="c-rec"><i data-lucide="search" class="i"></i> Busca por descrição</span>
+        <span class="c-loc">Palavras-chave</span>
+        <span class="c-pro"><i data-lucide="check" class="i"></i> IA encontra o momento</span>
+      </div>
+    </div>
+
+    <div class="of-ias">
+      <span class="of-ias-rot"><i data-lucide="plug" class="i"></i> Integração de IA</span>
+      <div class="of-ias-pills">
+        <span class="of-ia-pill">Google Gemini <small>incluso</small></span>
+        <span class="of-ia-pill">Claude <small>API própria</small></span>
+        <span class="of-ia-pill">ChatGPT <small>API própria</small></span>
       </div>
     </div>
 

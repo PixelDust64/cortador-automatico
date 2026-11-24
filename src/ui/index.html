@@ -902,38 +902,57 @@
   }
   .pilula-pro.gratis { background: var(--vidro2); color: var(--texto2); border-color: var(--linha2); }
   .pilula-pro.ativo { background: rgba(134,211,164,.16); color: var(--verde); border-color: rgba(134,211,164,.35); }
-  .pro-caixa { max-width: 660px; text-align: left; }
-  .pro-caixa h2, .pro-caixa > p { text-align: left; margin-left: 0; margin-right: 0; }
-  .pro-lista { list-style: none; display: grid; gap: 8px; margin: 14px 0 18px; padding: 14px; border-radius: 14px; background: rgba(255,255,255,.025); border: 1px solid var(--linha); font-size: var(--t5); color: var(--texto2); }
-  .pro-lista li { display: flex; align-items: flex-start; gap: 9px; }
-  .pro-lista .i { color: var(--amarelo); margin-top: 3px; }
-  .pro-lista b { color: var(--texto); }
+  .pro-caixa {
+    max-width: 660px; text-align: left; position: relative; overflow: hidden;
+    border-radius: 22px; border: 1px solid rgba(127,178,255,.16);
+    background:
+      radial-gradient(ellipse 85% 42% at 50% -12%, rgba(61,139,255,.18), transparent 65%),
+      #0b0d12;
+    box-shadow: 0 36px 90px -24px rgba(0,0,0,.92), 0 0 48px -18px rgba(61,139,255,.32), inset 0 1px 0 rgba(255,255,255,.08);
+    padding: 28px 28px 22px;
+  }
+  .pro-caixa::before {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px; pointer-events: none;
+    background: conic-gradient(
+      from var(--of-ang),
+      transparent 0deg,
+      rgba(61,139,255,.12) 220deg,
+      #3d8bff 295deg,
+      #a8ceff 330deg,
+      #3d8bff 350deg,
+      transparent 360deg
+    );
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    animation: ofGirar 4.2s linear infinite;
+  }
+  .dsp-caixa.pro-caixa h2 { font-size: 24px; font-weight: 600; letter-spacing: -.035em; color: #f6f8fc; text-align: left; margin: 0 0 6px; }
+  .dsp-caixa.pro-caixa > p { font-size: 14px; font-weight: 400; color: var(--texto2); text-align: left; margin: 0 0 18px; line-height: 1.55; }
   .pro-planos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
   @media (max-width: 600px) { .pro-planos { grid-template-columns: 1fr; } }
   .pro-plano {
-    padding: 16px; border-radius: 15px; border: 1px solid var(--linha2); background: var(--vidro);
-    display: flex; flex-direction: column; gap: 6px;
+    padding: 16px 18px; border-radius: 14px; border: 1px solid rgba(255,255,255,.09); background: rgba(255,255,255,.025);
+    display: flex; flex-direction: column; gap: 6px; transition: border-color .18s;
   }
-  .pro-plano.destaque { border-color: rgba(226,194,122,.5); background: linear-gradient(180deg, rgba(226,194,122,.10), rgba(226,194,122,.02)); }
-  .pro-plano .preco { font-size: 24px; font-weight: 800; color: var(--texto); letter-spacing: -.02em; }
-  .pro-plano small { font-size: var(--t6); color: var(--texto2); line-height: 1.4; flex: 1; }
-  .pro-chave-bloco { border-top: 1px solid var(--linha); padding-top: 14px; margin-top: 6px; }
+  .pro-plano > b { font-size: 13.5px; font-weight: 600; color: var(--texto); letter-spacing: -.01em; }
+  .pro-plano.destaque {
+    border-color: rgba(61,139,255,.45);
+    background: linear-gradient(180deg, rgba(61,139,255,.11), rgba(61,139,255,.02));
+  }
+  .pro-plano .preco { font-size: 26px; font-weight: 600; color: #fff; letter-spacing: -.03em; line-height: 1.1; }
+  .pro-plano small { font-size: 12px; color: var(--texto3); line-height: 1.45; flex: 1; }
+  .pro-chave-bloco { border-top: 1px solid rgba(255,255,255,.08); padding-top: 14px; margin-top: 8px; }
   .pro-chave-linha { display: flex; gap: 8px; margin-top: 8px; }
   .pro-chave-linha input { flex: 1; font-family: Consolas, monospace; text-transform: uppercase; letter-spacing: .06em; }
-  .pro-comparar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
-  @media (max-width: 600px) { .pro-comparar { grid-template-columns: 1fr; } }
-  .pro-comparar > div { padding: 13px 14px; border-radius: 14px; border: 1px solid var(--linha); background: rgba(255,255,255,.025); display: grid; gap: 5px; align-content: start; font-size: var(--t6); color: var(--texto2); }
-  .pro-comparar > div > b { display: flex; align-items: center; gap: 7px; color: var(--texto); font-size: var(--t5); margin-bottom: 3px; }
-  .pro-comparar > div > span::before { content: "✓ "; color: var(--texto3); }
-  .pro-comparar > div.pro { border-color: rgba(226,194,122,.45); background: rgba(226,194,122,.06); }
-  .pro-comparar > div.pro > span::before { color: var(--amarelo); }
-  .pro-comparar > div.pro > b .i { color: var(--amarelo); }
   .pro-provedores { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 8px 0; }
   @media (max-width: 600px) { .pro-provedores { grid-template-columns: 1fr; } }
-  .pro-prov { font: inherit; color: var(--texto); text-align: left; cursor: pointer; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--linha2); background: var(--vidro); display: grid; gap: 2px; }
+  .pro-prov { font: inherit; color: var(--texto); text-align: left; cursor: pointer; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.09); background: rgba(255,255,255,.025); display: grid; gap: 2px; transition: .15s; }
+  .pro-prov b { font-size: 13px; font-weight: 600; }
   .pro-prov small { font-size: 11px; color: var(--texto3); }
-  .pro-prov[aria-pressed="true"] { border-color: var(--amarelo); background: rgba(226,194,122,.09); box-shadow: 0 0 0 1px var(--amarelo) inset; }
-  .pro-espera { padding: 16px; border-radius: 14px; border: 1px dashed rgba(226,194,122,.5); background: rgba(226,194,122,.06); margin-bottom: 14px; font-size: var(--t5); }
+  .pro-prov[aria-pressed="true"] { border-color: rgba(61,139,255,.65); background: rgba(61,139,255,.12); box-shadow: 0 0 0 1px rgba(61,139,255,.45) inset; }
+  .pro-espera { padding: 14px 16px; border-radius: 13px; border: 1px solid rgba(127,178,255,.28); background: rgba(61,139,255,.08); margin-bottom: 14px; font-size: 13px; }
 
   /* ---------- previa imersiva de download + seletor de resolucao */
   .dl-card {
@@ -1055,7 +1074,8 @@
     padding: 13px 14px; border-radius: 12px; background: var(--superficie); border: 1px solid var(--linha);
     font-size: var(--t6); color: var(--texto2); line-height: 1.5;
   }
-  .tut-card b { display: flex; align-items: center; gap: 7px; color: var(--texto); font-size: var(--t5); margin-bottom: 4px; }
+  .tut-card > b:first-child { display: flex; align-items: center; gap: 7px; color: var(--texto); font-size: var(--t5); margin-bottom: 4px; }
+  .tut-card b { color: var(--texto); font-weight: 600; }
   .tut-card.destaque-pro { border-color: rgba(226,194,122,.35); background: linear-gradient(145deg, rgba(226,194,122,.09), var(--superficie)); }
   .tut-dica {
     margin-top: 12px; padding: 10px 13px; border-radius: 10px;
@@ -1945,44 +1965,52 @@
 
 <div class="dsp-fundo" id="modalPro" hidden role="dialog" aria-modal="true" aria-labelledby="proModalTitulo">
   <div class="dsp-caixa pro-caixa">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px">
-      <div>
-        <span class="pilula-pro" id="proModalSelo">Cortador Pro · IA na Nuvem</span>
-        <h2 id="proModalTitulo" style="margin-top:8px">Mais precisão em cada corte</h2>
-      </div>
-      <button class="btn p" id="btnFecharPro" type="button" aria-label="Fechar"><i data-lucide="x" class="i"></i></button>
+    <div class="of-topo-row" style="margin-bottom:14px">
+      <span class="of-selo" id="proModalSelo"><i data-lucide="sparkles" class="i"></i> Cortador Pro · Diretor IA</span>
+      <button class="of-x" id="btnFecharPro" type="button" aria-label="Fechar"><i data-lucide="x" class="i"></i></button>
     </div>
-    <p id="proModalSub" style="margin:8px 0 0">O Motor Local continua grátis e ilimitado. O Pro adiciona uma camada de IA que lê a conversa como um editor: o vídeo continua sendo cortado no seu PC, só a transcrição vai para a análise.</p>
+    <h2 id="proModalTitulo">Mais precisão em cada corte.</h2>
+    <p id="proModalSub">O Motor Local continua grátis e ilimitado. O Pro adiciona uma camada de IA que lê a conversa inteira como um editor — o vídeo continua no seu PC, só a transcrição vai para a análise.</p>
 
-    <div class="pro-comparar">
-      <div>
-        <b><i data-lucide="cpu" class="i"></i> Motor Local · Grátis</b>
-        <span>Escolhe pelas reações, volume, ritmo e palavras-chave</span>
-        <span>Título automático</span>
-        <span>Ilimitado e offline</span>
+    <div class="of-tabela">
+      <div class="of-t-row cab">
+        <span>Recurso</span>
+        <span>Grátis (Local)</span>
+        <span class="c-pro">Diretor IA Pro</span>
       </div>
-      <div class="pro">
-        <b><i data-lucide="sparkles" class="i"></i> Diretor IA Pro</b>
-        <span>Tudo do grátis <b>+ entende o assunto e o contexto</b></span>
-        <span>Começo e fim exatos de cada história</span>
-        <span>Título, gancho de tela e hashtags prontos</span>
-        <span>Você descreve o momento e a IA encontra</span>
+      <div class="of-t-row">
+        <span class="c-rec"><i data-lucide="sparkles" class="i"></i> Precisão dos cortes</span>
+        <span class="c-loc">Volume e chat</span>
+        <span class="c-pro"><i data-lucide="check" class="i"></i> Lê a história inteira</span>
+      </div>
+      <div class="of-t-row">
+        <span class="c-rec"><i data-lucide="scissors" class="i"></i> Início e fim exatos</span>
+        <span class="c-loc">Aproximado</span>
+        <span class="c-pro"><i data-lucide="check" class="i"></i> Alinhado na frase real</span>
+      </div>
+      <div class="of-t-row">
+        <span class="c-rec"><i data-lucide="radio" class="i"></i> IA na Live ao vivo</span>
+        <span class="c-loc">15 min de teste</span>
+        <span class="c-pro"><i data-lucide="check" class="i"></i> Live inteira sem limite</span>
+      </div>
+      <div class="of-t-row">
+        <span class="c-rec"><i data-lucide="hash" class="i"></i> Gancho, título e SEO</span>
+        <span class="c-loc">Padrão local</span>
+        <span class="c-pro"><i data-lucide="check" class="i"></i> Sob medida por rede</span>
+      </div>
+      <div class="of-t-row">
+        <span class="c-rec"><i data-lucide="search" class="i"></i> Busca por descrição</span>
+        <span class="c-loc">Palavras-chave</span>
+        <span class="c-pro"><i data-lucide="check" class="i"></i> IA encontra o momento</span>
       </div>
     </div>
 
-    <ul class="pro-lista">
-      <li><i data-lucide="crosshair" class="i"></i><span><b>Precisão de editor:</b> entende piada, ironia e contexto. Sabe onde a história começa e onde termina, não só onde alguém gritou.</span></li>
-      <li><i data-lucide="flame" class="i"></i><span><b>Títulos e ganchos prontos:</b> escreve o gancho dos 4 primeiros segundos e opções de título pra TikTok, Shorts e Reels.</span></li>
-      <li><i data-lucide="search" class="i"></i><span><b>Busca por pedido:</b> escreva o que aconteceu com suas palavras e a IA encontra o trecho exato.</span></li>
-      <li><i data-lucide="plug" class="i"></i><span><b>Gemini nativo ou a sua IA:</b> já vem com o Google Gemini pronto, sem configurar nada. Se preferir, conecte sua própria chave do <b>Claude</b> ou do <b>ChatGPT</b>.</span></li>
-    </ul>
-
-    <div id="proConviteBanner" class="pro-espera" hidden style="border-style:solid; border-color:rgba(226,194,122,.45); background:linear-gradient(145deg, rgba(226,194,122,.13), rgba(61,139,255,.06))">
-      <b style="color:var(--amarelo); font-size:var(--t4)" id="proConviteTitulo">✨ Convite Especial · Cortador Pro</b>
+    <div id="proConviteBanner" class="pro-espera" hidden>
+      <b style="color:#9ec5ff; font-size:13.5px; font-weight:600" id="proConviteTitulo">Diretor IA Pro</b>
       <div style="color:var(--texto2); margin-top:4px; line-height:1.5" id="proConviteTexto"></div>
     </div>
 
-    <div id="proPainelAtivo" class="pro-espera" hidden style="border-style:solid; border-color:rgba(134,211,164,.4); background:rgba(134,211,164,.07)">
+    <div id="proPainelAtivo" class="pro-espera" hidden style="border-color:rgba(134,211,164,.35); background:rgba(134,211,164,.07)">
       <b style="color:var(--verde); font-size:var(--t3)" id="proAtivoPlano">⚡ Cortador Pro Ativo</b>
       <div style="color:var(--texto2); margin-top:4px" id="proAtivoMeta"></div>
       <div style="margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap">
@@ -1992,7 +2020,7 @@
     </div>
 
     <div id="proPainelEspera" class="pro-espera" hidden>
-      <b style="color:#f4dca0">Aguardando confirmação do pagamento...</b>
+      <b style="color:#9ec5ff">Aguardando confirmação do pagamento...</b>
       <div style="color:var(--texto2); margin-top:4px" id="proEsperaTxt">Conclua o Pix ou Cartão na aba da InfinitePay que abriu. Assim que aprovar, seu Cortador Pro <b>ativa sozinho aqui na tela</b>!</div>
       <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap">
         <a class="btn principal p" id="btnReabrirCheckout" href="#" target="_blank" rel="noopener">Abrir pagamento novamente</a>
@@ -6319,7 +6347,7 @@
 
   function verificarBoasVindasInicial() {
     try {
-      if (!$('dspFundo').hidden || !$('modalAutoUpdate').hidden) return;
+      if (!$('dspFundo').hidden || !$('modalAutoUpdate').hidden || !$('modalPro').hidden || !$('modalOferta20').hidden) return;
       if (!localStorage.getItem(CHAVE_TUTORIAL)) {
         abrirTutorial(0);
       } else if (!localStorage.getItem(CHAVE_NOVIDADES)) {
@@ -6456,6 +6484,8 @@
   const _qsPreview = new URLSearchParams(location.search);
   if (_qsPreview.get('oferta') === '1') {
     setTimeout(() => { $('oferta20Status').textContent = ''; $('modalOferta20').hidden = false; icones($('modalOferta20')); }, 350);
+  } else if (_qsPreview.get('pro') === '1') {
+    setTimeout(() => abrirModalPro(), 350);
   } else if (_qsPreview.get('vip') === '1') {
     setTimeout(() => abrirBoasVindasVipPro('CORT-DEMO-1234-5678'), 350);
   }

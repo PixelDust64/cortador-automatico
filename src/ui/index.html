@@ -602,6 +602,17 @@
   }
   .projeto:hover { border-color: var(--linha2); background: var(--vidro2); }
   .projeto > .i { color: var(--texto3); font-size: 18px; }
+  .projeto-acoes { display: flex; align-items: center; gap: 6px; flex: none; }
+  .projeto-acoes > .i { color: var(--texto3); font-size: 18px; }
+  .btn-apagar-proj {
+    width: 34px; height: 34px; padding: 0; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: transparent; border: 1px solid transparent; color: var(--texto3);
+    cursor: pointer; transition: .2s var(--suave);
+  }
+  .btn-apagar-proj:hover {
+    color: #ff8e99; border-color: rgba(255,112,112,.32); background: rgba(255,95,110,.10);
+  }
   .capas { position: relative; flex: none; width: 98px; height: 96px; }
   .capas img {
     position: absolute; top: 0; width: 54px; height: 96px; object-fit: cover;
@@ -1883,6 +1894,7 @@
         <button class="btn" id="btnRelatorio"><i data-lucide="file-text" class="i"></i> Relatório</button>
         <button class="btn" id="btnNovo"><i data-lucide="rotate-ccw" class="i"></i> Cortar outro</button>
         <button class="btn" id="btnTrechoProjeto"><i data-lucide="film" class="i"></i> Escolher trecho</button>
+        <button class="btn" id="btnApagarProjeto" type="button" title="Apagar este projeto do computador"><i data-lucide="trash-2" class="i"></i> Apagar</button>
         <button class="btn principal" id="btnMais"><i data-lucide="plus" class="i"></i> Extrair mais cortes</button>
       </div>
     </div>
@@ -4598,7 +4610,7 @@
     }
 
     alvo.innerHTML = lista.map((p) =>
-      '<button class="projeto" data-pasta="' + esc(p.pasta) + '">' +
+      '<div class="projeto" role="button" tabindex="0" data-pasta="' + esc(p.pasta) + '">' +
         '<span class="capas">' + p.capas.map((c) =>
           '<img src="' + urlArquivo(c) + '" alt="" loading="lazy">').join('') + '</span>' +
         '<span class="projeto-info">' +
@@ -4617,13 +4629,65 @@
           (p.videoExiste || p.aoVivo ? '' : '<span class="projeto-alerta"><i data-lucide="triangle-alert" class="i"></i>' +
             'O vídeo original saiu da pasta — dá pra assistir e baixar, mas não editar nem tirar mais cortes.</span>') +
         '</span>' +
-        '<i data-lucide="chevron-right" class="i"></i>' +
-      '</button>').join('');
+        '<span class="projeto-acoes">' +
+          '<button type="button" class="btn-apagar-proj" data-apagar-pasta="' + esc(p.pasta) + '" data-apagar-nome="' + esc(p.nome) + '" title="Apagar projeto" aria-label="Apagar projeto"><i data-lucide="trash-2" class="i"></i></button>' +
+          '<i data-lucide="chevron-right" class="i"></i>' +
+        '</span>' +
+      '</div>').join('');
 
     alvo.querySelectorAll('.projeto').forEach((b) => {
       b.addEventListener('click', () => abrirProjeto(b.dataset.pasta));
+      b.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          abrirProjeto(b.dataset.pasta);
+        }
+      });
+    });
+    alvo.querySelectorAll('.btn-apagar-proj').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        apagarProjetoUi(btn.dataset.apagarPasta, btn.dataset.apagarNome, false);
+      });
     });
     icones(alvo);
+  }
+
+  async function apagarProjetoUi(pasta, nome, voltarParaLista) {
+    if (!pasta) return;
+    const label = (nome || 'este projeto').trim();
+    const ok = window.confirm('Apagar o projeto "' + label + '" e todos os cortes dele do seu computador?\n\nEssa ação não pode ser desfeita.');
+    if (!ok) return;
+
+    semErro();
+    // Libera players de video antes de apagar (no Windows um mp4 aberto trava a pasta)
+    document.querySelectorAll('#clipes video, #clipesParciais video').forEach((v) => {
+      try { v.pause(); v.removeAttribute('src'); v.load(); } catch (_) {}
+    });
+
+    try {
+      const resp = await fetch('/api/projeto/apagar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pasta }),
+      });
+      const dados = await resp.json().catch(() => ({}));
+      if (!resp.ok || dados.erro) throw new Error(dados.erro || 'Não consegui apagar esse projeto.');
+
+      listaDeProjetos = listaDeProjetos.filter((p) => p.pasta !== pasta);
+      if (projetoAtual && projetoAtual.pasta === pasta) {
+        projetoAtual = null;
+        pastaSaida = null;
+      }
+      if (voltarParaLista) {
+        await abrirProjetos();
+      } else {
+        pintarProjetos();
+      }
+      try { carregarArmazenamento(); } catch (_) {}
+    } catch (e) {
+      erro(e.message || 'Não consegui apagar esse projeto.');
+    }
   }
 
   $('buscaProjeto').addEventListener('input', pintarProjetos);
@@ -5659,6 +5723,10 @@
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ caminho: pastaSaida }),
     });
+  });
+  $('btnApagarProjeto').addEventListener('click', () => {
+    if (!projetoAtual || !projetoAtual.pasta) return;
+    apagarProjetoUi(projetoAtual.pasta, projetoAtual.nome, true);
   });
   // Recem-gerado: volta pra etapa 3 com o mesmo video, pra tentar de outro jeito.
   // Projeto aberto da lista: comeca do zero, escolhendo o video.

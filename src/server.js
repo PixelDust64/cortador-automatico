@@ -894,6 +894,21 @@ const servidor = http.createServer(async (req, res) => {
       return json(res, 200, p);
     }
 
+    if (rota === '/api/projeto/apagar' && req.method === 'POST') {
+      const corpo = await lerCorpo(req);
+      const pasta = projetos.pastaDoProjeto(corpo && corpo.pasta);
+      if (!pasta) return json(res, 404, { erro: 'Não achei esse projeto.' });
+      if (aoVivoAtual && !aoVivoAtual.parado && aoVivoAtual.pasta && path.resolve(aoVivoAtual.pasta) === pasta) {
+        return json(res, 409, { erro: 'Pare a live antes de apagar este projeto.' });
+      }
+      try {
+        projetos.apagar(pasta);
+        return json(res, 200, { ok: true });
+      } catch (e) {
+        return json(res, 500, { erro: e.message || 'Não consegui apagar esse projeto.' });
+      }
+    }
+
     // O video pra assistir no editor: o de um projeto (?pasta=) ou o que acabou
     // de ser escolhido na janela (?caminho=). Com Range, pra dar pra pular.
     const fonteDaUrl = () => ({ pasta: url.searchParams.get('pasta'), caminho: url.searchParams.get('caminho'), clipe: url.searchParams.get('clipe') });

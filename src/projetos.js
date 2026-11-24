@@ -295,4 +295,19 @@ async function gerarQuadro(video, t, pasta, chave, alvo) {
   }
 }
 
-module.exports = { listar, abrir, pastaDoProjeto, liberarVideo, videoDe, palavras, quadro };
+/** Apaga a pasta inteira de um projeto (clipes, miniaturas e sessao.json). */
+function apagar(bruto) {
+  const pasta = pastaDoProjeto(bruto);
+  if (!pasta) throw new Error('Projeto não encontrado.');
+  try {
+    fs.rmSync(pasta, { recursive: true, force: true, maxRetries: 3, retryDelay: 120 });
+  } catch (e) {
+    if (e && (e.code === 'EBUSY' || e.code === 'EPERM')) {
+      throw new Error('Algum vídeo deste projeto está aberto agora. Feche o player ou a pasta e tente de novo.');
+    }
+    throw new Error('Não consegui apagar a pasta do projeto: ' + (e.message || e));
+  }
+  return true;
+}
+
+module.exports = { listar, abrir, apagar, pastaDoProjeto, liberarVideo, videoDe, palavras, quadro };

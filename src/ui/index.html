@@ -1905,6 +1905,31 @@
   </div>
 </div>
 
+<div class="dsp-fundo" id="modalOferta20" hidden role="dialog" aria-modal="true" aria-labelledby="oferta20Titulo" style="z-index:240">
+  <div class="dsp-caixa" style="max-width:500px; text-align:center; padding:28px 26px 24px; border-color:rgba(226,194,122,.45); background:linear-gradient(160deg, rgba(226,194,122,.10), var(--cartao) 38%, rgba(61,139,255,.08))">
+    <span class="pilula-pro" style="background:rgba(226,194,122,.18); border-color:rgba(226,194,122,.45); color:var(--amarelo)">🔥 Promoção exclusiva · válida somente nesta mensagem</span>
+    <h2 id="oferta20Titulo" style="margin:12px 0 6px; font-size:24px; line-height:1.2">Diretor IA Pro de <span style="text-decoration:line-through; color:var(--texto3); font-weight:500">R$ 24,90</span> por <span style="color:var(--amarelo)">R$ 20,00</span></h2>
+    <p style="margin:0 auto 16px; color:var(--texto2); font-size:var(--t5); max-width:42ch; line-height:1.55">
+      Oferta única ao abrir o programa! <b>Se você fechar esta janela, o valor volta para R$ 24,90.</b>
+    </p>
+    <div style="padding:14px 16px; border-radius:14px; background:rgba(0,0,0,.28); border:1px solid var(--linha2); text-align:left; font-size:13.5px; color:var(--texto2); display:grid; gap:7px; margin-bottom:18px">
+      <div><b style="color:var(--texto)">✓</b> Entende a conversa inteira e crava o início/fim exato de cada história</div>
+      <div><b style="color:var(--texto)">✓</b> Até <b>80 vídeos/mês</b> + <b>lives inteiras sem limite de 15 minutos</b></div>
+      <div><b style="color:var(--texto)">✓</b> Gancho de 4s na tela, títulos virais e SEO pronto por rede</div>
+      <div><b style="color:var(--texto)">✓</b> Pagamento via <b>Pix ou Cartão</b> · ativa sozinho na tela na hora</div>
+    </div>
+    <div style="display:grid; gap:10px">
+      <button class="btn principal" id="btnGarantirOferta20" type="button" style="width:100%; justify-content:center; padding:13px 18px; font-size:15px">
+        <i data-lucide="zap" class="i"></i> Garantir agora por R$ 20,00 (Pix ou Cartão)
+      </button>
+      <button class="btn p" id="btnFecharOferta20" type="button" style="width:100%; justify-content:center; color:var(--texto3)">
+        Agora não (fechar e perder o desconto)
+      </button>
+    </div>
+    <div class="pasta-status" id="oferta20Status" style="margin-top:10px"></div>
+  </div>
+</div>
+
 <div class="dsp-fundo" id="modalTutorial" hidden role="dialog" aria-modal="true" aria-labelledby="tutTitulo" style="z-index:220">
   <div class="dsp-caixa tut-caixa">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px">
@@ -5717,7 +5742,70 @@
     });
   }
 
+  // ---- promocao relampago unica ao abrir (de R$ 24,90 por R$ 20,00 - valida somente nesta mensagem)
+  const CHAVE_OFERTA_20 = 'cortador_oferta_24_por_20_v1';
+  function tentarMostrarOferta20() {
+    if (!estadoPro || estadoPro.ativo || !estadoPro.configurado) return;
+    try { if (localStorage.getItem(CHAVE_OFERTA_20)) return; } catch (_) { return; }
+    const algumAberto = !$('dspFundo').hidden || !$('modalTutorial').hidden || !$('modalNovidades').hidden || !$('modalAutoUpdate').hidden || !$('modalPro').hidden;
+    if (algumAberto || processandoAgora || avAtivo) return;
+    try { localStorage.setItem(CHAVE_OFERTA_20, '1'); } catch (_) {}
+    $('oferta20Status').textContent = '';
+    $('modalOferta20').hidden = false;
+    icones($('modalOferta20'));
+  }
+
+  if ($('btnFecharOferta20')) {
+    $('btnFecharOferta20').addEventListener('click', () => {
+      try { localStorage.setItem(CHAVE_OFERTA_20, '1'); } catch (_) {}
+      $('modalOferta20').hidden = true;
+    });
+  }
+  if ($('btnGarantirOferta20')) {
+    $('btnGarantirOferta20').addEventListener('click', async () => {
+      const b = $('btnGarantirOferta20');
+      const st = $('oferta20Status');
+      b.disabled = true;
+      st.textContent = 'Gerando link promocional de R$ 20,00 na InfinitePay...';
+      st.className = 'pasta-status';
+      try {
+        const r = await postJson('/api/pro/checkout', { plano: 'mensal_promo' });
+        if (r.erro) throw new Error(r.erro);
+        $('modalOferta20').hidden = true;
+        $('modalPro').hidden = false;
+        statusPro('🔥 Link promocional de R$ 20,00 aberto! Conclua o Pix ou Cartão para ativar na hora.', 'ok');
+        $('btnReabrirCheckout').href = r.urlCheckout;
+        $('proPainelEspera').hidden = false;
+        window.open(r.urlCheckout, '_blank', 'noopener');
+        icones($('modalPro'));
+
+        clearInterval(timerPedidoPro);
+        timerPedidoPro = setInterval(async () => {
+          try {
+            const chk = await fetch('/api/pro/pedido?id=' + encodeURIComponent(r.pedidoId)).then((x) => x.json());
+            if (chk && chk.pago) {
+              clearInterval(timerPedidoPro);
+              timerPedidoPro = null;
+              $('proPainelEspera').hidden = true;
+              cfg.motor = 'ia';
+              guardar();
+              await carregarEstadoPro(true);
+              statusPro('🎉 Pagamento de R$ 20,00 confirmado! Sua chave ' + (chk.chave || '') + ' já foi ativada neste PC.', 'ok');
+            }
+          } catch (_) {}
+        }, 3200);
+      } catch (err) {
+        st.textContent = err.message || 'Não consegui gerar o link agora.';
+        st.className = 'pasta-status ruim';
+      } finally {
+        b.disabled = false;
+      }
+    });
+  }
+
   function tentarMostrarConviteUpgrade() {
+    tentarMostrarOferta20();
+    if (!$('modalOferta20').hidden) return;
     if (!estadoPro || estadoPro.ativo || !estadoPro.conviteUpgrade) return;
     const idConvite = 'pro_convite_visto_' + (estadoPro.conviteUpgrade.id || 'v1');
     try {

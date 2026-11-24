@@ -1,16 +1,16 @@
 {
   "versao": "2.0.8",
-  "resumoVersao": "Oferta exclusiva Diretor IA Pro por R$ 19,99/mês + correção de vídeo fluido nas lives do YouTube.",
+  "resumoVersao": "Promoção relâmpago Diretor IA Pro + correção de vídeo fluido nas lives do YouTube.",
   "precisaInstalador": false,
   "proApiUrl": "https://cortador-pro.gabrielhraa.workers.dev",
   "aviso": {
-    "id": "oferta-exclusiva-1999-v1",
+    "id": "instagram-duvidas-v1",
     "ativo": true,
-    "tipo": "aviso",
-    "titulo": "🔥 Oferta Exclusiva pra quem já baixou: Diretor IA Pro por R$ 19,99/mês!",
-    "texto": "De R$ 24,90 por apenas R$ 19,99/mês: libere o Diretor IA Pro para vídeos e lives inteiras sem limite de tempo (ativa na hora no Pix ou Cartão).",
-    "botaoTexto": "⚡ Garantir por R$ 19,99",
-    "botaoUrl": "#pro",
+    "tipo": "info",
+    "titulo": "Alguma dúvida ou sugestão?",
+    "texto": "Siga @gabriel.workspace no Instagram para acompanhar as novidades e mandar qualquer dúvida por lá.",
+    "botaoTexto": "Seguir no Instagram",
+    "botaoUrl": "https://www.instagram.com/gabriel.workspace/",
     "fixo": false
   }
 }

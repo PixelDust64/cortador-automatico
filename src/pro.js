@@ -17,10 +17,9 @@ const { achatarPalavras, montarFrases, mmss, rotulo } = require('./score');
 const PLANOS_PADRAO = [
   {
     id: 'mensal',
-    nome: 'Oferta Exclusiva · Passe 30 dias',
-    precoAntes: 'R$ 24,90',
-    preco: 'R$ 19,99',
-    detalhe: 'Exclusivo pra quem já baixou · até 80 vídeos/mês + lives inteiras sem limite · ativa na hora no Pix ou Cartão',
+    nome: 'Passe 30 dias · Cortador Pro',
+    preco: 'R$ 24,90',
+    detalhe: 'Pix ou cartão · até 80 vídeos/mês + lives inteiras sem limite · ativa na hora',
     destaque: true,
   },
   {

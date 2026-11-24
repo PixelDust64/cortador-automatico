@@ -658,9 +658,9 @@
   .modal .dica b { color: var(--texto2); }
   .fechar-x { position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--linha); background: transparent; color: var(--texto3); cursor: pointer; display: grid; place-items: center; }
   .fechar-x:hover { color: var(--texto); border-color: var(--linha2); }
-  .modal.escolha { max-width: 880px; text-align: left; }
+  .modal.escolha { max-width: 610px; text-align: left; }
   .modal.escolha > h3, .modal.escolha > p { text-align: center; }
-  .opcoes-exe { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: stretch; margin-bottom: 14px; }
+  .opcoes-exe { display: grid; grid-template-columns: 1fr; gap: 14px; align-items: stretch; margin-bottom: 14px; }
   .opcao { padding: 20px; border-radius: 18px; border: 1px solid var(--linha); background: var(--vidro); display: flex; flex-direction: column; gap: 14px; }
   .opcao + .opcao { margin-top: 12px; }
   .opcoes-exe .opcao + .opcao { margin-top: 0; }
@@ -689,8 +689,8 @@
   .beneficios-apoiador li svg { width: 16px; height: 16px; color: var(--estrela); margin-top: 2px; }
   .beneficios-gratis li svg { width: 16px; height: 16px; color: var(--marca2); margin-top: 2px; }
   .beneficios-apoiador b, .beneficios-gratis b { color: var(--texto); }
-  .seguranca { padding: 14px 16px; border-radius: 14px; background: rgba(245,196,81,.06); border: 1px solid rgba(245,196,81,.25); font-size: 13.5px; color: var(--texto2); text-align: left; }
-  .seguranca > b { display: flex; align-items: center; gap: 8px; color: var(--estrela); font-size: 14px; margin-bottom: 6px; }
+  .seguranca { padding: 14px 16px; border-radius: 14px; background: rgba(61,139,255,.07); border: 1px solid rgba(61,139,255,.32); font-size: 13.5px; color: var(--texto2); text-align: left; line-height: 1.5; }
+  .seguranca > b { display: flex; align-items: center; gap: 8px; color: var(--marca2); font-size: 14px; margin-bottom: 6px; }
   .seguranca p { margin: 0 0 8px; }
   .seguranca ol { padding-left: 20px; display: grid; gap: 4px; }
   .seguranca b, .opcao-texto b { color: var(--texto); }
@@ -1334,53 +1334,32 @@
   <div class="modal escolha">
     <button class="fechar-x" type="button" data-fechar aria-label="Fechar"><i data-lucide="x"></i></button>
     <h3 id="escolherTitulo">Baixar Cortador Automático v2.0.8</h3>
-    <p>Instalador completo para Windows 10 e 11 (64 bits) — já inclui todas as novidades da versão 2.0.8:</p>
-    <div class="seguranca" style="margin-bottom:14px; border-color:rgba(61,139,255,.35); background:rgba(61,139,255,.07)">
-      <b><i data-lucide="sparkles"></i> O que há de novo nesta versão (v2.0.8)</b>
-      <p style="margin:0">• <b>Diretor IA Pro em Vídeo e Live</b> (3 testes grátis inclusos + Gemini nativo ou sua chave Claude/ChatGPT) · <b>Áudio Zero-Atraso</b> (YouTube, Kick e Twitch) · <b>Prévia com Escolha de Resolução</b> (720p a 4K) · <b>Webcam 6 posições</b> · <b>SEO TikTok, Shorts e Reels</b> · <b>Auto-Update pelo GitHub</b>.</p>
-    </div>
+    <p>Instalador oficial completo para Windows 10 e 11 (64 bits):</p>
     <div class="opcoes-exe">
       <div class="opcao recomendada contorno">
         <div class="apoiador-selo">
-          <span class="gratis-pill"><i data-lucide="download"></i> <span data-downloads>+1.200 downloads</span></span>
-          <span class="tag-gratis">v2.0.8 · Grátis + 3 Testes Pro</span>
+          <span class="gratis-pill"><i data-lucide="download"></i> <span data-downloads>+1.530 downloads</span></span>
+          <span class="tag-gratis">100% Grátis · v2.0.8</span>
         </div>
         <div class="opcao-topo">
           <span class="opcao-ic"><i data-lucide="download"></i></span>
-          <div><b>Instalador Oficial (.exe) · v2.0.8</b><span>Motor Local grátis ilimitado + 3 testes do Diretor IA Pro</span></div>
+          <div><b>Instalador (.exe) · Versão Gratuita</b><span>Grátis para sempre · é só clicar em Avançar · auto-update incluso</span></div>
         </div>
         <ul class="beneficios-gratis">
-          <li><i data-lucide="circle-check"></i><span><b>Cortes ilimitados:</b> clipa lives ao vivo (Twitch, Kick, YouTube) e vídeos gravados do PC.</span></li>
-          <li><i data-lucide="circle-check"></i><span><b>Pronto pra postar:</b> enquadra rosto + jogo em 9:16 com legenda automática e título SEO.</span></li>
-          <li><i data-lucide="circle-check"></i><span><b>100% no seu PC:</b> sem marca d'água, sem cadastro, sem assinatura e sem chave de API.</span></li>
-          <li><i data-lucide="circle-check"></i><span><b>Instalador completo:</b> já traz tudo configurado para Windows 10 e 11 (64 bits).</span></li>
+          <li><i data-lucide="circle-check"></i><span><b>Cortes ilimitados:</b> clipa lives ao vivo (Twitch, Kick, YouTube) e vídeos gravados com áudio 0ms sincronizado.</span></li>
+          <li><i data-lucide="circle-check"></i><span><b>Pronto pra postar:</b> escolha de resolução (720p a 4K), webcam 6 posições, legenda automática e SEO por rede.</span></li>
+          <li><i data-lucide="circle-check"></i><span><b>100% no seu PC + 3 testes Pro grátis:</b> Motor Local ilimitado offline e degustação do Diretor IA Pro inclusa.</span></li>
+          <li><i data-lucide="circle-check"></i><span><b>Instalador completo:</b> já traz tudo configurado para Windows 10 e 11 (64 bits) e atualiza sozinho pelo GitHub.</span></li>
         </ul>
         <a class="btn principal grande" id="btnBaixarExe" href="#"><i data-lucide="download"></i> Baixar versão gratuita (.exe)</a>
       </div>
-      <div class="opcao apoiador contorno brilha" data-grupo-nivel>
-        <div class="apoiador-selo">
-          <span class="vagas-pill"><span class="ponto-vaga"></span> 20 vagas restantes</span>
-          <span class="tag-exclusivo"><i data-lucide="star"></i> Recomendado</span>
-        </div>
-        <div class="opcao-topo">
-          <span class="opcao-ic apoiador-ic"><i data-lucide="crown"></i></span>
-          <div><b>Seja um Apoiador do Projeto</b><span>Escolha quanto quer contribuir com o desenvolvimento</span></div>
-        </div>
-        <div class="seletor-niveis" role="group" aria-label="Escolha o nível de apoio">
-          <button type="button" class="nv-pill" data-nivel="apoio" aria-pressed="false"><span class="nv-esq"><i data-lucide="coffee"></i> Apoio</span><span class="nv-val">R$ 10</span></button>
-          <button type="button" class="nv-pill" data-nivel="colaborador" aria-pressed="true"><span class="nv-esq"><i data-lucide="rocket"></i> Colaborador <span class="nv-rec"><i data-lucide="star"></i></span></span><span class="nv-val">R$ 25</span></button>
-          <button type="button" class="nv-pill" data-nivel="apoiador" aria-pressed="false"><span class="nv-esq"><i data-lucide="gem"></i> Apoiador</span><span class="nv-val">R$ 50</span></button>
-          <button type="button" class="nv-pill" data-nivel="patrocinador" aria-pressed="false"><span class="nv-esq"><i data-lucide="wrench"></i> Patrocinador</span><span class="nv-val">R$ 100+</span></button>
-        </div>
-        <ul class="beneficios-apoiador">
-          <li><i data-lucide="circle-check"></i><span data-nivel-resumo><b>Colaborador (R$ 25):</b> ajuda diretamente no desenvolvimento e nas próximas atualizações.</span></li>
-          <li><i data-lucide="circle-check"></i><span><b>Versão exclusiva + acesso antecipado:</b> receba novas versões e ideias antes de todo mundo.</span></li>
-          <li><i data-lucide="circle-check"></i><span><b>Sugestões para atualizações:</b> dê ideias, sugira funções e participe de cada atualização.</span></li>
-          <li><i data-lucide="circle-check"></i><span><b>Seu nome no projeto:</b> reconhecimento oficial com seu nome registrado no projeto.</span></li>
-        </ul>
-        <a class="btn estrelar grande" data-nivel-link href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20apoiar%20o%20Cortador%20Autom%C3%A1tico%20no%20n%C3%ADvel%20Colaborador%20(R%24%2025)%20e%20garantir%20minha%20vaga!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> <span data-nivel-btn>Ser Colaborador · R$ 25 (WhatsApp)</span></a>
-      </div>
     </div>
+
+    <div class="seguranca" style="margin-bottom:14px">
+      <b><i data-lucide="shield-check"></i> Por que aparece o alerta "O Windows protegeu o computador"?</b>
+      <p style="margin:0">Não se preocupe — <b>não é vírus</b>. A Microsoft exibe esse aviso automático (SmartScreen) em todo programa independente recém-atualizado que ainda não compra um certificado empresarial anual (que custa ~R$ 2.500/ano; nosso certificado gratuito de código aberto na SignPath Foundation já está em análise). Todo o nosso código é <b>100% aberto e auditável no GitHub</b> e o instalador é gerado direto pelos servidores oficiais do GitHub. Ao abrir, basta clicar em <b>Mais informações</b> e depois em <b>Executar assim mesmo</b>.</p>
+    </div>
+
     <div class="opcao">
       <div class="opcao-topo">
         <span class="opcao-ic github"><svg class="ic-m"><use href="#m-github"/></svg></span>
@@ -1399,30 +1378,16 @@
 <div class="modal-fundo" id="obrigado" role="dialog" aria-modal="true" aria-labelledby="obrigadoTitulo">
   <div class="modal">
     <h3 id="obrigadoTitulo">Seu download começou!</h3>
-    <p>Enquanto o instalador baixa, veja como abrir rapidinho e como apoiar o projeto:</p>
-    <div class="seguranca" style="margin-bottom:14px; border-color:rgba(61,139,255,.35); background:rgba(61,139,255,.07)">
+    <p>Enquanto o instalador baixa, veja as novidades da v2.0.8 e como abrir rapidinho:</p>
+    <div class="seguranca" style="margin-bottom:14px">
       <b><i data-lucide="sparkles"></i> Notas da Atualização v2.0.8 · O que mudou nesta versão</b>
-      <p>• <b>Diretor IA Pro (Vídeo e Live):</b> 3 testes grátis + Gemini nativo ou sua chave Claude/ChatGPT.<br>• <b>Áudio Zero-Atraso:</b> sincronia CFR + async ativo no YouTube, Kick e Twitch.<br>• <b>Prévia Imersiva + Resolução:</b> escolha 720p/1080p/4K antes de baixar em qualquer conexão.<br>• <b>Live Calibrada + Webcam 6 posições + SEO pronto</b> para TikTok, Shorts e Reels.</p>
+      <p style="margin:0">• <b>Diretor IA Pro (Vídeo e Live):</b> 3 testes grátis + Gemini nativo ou sua chave Claude/ChatGPT.<br>• <b>Áudio Zero-Atraso:</b> sincronia CFR + async ativo no YouTube, Kick e Twitch.<br>• <b>Prévia Imersiva + Resolução:</b> escolha 720p/1080p/4K antes de baixar em qualquer conexão.<br>• <b>Live Calibrada + Webcam 6 posições + SEO pronto</b> para TikTok, Shorts e Reels + <b>Auto-Update Git</b>.</p>
     </div>
     <div class="seguranca" style="margin-bottom:14px">
-      <b><i data-lucide="shield-alert"></i> Como abrir o instalador no Windows</b>
-      <p>Enquanto o nosso certificado gratuito da SignPath Foundation está em análise, o Windows pode mostrar <b>"O Windows protegeu o computador"</b>. É só clicar em <b>Mais informações</b> e depois em <b>Executar assim mesmo</b>.</p>
+      <b><i data-lucide="shield-check"></i> Por que o Windows mostra "O Windows protegeu o computador"?</b>
+      <p style="margin:0">O SmartScreen da Microsoft aparece em todo `.exe` novo de projeto independente sem certificado corporativo pago (~R$ 2.500/ano — o nosso gratuito da SignPath Foundation está em análise). Nosso `.exe` é compilado direto no GitHub com código 100% aberto. É só clicar em <b>Mais informações</b> → <b>Executar assim mesmo</b>.</p>
     </div>
     <div class="formas">
-      <div class="forma f-colab contorno" data-grupo-nivel>
-        <span class="f-ic"><i data-lucide="crown"></i></span>
-        <div>
-          <b>Apoie o desenvolvimento <span class="vagas-pill"><span class="ponto-vaga"></span> 20 vagas restantes</span></b>
-          <small data-nivel-resumo><b>Colaborador (R$ 25):</b> ajuda no desenvolvimento, com acesso antecipado, sugestões e seu nome no projeto.</small>
-          <div class="seletor-niveis" style="margin-bottom:12px" role="group" aria-label="Escolha o nível de apoio">
-            <button type="button" class="nv-pill" data-nivel="apoio" aria-pressed="false"><span class="nv-esq"><i data-lucide="coffee"></i> Apoio</span><span class="nv-val">R$ 10</span></button>
-            <button type="button" class="nv-pill" data-nivel="colaborador" aria-pressed="true"><span class="nv-esq"><i data-lucide="rocket"></i> Colaborador <span class="nv-rec"><i data-lucide="star"></i></span></span><span class="nv-val">R$ 25</span></button>
-            <button type="button" class="nv-pill" data-nivel="apoiador" aria-pressed="false"><span class="nv-esq"><i data-lucide="gem"></i> Apoiador</span><span class="nv-val">R$ 50</span></button>
-            <button type="button" class="nv-pill" data-nivel="patrocinador" aria-pressed="false"><span class="nv-esq"><i data-lucide="wrench"></i> Patrocinador</span><span class="nv-val">R$ 100+</span></button>
-          </div>
-          <a class="btn estrelar" data-nivel-link href="https://wa.me/5521971296791?text=Ol%C3%A1%20Gabriel!%20Quero%20apoiar%20o%20Cortador%20Autom%C3%A1tico%20no%20n%C3%ADvel%20Colaborador%20(R%24%2025)%20e%20garantir%20minha%20vaga!" target="_blank" rel="noopener"><svg class="ic-m"><use href="#m-whatsapp"/></svg> <span data-nivel-btn>Ser Colaborador · R$ 25 (WhatsApp)</span></a>
-        </div>
-      </div>
       <div class="forma f-estrela">
         <span class="f-ic"><svg class="ic-m"><use href="#m-github"/></svg></span>
         <div>

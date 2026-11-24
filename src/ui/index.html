@@ -1030,7 +1030,8 @@
   .nov-lista { list-style: none; display: grid; gap: 10px; margin: 16px 0 18px; padding: 0; max-height: 54vh; overflow-y: auto; }
   .nov-lista li { padding: 11px 13px; border-radius: 12px; background: var(--vidro); border: 1px solid var(--linha); font-size: var(--t5); color: var(--texto2); display: flex; gap: 10px; align-items: flex-start; line-height: 1.45; }
   .nov-lista li .i { color: var(--marca-claro); margin-top: 2px; flex-shrink: 0; }
-  .nov-lista li b { color: var(--texto); display: block; margin-bottom: 2px; }
+  .nov-lista li b { color: var(--texto); }
+  .nov-lista li div > b:first-child { display: block; margin-bottom: 2px; }
 
   /* ---------- tela obrigatoria de auto-atualizacao (git novo) */
   .upd-caixa { max-width: 480px; text-align: center; position: relative; overflow: hidden; }
@@ -2343,6 +2344,7 @@
     <p style="margin:6px 0 0; color:var(--texto2)">Confira tudo o que foi atualizado para deixar seus cortes mais precisos, sincronizados e prontos para viralizar:</p>
     <ul class="nov-lista">
       <li><i data-lucide="refresh-cw" class="i"></i><div><b>Agora o aplicativo atualiza sozinho!</b>Sempre que sair uma melhoria ou correção nova no GitHub, o próprio programa avisa, baixa em segundos com tela de progresso e reinicia atualizado — sem precisar baixar o instalador de novo.</div></li>
+      <li><i data-lucide="trash-2" class="i"></i><div><b>Apagar projetos direto pelo programa</b>Exclua os projetos que não precisa mais direto da lista de <b>Projetos</b> ou dentro de um projeto aberto, com confirmação segura para liberar espaço no disco na hora.</div></li>
       <li><i data-lucide="sparkles" class="i"></i><div><b>Diretor IA Pro em Vídeo e em Live (3 usos grátis inclusos)</b>Entende a conversa inteira, corta no início e fim exatos da história e cria ganchos e títulos virais (com Gemini nativo incluso ou sua chave Claude/ChatGPT). Use seus 3 testes grátis (2 em vídeos + 1 vídeo ou 1 live de 15 min) — e no Plano Pro use na live inteira sem limite!</div></li>
       <li><i data-lucide="audio-lines" class="i"></i><div><b>Áudio 100% sincronizado e vídeo fluido nas lives (YouTube, Kick e Twitch)</b>Nova sincronização de áudio e vídeo em vídeos gravados e lives ao vivo — corrigido o bug que podia congelar a imagem em cortes de lives do YouTube e eliminando qualquer atraso na voz do streamer.</div></li>
       <li><i data-lucide="monitor-play" class="i"></i><div><b>Prévia do vídeo + Escolha de resolução antes de baixar</b>Veja capa, canal e duração na hora, escolha entre 480p, 720p, 1080p, 1440p ou 4K e acompanhe velocidade e tempo restante em qualquer conexão de internet.</div></li>

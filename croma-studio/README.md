@@ -1,20 +1,12 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Croma Studio
 
-# Run and deploy your AI Studio app
+Estúdio visual integrado ao **Mega Cortes HD** para criação de thumbnails, banners de YouTube, marcas d'água (`150×150`), fundos em gradiente, fractais, QR Codes e favoritos 100% offline.
 
-This contains everything you need to run your app locally.
+## Desenvolvimento local
 
-View your app in AI Studio: https://ai.studio/apps/d050c11c-dae5-4367-bea3-4ac319f2f1ad
-
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+```bash
+npm install
+npm run dev     # servidor de desenvolvimento (porta 3000)
+npm run lint    # checagem TypeScript (tsc --noEmit)
+npm run build   # gera o bundle estático em dist/ (copiado para ../src/ui/croma/)
+```

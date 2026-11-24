@@ -235,6 +235,34 @@ test('base/modulos: sessoes, score, copy e pipeline exportam API principal intac
   assert.equal(typeof copy, 'object');
 });
 
+test('base/v2.0.8-compat: recursos tecnicos da v2.0.8 (CFR, webcam 6 posicoes, SEO por rede, apagar projeto e contrato Diretor IA)', () => {
+  // 1. Sincronia CFR + aresample async=1000 e deteccao de webcam ao vivo em media.js
+  assert.equal(typeof media.acharWebcam, 'function');
+  assert.equal(typeof media.acharWebcamAoVivo, 'function');
+  const mediaSrc = fs.readFileSync(path.join(RAIZ, 'src', 'media.js'), 'utf8');
+  assert.match(mediaSrc, /'-fps_mode',\s*'cfr'/);
+  assert.match(mediaSrc, /aresample=async=1000/);
+
+  // 2. Apagar projetos com protecao contra path traversal
+  const projetos = require(path.join(RAIZ, 'src', 'projetos'));
+  assert.equal(typeof projetos.apagar, 'function');
+  assert.throws(() => projetos.apagar('C:\\Windows\\System32'), /projeto|pasta|inval/i);
+
+  // 3. SEO por plataforma (TikTok, Shorts, Reels) em copy.js
+  assert.equal(typeof copy.gerarSeoPlataformas, 'function');
+  const seo = copy.gerarSeoPlataformas({ texto: 'Jogada absurda no final da partida' }, 'Jogada absurda', ['gaming', 'clip'], 'Live');
+  assert.ok(seo && typeof seo === 'object');
+  assert.ok(typeof seo.tiktok === 'string' && seo.tiktok.length > 0);
+
+  // 4. Contrato do Diretor IA (src/pro.js) usado por pipeline.js e aovivo.js
+  const pro = require(path.join(RAIZ, 'src', 'pro'));
+  assert.equal(typeof pro.analisarComIa, 'function');
+  assert.equal(typeof pro.refinarClipeAoVivo, 'function');
+  assert.equal(typeof pro.obterEstado, 'function');
+  assert.equal(typeof pro.salvarProvedor, 'function');
+  assert.equal(typeof pro.resumoProvedor, 'function');
+});
+
 // ------------------------------------------------------------------ 4. Scripts Python base
 
 test('base/python: transcrever.py e separar_voz.py compilam sem erro de sintaxe', (t) => {

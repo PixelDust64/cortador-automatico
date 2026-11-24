@@ -1675,6 +1675,45 @@ body[data-modo="splitter"] .fila-aba { display: none !important; }
     </div>
 
     <div class="grupo">
+      <h4><i data-lucide="sparkles" class="i"></i> Diretor IA (Nuvem — Opcional)</h4>
+      <label class="marcar">
+        <input type="checkbox" id="usarIaPro">
+        <div><b>Usar Diretor IA na análise de cortes</b><span>Lê a conversa inteira para escolher melhores histórias, títulos e ganchos. Motor Local continua 100% offline se desmarcado.</span></div>
+      </label>
+      <div id="iaConfigBox" style="margin-top:10px; display:grid; gap:8px">
+        <label style="font-size:11.5px; color:var(--texto2)">Provedor de IA
+          <select id="iaProvedor" style="width:100%; margin-top:4px; padding:7px 9px; border-radius:8px; background:var(--superficie2); border:1px solid var(--linha2); color:var(--texto); font:inherit; font-size:var(--t5)">
+            <option value="beavernet">BeaverNet — Grátis (net.beaverai.org · chave opcional)</option>
+            <option value="gemini">Google Gemini (chave própria)</option>
+            <option value="openai">OpenAI / ChatGPT (chave própria)</option>
+            <option value="anthropic">Anthropic / Claude (chave própria)</option>
+          </select>
+        </label>
+        <label style="font-size:11.5px; color:var(--texto2)">Modelo (manual ou fallback automático)
+          <div style="display:flex; gap:6px; margin-top:4px">
+            <select id="iaModeloPreset" style="flex:1; min-width:0; padding:7px 9px; border-radius:8px; background:var(--superficie2); border:1px solid var(--linha2); color:var(--texto); font:inherit; font-size:var(--t5)">
+              <option value="auto">Automático (MeroMero 26B &gt;&gt; Nemotron &gt;&gt; Gemma-4 4B &gt;&gt; Qwen 0.8B)</option>
+              <option value="Linkpharm/MeroMero 26B A4B Uncensored Q4">MeroMero 26B A4B (Gemma 26B — Preferência #1)</option>
+              <option value="serranoprime1/nvidia/nemotron-3.5-super-vl:free">Nemotron 3.5 Super VL (Preferência #2)</option>
+              <option value="Meus Artis/Gemma-4-E4B-it-Ultra-Uncensored-Heretic">Gemma-4 E4B Heretic (Preferência #3)</option>
+              <option value="pixel.dust/Qwen3.5-0.8B-Space-Programming">Qwen3.5 0.8B Space (Preferência #4)</option>
+            </select>
+            <button type="button" class="btn p" id="btnAtualizarModelosBeaver" title="Buscar modelos online no BeaverNet" style="padding:6px 10px">↻</button>
+          </div>
+          <input type="text" id="iaModeloManual" placeholder="Ou digite manualmente o routing string do modelo..." style="width:100%; margin-top:6px; padding:7px 9px; border-radius:8px; background:var(--superficie2); border:1px solid var(--linha2); color:var(--texto); font:inherit; font-size:var(--t5)">
+        </label>
+        <label style="font-size:11.5px; color:var(--texto2)">Chave de API <span id="iaChaveHint" style="color:var(--texto3)">(opcional no BeaverNet)</span>
+          <input type="password" id="iaChave" placeholder="Opcional no BeaverNet · obrigatória em Gemini/OpenAI/Claude" autocomplete="off" style="width:100%; margin-top:4px; padding:7px 9px; border-radius:8px; background:var(--superficie2); border:1px solid var(--linha2); color:var(--texto); font:inherit; font-size:var(--t5)">
+        </label>
+        <div style="display:flex; gap:6px; flex-wrap:wrap">
+          <button type="button" class="btn p" id="btnSalvarIa">Salvar IA</button>
+          <button type="button" class="btn p" id="btnTestarIa">Testar conexão</button>
+        </div>
+        <div id="iaStatusTxt" class="dica"></div>
+      </div>
+    </div>
+
+    <div class="grupo">
       <h4><i data-lucide="wrench" class="i"></i> Avançado</h4>
       <label class="marcar">
         <input type="checkbox" id="picos" checked>
@@ -3356,6 +3395,7 @@ body[data-modo="splitter"] .fila-aba { display: none !important; }
         quantidade: cfg.quantidade, minDur: Number(faixa[0]), maxDur: Number(faixa[1]),
         ordem: cfg.ordem, modelo: vel.modelo, qualidade: vel.qualidade,
         legendar: cfg.legenda && formato !== 'original',
+        usarIaPro: !!cfg.usarIaPro,
         textoGancho: cfg.gancho, tamanhoLegenda: cfg.tamLegenda, fonteLegenda: cfg.fonteLegenda,
         detectarWebcam: cfg.focarRosto, detectarMomentos: cfg.picos,
         trecho: trechoFluxo ? { inicio: trechoFluxo.inicio, fim: trechoFluxo.fim } : null,
@@ -3574,11 +3614,29 @@ body[data-modo="splitter"] .fila-aba { display: none !important; }
           (p.videoExiste || p.aoVivo ? '' : '<span class="projeto-alerta"><i data-lucide="triangle-alert" class="i"></i>' +
             'O vídeo original saiu da pasta — dá pra assistir e baixar, mas não editar nem tirar mais cortes.</span>') +
         '</span>' +
-        '<i data-lucide="chevron-right" class="i"></i>' +
+        '<span style="display:flex; align-items:center; gap:6px; flex:none">' +
+          '<span role="button" tabindex="0" class="btn-apagar-proj" data-apagar="' + esc(p.pasta) + '" data-nome="' + esc(p.nome) + '" title="Apagar projeto" style="padding:6px; border-radius:8px; color:var(--texto3); display:inline-flex" onclick="event.stopPropagation()"><i data-lucide="trash-2" class="i"></i></span>' +
+          '<i data-lucide="chevron-right" class="i"></i>' +
+        '</span>' +
       '</button>').join('');
 
     alvo.querySelectorAll('.projeto').forEach((b) => {
       b.addEventListener('click', () => abrirProjeto(b.dataset.pasta));
+    });
+    alvo.querySelectorAll('.btn-apagar-proj').forEach((btn) => {
+      btn.addEventListener('click', async (ev) => {
+        ev.stopPropagation();
+        const nome = btn.dataset.nome || 'este projeto';
+        if (!confirm('Apagar permanentemente o projeto "' + nome + '" e todos os seus clipes?')) return;
+        try {
+          const r = await fetch('/api/projeto/apagar', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pasta: btn.dataset.apagar }),
+          }).then((x) => x.json());
+          if (r.erro) return erro(r.erro);
+          abrirProjetos();
+        } catch (e) { erro(e.message || 'Erro ao apagar projeto.'); }
+      });
     });
     icones(alvo);
   }
@@ -5021,6 +5079,75 @@ body[data-modo="splitter"] .fila-aba { display: none !important; }
   $('formLinkTopo').addEventListener('submit', () => {
     if (document.body.dataset.modo === 'croma') abrirCroma(false);
     if (document.body.dataset.modo === 'splitter') abrirSplitter(false);
+  });
+
+  // ---- Diretor IA (BeaverNet gratuito + Gemini/OpenAI/Claude)
+  $('usarIaPro').checked = !!cfg.usarIaPro;
+  $('usarIaPro').addEventListener('change', () => { cfg.usarIaPro = $('usarIaPro').checked; guardar(); });
+
+  function atualizarHintsIa() {
+    const p = $('iaProvedor').value;
+    $('iaChaveHint').textContent = p === 'beavernet' ? '(opcional no BeaverNet — grátis sem chave)' : '(obrigatória para ' + p + ')';
+    $('iaModeloPreset').style.display = p === 'beavernet' ? '' : 'none';
+    $('btnAtualizarModelosBeaver').style.display = p === 'beavernet' ? '' : 'none';
+  }
+  $('iaProvedor').addEventListener('change', atualizarHintsIa);
+  $('iaModeloPreset').addEventListener('change', () => {
+    const v = $('iaModeloPreset').value;
+    $('iaModeloManual').value = v === 'auto' ? '' : v;
+  });
+
+  async function carregarConfigIa() {
+    try {
+      const d = await fetch('/api/ia/config').then((r) => r.json());
+      if (d.provedor) $('iaProvedor').value = d.provedor;
+      if (d.modeloProprio) $('iaModeloManual').value = d.modeloProprio;
+      atualizarHintsIa();
+      $('iaStatusTxt').textContent = d.provedor === 'beavernet'
+        ? (d.temChavePropria ? 'BeaverNet configurado com chave (limites maiores).' : 'BeaverNet pronto (modo gratuito sem chave · fallback automático ativo).')
+        : (d.temChavePropria ? 'Chave salva para ' + d.provedor + '.' : 'Cole sua chave de API para usar ' + d.provedor + '.');
+    } catch (_) {}
+  }
+  carregarConfigIa();
+
+  $('btnAtualizarModelosBeaver').addEventListener('click', async () => {
+    $('iaStatusTxt').textContent = 'Consultando modelos online no BeaverNet...';
+    try {
+      const d = await fetch('/api/ia/beavernet-modelos').then((r) => r.json());
+      if (Array.isArray(d.modelos) && d.modelos.length) {
+        const atual = $('iaModeloManual').value;
+        $('iaModeloPreset').innerHTML =
+          '<option value="auto">Automático (MeroMero 26B &gt;&gt; Nemotron &gt;&gt; Gemma-4 4B &gt;&gt; Qwen 0.8B)</option>' +
+          d.modelos.map((m) => '<option value="' + esc(m) + '"' + (m === atual ? ' selected' : '') + '>' + esc(m) + '</option>').join('');
+        $('iaStatusTxt').textContent = d.modelos.length + ' modelos carregados do BeaverNet.';
+      }
+    } catch (_) { $('iaStatusTxt').textContent = 'Não foi possível listar modelos do BeaverNet agora.'; }
+  });
+
+  $('btnSalvarIa').addEventListener('click', async () => {
+    $('iaStatusTxt').textContent = 'Salvando...';
+    try {
+      const r = await fetch('/api/ia/config', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provedor: $('iaProvedor').value,
+          chave: $('iaChave').value,
+          modelo: $('iaModeloManual').value.trim() || ($('iaProvedor').value === 'beavernet' ? $('iaModeloPreset').value : ''),
+        }),
+      }).then((x) => x.json());
+      if (r.erro) { $('iaStatusTxt').textContent = 'Erro: ' + r.erro; return; }
+      $('iaChave').value = '';
+      $('iaStatusTxt').textContent = 'Salvo! Provedor ativo: ' + r.provedor + (r.modeloProprio ? ' (' + r.modeloProprio + ')' : ' (fallback automático)');
+    } catch (e) { $('iaStatusTxt').textContent = 'Erro ao salvar: ' + e.message; }
+  });
+
+  $('btnTestarIa').addEventListener('click', async () => {
+    $('iaStatusTxt').textContent = 'Testando conexão com a IA...';
+    try {
+      const r = await fetch('/api/ia/testar', { method: 'POST' }).then((x) => x.json());
+      if (r.erro) { $('iaStatusTxt').textContent = 'Falha: ' + r.erro; return; }
+      $('iaStatusTxt').textContent = 'OK! Respondendo via ' + r.provedor + ' · modelo: ' + r.modeloUsado;
+    } catch (e) { $('iaStatusTxt').textContent = 'Falha no teste: ' + e.message; }
   });
 
   resumo();

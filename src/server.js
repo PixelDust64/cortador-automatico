@@ -21,6 +21,7 @@ const projetos = require('./projetos');
 const sessoes = require('./sessoes');
 const aovivo = require('./aovivo');
 const splitter = require('./splitter');
+const pro = require('./pro');
 
 // Um erro solto em algum canto (um ffmpeg que sumiu, uma conexao que caiu)
 // nao pode derrubar o programa inteiro: a janela ficaria dando "Failed to fetch"
@@ -1133,10 +1134,46 @@ const servidor = http.createServer(async (req, res) => {
       return json(res, 200, { id, naFila: true });
     }
 
+    // ---------------------------------------------------------- Diretor IA (BeaverNet gratuito + Gemini/OpenAI/Claude)
+    if (rota === '/api/ia/config' && req.method === 'GET') {
+      return json(res, 200, await pro.obterEstado());
+    }
+    if (rota === '/api/ia/config' && req.method === 'POST') {
+      const corpo = await lerCorpo(req);
+      try { return json(res, 200, pro.salvarProvedor(corpo.provedor, corpo.chave, corpo.modelo, corpo.baseUrl)); }
+      catch (e) { return json(res, 400, { erro: e.message }); }
+    }
+    if (rota === '/api/ia/beavernet-modelos' && req.method === 'GET') {
+      return json(res, 200, { modelos: await pro.listarModelosBeaverNet() });
+    }
+    if (rota === '/api/ia/testar' && req.method === 'POST') {
+      try { return json(res, 200, await pro.testarConexao()); }
+      catch (e) { return json(res, 400, { erro: e.message }); }
+    }
+
     // ---------------------------------------------------------- projetos
     // Tudo que ja foi gerado, pra reabrir sem baixar nem transcrever de novo.
     if (rota === '/api/projetos') {
       return json(res, 200, { projetos: projetos.listar(url.searchParams.get('sessao')) });
+    }
+
+    if (rota === '/api/projeto' && req.method === 'DELETE') {
+      try {
+        projetos.apagar(url.searchParams.get('pasta'));
+        return json(res, 200, { ok: true });
+      } catch (e) {
+        return json(res, 400, { erro: e.message || 'Não consegui apagar esse projeto.' });
+      }
+    }
+
+    if (rota === '/api/projeto/apagar' && req.method === 'POST') {
+      const corpo = await lerCorpo(req);
+      try {
+        projetos.apagar(corpo.pasta);
+        return json(res, 200, { ok: true });
+      } catch (e) {
+        return json(res, 400, { erro: e.message || 'Não consegui apagar esse projeto.' });
+      }
     }
 
     if (rota === '/api/projeto') {

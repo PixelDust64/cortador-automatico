@@ -18,7 +18,12 @@ function acharBinario(nome) {
     return [nome, '/usr/bin/' + nome, '/usr/local/bin/' + nome];
   }
 
-  const candidatos = [nome + '.exe'];
+  const raizApp = path.join(__dirname, '..');
+  const candidatos = [
+    path.join(raizApp, 'runtime', 'ffmpeg', nome + '.exe'),
+    path.join(raizApp, '..', 'runtime', 'ffmpeg', nome + '.exe'),
+    nome + '.exe',
+  ];
   const base = path.join(os.homedir(), 'AppData', 'Local', 'Microsoft', 'WinGet', 'Packages');
   try {
     for (const dir of fs.readdirSync(base)) {
@@ -307,13 +312,20 @@ async function cortarClipe(o) {
   // comecar num quadro-chave: o clipe saia ate alguns segundos ANTES do ponto
   // escolhido e mais comprido que o pedido (medido: 9,3s num corte de 8s).
 
+  // "O audio esta atrasado": o som vem de uma segunda leitura do mesmo video,
+  // deslocada. atrasoAudio > 0 = a voz chega depois da boca, entao o som e
+  // pego mais pra frente; < 0 = a voz chega antes. Vale so pra esse clipe.
+  const atraso = !teaser && o.temAudio !== false ? Math.max(-5, Math.min(5, Number(o.atrasoAudio) || 0)) : 0;
+  let inicioSom = o.inicio + atraso, silencioAntes = 0;
+  if (inicioSom < 0) { silencioAntes = -inicioSom; inicioSom = 0; }
   const args = [
     '-y',
     '-ss', String(o.inicio),          // seek antes do input: rapido
     '-i', o.video,
+  ].concat(atraso ? ['-ss', String(inicioSom), '-i', o.video] : [], [
     // com chamariz o resultado fica mais longo que o trecho lido
     '-t', String(o.duracao + (teaser ? teaser.duracao : 0)),
-  ];
+  ]);
 
   const filtroBase = filtroDeFormato(o.formato, o.recorte);
   // A legenda entra depois do enquadramento, ja no tamanho final.
@@ -360,8 +372,11 @@ async function cortarClipe(o) {
 
   if (legenda) { partes.push(rotulo + legenda + '[vleg]'); rotulo = '[vleg]'; }
 
+  if (atraso) rotuloAudio = '1:a?';
   if (partes.length) {
     args.push('-filter_complex', partes.join(';'), '-map', rotulo, '-map', rotuloAudio);
+  } else if (atraso) {
+    args.push('-map', '0:v:0', '-map', rotuloAudio);
   }
 
   const q = perfilDeQualidade(o.qualidade);
@@ -370,9 +385,11 @@ async function cortarClipe(o) {
   // no comeco do audio (live gravada da Twitch/Kick as vezes tem), vira silencio.
   // Sem isso o arquivo dependia de "edit list", que o TikTok e o CapCut ignoram -
   // e a voz saia fora de tempo la (medido: 0,19s num clipe de VOD da Twitch).
-  if (!teaser && o.temAudio !== false) args.push('-af', 'aresample=async=1:first_pts=0');
+  if (!teaser && o.temAudio !== false) args.push('-af', (silencioAntes ? 'adelay=' + Math.round(silencioAntes * 1000) + ':all=1,' : '') + 'aresample=async=1000:min_hard_comp=0.100000:first_pts=0');
 
   args.push(
+    '-fps_mode', 'cfr',
+    '-avoid_negative_ts', 'make_zero',
     '-c:v', 'libx264', '-preset', q.preset, '-crf', q.crf,
     '-pix_fmt', 'yuv420p',
     '-profile:v', 'high', '-level', '4.2',
@@ -454,12 +471,15 @@ const AMOSTRA_A = 180;
 /** Um frame pequeno em RGB cru, pra analisar pixel a pixel sem depender de biblioteca. */
 async function amostrarFrame(video, segundo) {
   const { ffmpeg } = await garantirFfmpeg();
-  const buf = await rodarBinario(ffmpeg, [
-    '-ss', String(Math.max(0, segundo)), '-i', video,
-    '-frames:v', '1', '-f', 'rawvideo', '-pix_fmt', 'rgb24',
-    '-s', AMOSTRA_L + 'x' + AMOSTRA_A, '-loglevel', 'error', 'pipe:1',
-  ]);
-  return buf.length >= AMOSTRA_L * AMOSTRA_A * 3 ? buf : null;
+  const baseOut = ['-frames:v', '1', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', AMOSTRA_L + 'x' + AMOSTRA_A, '-loglevel', 'error', 'pipe:1'];
+  if (segundo > 0) {
+    try {
+      const buf = await rodarBinario(ffmpeg, ['-ss', String(segundo), '-i', video].concat(baseOut));
+      if (buf.length >= AMOSTRA_L * AMOSTRA_A * 3) return buf;
+    } catch (_) {}
+  }
+  const buf0 = await rodarBinario(ffmpeg, ['-i', video].concat(baseOut));
+  return buf0.length >= AMOSTRA_L * AMOSTRA_A * 3 ? buf0 : null;
 }
 
 function pixel(buf, x, y) {
@@ -596,20 +616,33 @@ function mudancaEntreFrames(b1, b2, area) {
  *
  * @returns {Promise<object|null>} { area, canto, estabilidade } ou null
  */
-async function acharWebcam(video, duracao) {
-  const dur = duracao || 600;
-  // Bem espalhados de proposito: se os frames forem proximos, o gameplay
-  // tambem parece estavel e o sinal some.
-  const instantes = [0.15, 0.35, 0.55, 0.75, 0.9].map((f) => Math.max(1, dur * f));
-
-  const frames = [];
-  for (const t of instantes) {
-    try {
-      const buf = await amostrarFrame(video, t);
-      if (buf) frames.push(buf);
-    } catch (_) { /* um frame ruim nao invalida a busca */ }
+/** Variacao espacial dentro da regiao: descarta tarja preta ou ceu liso sem rosto/cenario. */
+function texturaInterna(buf, area) {
+  const x0 = Math.max(0, Math.round(area.x * AMOSTRA_L));
+  const y0 = Math.max(0, Math.round(area.y * AMOSTRA_A));
+  const x1 = Math.min(AMOSTRA_L - 1, Math.round((area.x + area.w) * AMOSTRA_L));
+  const y1 = Math.min(AMOSTRA_A - 1, Math.round((area.y + area.h) * AMOSTRA_A));
+  let soma = 0, soma2 = 0, n = 0;
+  for (let y = y0; y < y1; y += 2) {
+    for (let x = x0; x < x1; x += 2) {
+      const i = (y * AMOSTRA_L + x) * 3;
+      const lum = buf[i] * 0.299 + buf[i + 1] * 0.587 + buf[i + 2] * 0.114;
+      soma += lum;
+      soma2 += lum * lum;
+      n++;
+    }
   }
-  if (frames.length < 3) return null;
+  if (!n) return 0;
+  const media = soma / n;
+  return Math.sqrt(Math.max(0, soma2 / n - media * media));
+}
+
+/**
+ * Procura a webcam em uma lista de buffers RGB ja extraidos (serve tanto pra VOD
+ * quanto pros ultimos pedacos gravados de uma live ao vivo).
+ */
+function acharWebcamEmFrames(frames) {
+  if (!frames || frames.length < 2) return null;
 
   function mudancaMedia(area) {
     let soma = 0, pares = 0;
@@ -622,39 +655,97 @@ async function acharWebcam(video, duracao) {
     return pares ? soma / pares : 0;
   }
 
-  // Referencia: o quanto a tela inteira muda entre esses mesmos momentos.
   const geral = mudancaMedia({ x: 0, y: 0, w: 1, h: 1 });
-  if (geral < 5) return null;   // video praticamente parado: nao da pra concluir nada
+  if (geral < 2.2) return null;
 
-  const m = 0.005;
-  const tamanhos = [{ w: 0.18, h: 0.24 }, { w: 0.23, h: 0.30 }, { w: 0.28, h: 0.37 }, { w: 0.33, h: 0.44 }];
-  const cantos = [
-    { nome: 'superior esquerdo', x: () => m, y: () => m },
-    { nome: 'superior direito', x: (t) => 1 - t.w - m, y: () => m },
-    { nome: 'inferior esquerdo', x: () => m, y: (t) => 1 - t.h - m },
-    { nome: 'inferior direito', x: (t) => 1 - t.w - m, y: (t) => 1 - t.h - m },
+  const margens = [0.006, 0.026];
+  const tamanhos = [
+    { w: 0.18, h: 0.24 },
+    { w: 0.23, h: 0.31 },
+    { w: 0.28, h: 0.37 },
+    { w: 0.33, h: 0.44 },
+  ];
+  const posicoes = [
+    { nome: 'superior esquerdo', x: (t, m) => m, y: (t, m) => m },
+    { nome: 'superior direito', x: (t, m) => 1 - t.w - m, y: (t, m) => m },
+    { nome: 'inferior esquerdo', x: (t, m) => m, y: (t, m) => 1 - t.h - m },
+    { nome: 'inferior direito', x: (t, m) => 1 - t.w - m, y: (t, m) => 1 - t.h - m },
+    { nome: 'meio esquerdo', x: (t, m) => m, y: (t) => Math.max(0.08, 0.46 - t.h / 2) },
+    { nome: 'meio direito', x: (t, m) => 1 - t.w - m, y: (t) => Math.max(0.08, 0.46 - t.h / 2) },
   ];
 
   let melhor = null;
-  for (const c of cantos) {
-    for (const t of tamanhos) {
-      const area = { x: c.x(t), y: c.y(t), w: t.w, h: t.h };
-      const razao = mudancaMedia(area) / geral;   // quanto menor, mais estavel
-      if (!melhor || razao < melhor.razao) {
-        melhor = { area, canto: c.nome, razao };
+  for (const pos of posicoes) {
+    for (const m of margens) {
+      for (const t of tamanhos) {
+        const area = {
+          x: Math.round(pos.x(t, m) * 1000) / 1000,
+          y: Math.round(pos.y(t, m) * 1000) / 1000,
+          w: t.w,
+          h: t.h,
+        };
+        // Descarta tarja preta / ceu chapado sem detalhe de webcam
+        const texMedia = frames.reduce((s, f) => s + texturaInterna(f, area), 0) / frames.length;
+        if (texMedia < 9.5) continue;
+
+        const mudArea = mudancaMedia(area);
+        const bordas = frames.map((f) => medirBordaDaWebcam(f, area)).filter((v) => v != null);
+        const bordaMedia = bordas.length ? bordas.reduce((a, b) => a + b, 0) / bordas.length : 1;
+        const moldura = frames.map((f) => forcaDaMolduraInteira(f, area)).filter((v) => v != null);
+        const molduraMedia = moldura.length ? moldura.reduce((a, b) => a + b, 0) / moldura.length : 0.8;
+
+        // Rejeita overlay 100% congelado sem moldura de webcam (ex: placar/logo fixo)
+        if (mudArea < 0.15 && molduraMedia < 1.15) continue;
+
+        const razao = mudArea / geral;
+
+        // Pontuacao combinada: menor mudanca que o jogo + presenca de moldura visivel
+        const bonusBorda = Math.min(0.22, Math.max(0, (bordaMedia - 1.15) * 0.09) + Math.max(0, (molduraMedia - 0.95) * 0.08));
+        const custo = razao - bonusBorda;
+
+        if (!melhor || custo < melhor.custo) {
+          melhor = { area, canto: pos.nome, razao, bordaMedia, custo };
+        }
       }
     }
   }
 
-  // Precisa mudar bem menos que a tela toda pra ser webcam, e nao um pedaco
-  // de cenario que por acaso ficou parado.
-  if (!melhor || melhor.razao > 0.62) return null;
+  // Aceita tanto estabilidade forte (razao <= 0.68) quanto webcam movimentada mas com moldura nitida (custo <= 0.66)
+  if (!melhor || (melhor.razao > 0.76 && melhor.custo > 0.66)) return null;
 
   return {
     area: melhor.area,
     canto: melhor.canto,
-    estabilidade: Math.round((1 - melhor.razao) * 100),   // 0 a 100, quanto maior mais confianca
+    estabilidade: Math.max(15, Math.min(99, Math.round((1 - Math.min(0.85, melhor.custo)) * 100))),
   };
+}
+
+async function acharWebcam(video, duracao) {
+  const dur = duracao || 600;
+  const instantes = [0.08, 0.22, 0.36, 0.50, 0.64, 0.78, 0.90].map((f) => Math.max(0.5, dur * f));
+
+  const frames = [];
+  for (const t of instantes) {
+    try {
+      const buf = await amostrarFrame(video, t);
+      if (buf) frames.push(buf);
+    } catch (_) { /* um frame ruim nao invalida a busca */ }
+  }
+  if (frames.length < 2) return null;
+  return acharWebcamEmFrames(frames);
+}
+
+/** Procura a webcam usando varios pedacos recentes gravados de uma live ao vivo. */
+async function acharWebcamAoVivo(arquivosPedacos) {
+  const frames = [];
+  for (const arq of (arquivosPedacos || [])) {
+    try {
+      const buf = await amostrarFrame(arq, 0);
+      if (buf) frames.push(buf);
+    } catch (_) {}
+  }
+  if (frames.length < 2) return null;
+  return acharWebcamEmFrames(frames);
 }
 
 /**
@@ -916,6 +1007,7 @@ module.exports = {
   gerarFrame,
   detectarWebcam,
   acharWebcam,
+  acharWebcamAoVivo,
   gerarPrevia,
   filtroDeFormato,
   rodar,

@@ -1,7 +1,9 @@
 'use strict';
 /** Baixa o video direto do YouTube (ou de qualquer link que o yt-dlp entenda). */
 
-const { spawn } = require('child_process');
+try { require('dns').setDefaultResultOrder('ipv4first'); } catch (_) {}
+
+const { spawn, execFile } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -90,36 +92,66 @@ function pareceLink(texto) {
 }
 
 /**
- * A Kick tem dois formatos de link pro mesmo video: o da barra de endereco
- * (kick.com/canal/videos/uuid), que o yt-dlp entende, e o do botao de
- * compartilhar (kick.com/video/uuid), que ele nao reconhece e trata como
- * pagina generica - dando 404. Aqui a gente descobre o canal e reescreve.
+ * Consulta JSON nas APIs da Kick passando pela impressao digital TLS do Windows
+ * (System32\curl.exe usa Schannel, que o Cloudflare da Kick aceita em ~200ms),
+ * com fallback pra IPv6 puro e fetch nativo.
  */
-function descobrirCanalDaKick(uuid) {
-  const https = require('https');
-  return new Promise((resolve) => {
-    const req = https.get('https://kick.com/api/v1/video/' + uuid, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
-                      '(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-        'Accept': 'application/json',
-      },
-      timeout: 15000,
-    }, (res) => {
-      let d = '';
-      res.on('data', (c) => { d += c; });
-      res.on('end', () => {
-        try {
-          const j = JSON.parse(d);
-          const canal = (j.livestream && j.livestream.channel && j.livestream.channel.slug) ||
-                        (j.channel && j.channel.slug) || null;
-          resolve(canal);
-        } catch (_) { resolve(null); }
-      });
+async function consultarJsonKick(apiUrl) {
+  const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+  if (process.platform === 'win32') {
+    const curlSys = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'curl.exe');
+    if (fs.existsSync(curlSys)) {
+      for (const flagRede of [['-4'], []]) {
+        const res = await new Promise((resolve) => {
+          execFile(curlSys, flagRede.concat(['-s', '-L', '-m', '10', '-A', ua, '-H', 'Accept: application/json', apiUrl]),
+            { windowsHide: true, timeout: 12000, maxBuffer: 4 * 1024 * 1024 },
+            (err, stdout) => {
+              if (err || !stdout) return resolve(null);
+              try {
+                const j = JSON.parse(String(stdout).trim());
+                if (j && typeof j === 'object' && !j.message?.includes?.('blocked')) return resolve(j);
+              } catch (_) {}
+              resolve(null);
+            });
+        });
+        if (res) return res;
+      }
+    }
+  }
+  try {
+    const r = await fetch(apiUrl, {
+      headers: { 'User-Agent': ua, Accept: 'application/json' },
+      signal: AbortSignal.timeout(10000),
     });
-    req.on('error', () => resolve(null));
-    req.on('timeout', () => { req.destroy(); resolve(null); });
-  });
+    if (r.ok) return await r.json();
+  } catch (_) {}
+  return null;
+}
+
+/**
+ * A Kick tem dois formatos de link pro mesmo video (kick.com/canal/videos/uuid
+ * e kick.com/video/uuid), e o extrator [kick:vod] do yt-dlp costuma tomar
+ * NOT_FOUND na API da Kick. A API publica /api/v1/video/<uuid> devolve o
+ * endereco direto do .m3u8 (source), o titulo e o canal.
+ */
+async function inspecionarVodKick(url) {
+  const u = String(url || '').trim();
+  const m = /^https?:\/\/(?:www\.)?kick\.com\/(?:[^/]+\/videos|video)\/([0-9a-fA-F-]{20,})/i.exec(u);
+  if (!m) return null;
+  const uuid = m[1];
+  const j = await consultarJsonKick('https://kick.com/api/v1/video/' + uuid);
+  if (!j || typeof j !== 'object') return null;
+  const canal = (j.livestream && j.livestream.channel && (j.livestream.channel.user?.username || j.livestream.channel.slug)) ||
+                (j.channel && j.channel.slug) || null;
+  const slugCanal = (j.livestream && j.livestream.channel && j.livestream.channel.slug) ||
+                    (j.channel && j.channel.slug) || null;
+  const titulo = (j.livestream && j.livestream.session_title) || j.slug || 'Live da Kick';
+  const durBruta = Number((j.livestream && j.livestream.duration) || j.duration || 0);
+  // API da Kick devolve duracao em milissegundos (ex: 7200000 = 2h)
+  const duracao = durBruta > 86400 ? Math.round(durBruta / 1000) : durBruta;
+  const thumbBruta = (j.livestream && j.livestream.thumbnail) || j.thumbnail || null;
+  const thumbnail = typeof thumbBruta === 'string' ? thumbBruta : (thumbBruta && (thumbBruta.src || thumbBruta.url)) || null;
+  return { uuid, canal: canal || slugCanal, slugCanal, titulo, duracao, thumbnail, source: j.source || null };
 }
 
 async function normalizarUrl(url) {
@@ -127,8 +159,9 @@ async function normalizarUrl(url) {
   const m = /^https?:\/\/(?:www\.)?kick\.com\/video\/([0-9a-fA-F-]{20,})/.exec(u);
   if (!m) return u;
 
-  const canal = await descobrirCanalDaKick(m[1]);
-  return canal ? 'https://kick.com/' + canal + '/videos/' + m[1] : u;
+  const info = await inspecionarVodKick(u);
+  const slug = info && (info.slugCanal || info.canal);
+  return slug ? 'https://kick.com/' + slug + '/videos/' + m[1] : u;
 }
 
 function limparNome(s) {
@@ -145,14 +178,38 @@ function limparNome(s) {
  * antes dele morre na porta.
  */
 async function espiar(url) {
+  const kickVod = await inspecionarVodKick(url);
+  if (kickVod && kickVod.source) {
+    let duracao = kickVod.duracao || 0;
+    if (!duracao) {
+      try {
+        const pl = await lerPlaylist(kickVod.source);
+        duracao = Math.round(pl.duracao || 0);
+      } catch (_) {}
+    }
+    return {
+      titulo: kickVod.titulo,
+      duracao,
+      aoVivo: false,
+      canal: kickVod.canal || '',
+      thumbnail: kickVod.thumbnail || '',
+      resolucoes: [1080, 720, 480],
+      largura: 1920,
+      altura: 1080,
+    };
+  }
   url = await normalizarUrl(url);
   const todas = estrategiasPara(url);
   // as 3 primeiras e, se precisar, o login do navegador (YouTube pedindo login)
   const tentativas = todas.slice(0, 3).concat(todas.filter((e, i) => i >= 3 && e.login));
   let ultimo = null;
   for (const e of tentativas) {
-    try { return await espiarUma(url, e.args || []); }
+    try { return await espiarUma(url, e.args || [], false); }
     catch (err) {
+      // Rede somente IPv6 (ex: 5G / CGNAT sem rota IPv4): tenta sem --force-ipv4
+      if (/Sem conexao|demorou demais|network|unreachable/i.test(err.message)) {
+        try { return await espiarUma(url, e.args || [], true); } catch (err2) { ultimo = err2; continue; }
+      }
       ultimo = err;
       if (semJeito(err.message)) throw err;
     }
@@ -160,27 +217,44 @@ async function espiar(url) {
   throw ultimo || new Error('Nao consegui ler esse link.');
 }
 
-function espiarUma(url, extras) {
+function espiarUma(url, extras, semForcarIpv4) {
   return garantirYtDlp().then((bin) => new Promise((resolve, reject) => {
-    const p = spawn(bin, ['--no-warnings', '--dump-single-json', '--no-playlist']
-      .concat(extras, [url]), { windowsHide: true });
+    const baseArgs = ['--no-warnings', '--socket-timeout', '15', '--dump-single-json', '--no-playlist'];
+    if (!semForcarIpv4) baseArgs.push('--force-ipv4');
+    const p = spawn(bin, baseArgs.concat(extras, [url]), { windowsHide: true });
     let saida = '';
     let erro = '';
+    let estourou = false;
+    // Nunca deixa a tela "buscando" pra sempre: se o site nao responder, desiste e explica.
+    const relogio = setTimeout(() => { estourou = true; try { p.kill(); } catch (_) {} }, 45000);
     p.stdout.setEncoding('utf8');
     p.stdout.on('data', (d) => { saida += d.toString(); });
     p.stderr.setEncoding('utf8');
     p.stderr.on('data', (d) => { erro += d.toString(); });
-    p.on('error', reject);
+    p.on('error', (e) => { clearTimeout(relogio); reject(e); });
     p.on('close', (code) => {
+      clearTimeout(relogio);
+      if (estourou) return reject(new Error('O site demorou demais pra responder. Confira sua internet e tente de novo.'));
       if (code !== 0) return reject(new Error(mensagemDeErro(erro)));
       try {
         const j = JSON.parse(saida);
+        const thumbs = Array.isArray(j.thumbnails) ? j.thumbnails.filter((t) => t && /^https?:\/\//i.test(t.url || '')) : [];
+        const thumb = j.thumbnail || (thumbs.length ? thumbs[thumbs.length - 1].url : '');
+        const alts = new Set();
+        for (const f of (j.formats || [])) {
+          const h = Number(f && f.height);
+          if (h >= 360) alts.add(h);
+        }
+        const maxAlt = Math.max(Number(j.height || 0), ...alts, 0);
+        const padroes = [2160, 1440, 1080, 720, 480].filter((h) => !maxAlt || h <= maxAlt + 40);
         resolve({
           titulo: j.title || 'video',
           duracao: Number(j.duration || 0),
           // live acontecendo agora (o mesmo pedido ja responde, sem consultar de novo)
           aoVivo: j.is_live === true || j.live_status === 'is_live',
           canal: j.uploader || j.channel || '',
+          thumbnail: thumb || '',
+          resolucoes: padroes.length ? padroes : [1080, 720, 480],
           largura: j.width || 0,
           altura: j.height || 0,
         });
@@ -304,6 +378,12 @@ function semJeito(msg) {
 
 async function baixar(url, opcoes, aoProgredir) {
   opcoes = opcoes || {};
+  const kickVod = await inspecionarVodKick(url);
+  if (kickVod && kickVod.source) {
+    // Baixa direto do .m3u8 da Kick (contorna o NOT_FOUND do extrator kick:vod do yt-dlp)
+    const nomeBase = limparNome(kickVod.titulo) + ' [' + kickVod.uuid.slice(0, 8) + ']';
+    return tentarBaixar(kickVod.source, Object.assign({}, opcoes, { nomeArquivo: nomeBase }), aoProgredir, { nome: 'Kick direto', args: [], formatoLivre: true });
+  }
   url = await normalizarUrl(url);
   let ultimoErro = null;
   let jaAtualizou = false;
@@ -315,8 +395,11 @@ async function baixar(url, opcoes, aoProgredir) {
       if (i > 0 && aoProgredir) {
         aoProgredir(0, 'Recusado. Tentando ' + e.nome + '...');
       }
-      return await tentarBaixar(url, opcoes, aoProgredir, e);
+      return await tentarBaixar(url, opcoes, aoProgredir, e, false);
     } catch (err) {
+      if (/Sem conexao|network|unreachable/i.test(err.message)) {
+        try { return await tentarBaixar(url, opcoes, aoProgredir, e, true); } catch (errIpv6) { err = errIpv6; }
+      }
       ultimoErro = err;
       if (semJeito(err.message)) throw err;   // insistir nao vai mudar nada
 
@@ -348,7 +431,7 @@ async function baixar(url, opcoes, aoProgredir) {
   throw new Error(base + ' Tentei ' + estrategias.length + ' caminhos diferentes. Baixe o arquivo por fora e use "Arraste um vídeo do seu PC".');
 }
 
-async function tentarBaixar(url, opcoes, aoProgredir, estrategia) {
+async function tentarBaixar(url, opcoes, aoProgredir, estrategia, semForcarIpv4) {
   opcoes = opcoes || {};
   estrategia = estrategia || { args: [] };
   const bin = await garantirYtDlp();
@@ -370,33 +453,33 @@ async function tentarBaixar(url, opcoes, aoProgredir, estrategia) {
         'bv*+ba/b',
       ].join('/');
 
-  const modelo = path.join(pastas.baixados(), '%(title).60B [%(id)s].%(ext)s');
+  const modelo = path.join(pastas.baixados(), (opcoes.nomeArquivo ? opcoes.nomeArquivo : '%(title).60B [%(id)s]') + '.%(ext)s');
 
   return new Promise((resolve, reject) => {
     const args = [
       '--no-warnings', '--no-playlist', '--newline',
+      ...(semForcarIpv4 ? [] : ['--force-ipv4']),
+      '--socket-timeout', '20',
       ...(estrategia.args || []),
-      '--retries', '5', '--fragment-retries', '10',
+      '--retries', '10', '--fragment-retries', '15',
+      '--retry-sleep', 'linear=1::4',
       '--concurrent-fragments', '4',
-      '--no-part',                       // evita ficar com .part se cair a conexao
+      '--continue',                      // retoma de onde parou se a internet oscilar
       '-f', formato,
       '--merge-output-format', 'mp4',
+      '--postprocessor-args', 'Merger+ffmpeg:-avoid_negative_ts make_zero -movflags +faststart',
       '--restrict-filenames',            // sem acento e sem espaco: menos dor de cabeca depois
       '-o', modelo,
       '--progress',
-      // Nada de --print aqui: ele desliga o relatorio de progresso do yt-dlp,
-      // e ai o usuario fica olhando uma barra parada num download de 500 MB.
-      // O caminho do arquivo a gente tira das proprias mensagens abaixo.
       url,
     ];
 
+    if (aoProgredir) aoProgredir(0.01, 'Conectando ao servidor do vídeo...', { fase: 'conectando' });
     const p = spawn(bin, args, { windowsHide: true });
     let caminho = '';
     let erro = '';
     const restos = { out: '', err: '' };
 
-    // Com --print ligado, o yt-dlp joga o progresso no stderr e deixa o stdout
-    // so pro caminho do arquivo. Entao a gente le as duas saidas do mesmo jeito.
     function processar(texto, qual) {
       restos[qual] += texto;
       const linhas = restos[qual].split(/\r?\n/);
@@ -406,8 +489,6 @@ async function tentarBaixar(url, opcoes, aoProgredir, estrategia) {
         const t = linha.trim();
         if (!t) continue;
 
-        // De onde sai o caminho final, em ordem de confianca:
-        // o Merger diz o arquivo juntado; o Destination, o arquivo unico.
         const juntou = /\[Merger\]\s+Merging formats into\s+"(.+?)"/i.exec(t);
         if (juntou) { caminho = juntou[1]; }
 
@@ -419,13 +500,15 @@ async function tentarBaixar(url, opcoes, aoProgredir, estrategia) {
 
         const m = /\[download\]\s+([\d.]+)%/.exec(t);
         if (m && aoProgredir) {
-          const frac = Math.min(1, Number(m[1]) / 100);
-          const vel = (/at\s+([\d.]+\s*\w+\/s)/.exec(t) || [])[1];
-          const total = (/of\s+~?([\d.]+\s*\w+)/.exec(t) || [])[1];
+          const frac = Math.min(0.96, Number(m[1]) / 100);
+          const vel = (/at\s+([\d.]+\s*[A-Za-z]+\/s)/.exec(t) || [])[1] || '';
+          const total = (/of\s+~?([\d.]+\s*[A-Za-z]+)/.exec(t) || [])[1] || '';
+          const eta = (/ETA\s+([\d:]+)/.exec(t) || [])[1] || '';
           aoProgredir(frac, 'Baixando... ' + Math.round(frac * 100) + '%' +
-            (total ? ' de ' + total : '') + (vel ? '  ·  ' + vel : ''));
+            (total ? ' de ' + total : '') + (vel ? '  ·  ' + vel : '') + (eta && eta !== '00:00' ? '  ·  faltam ' + eta : ''),
+            { fase: 'baixando', vel, total, eta });
         } else if (/\[Merger\]|\[ffmpeg\]/i.test(t) && aoProgredir) {
-          aoProgredir(0.97, 'Juntando video e audio...');
+          aoProgredir(0.98, 'Sincronizando vídeo e áudio em alta definição...', { fase: 'sincronizando' });
         }
       }
     }
@@ -637,7 +720,7 @@ async function baixarHls(url, opcoes, aoProgredir) {
 function baixarPedacos(ffmpeg, segs, destino, avisar) {
   return new Promise((resolve, reject) => {
     const p = spawn(ffmpeg, [
-      '-y', '-v', 'error', '-f', 'mpegts', '-i', 'pipe:0',
+      '-y', '-v', 'error', '-fflags', '+genpts+discardcorrupt', '-f', 'mpegts', '-i', 'pipe:0',
       '-map', '0:v:0?', '-map', '0:a:0?', '-c', 'copy',
       '-bsf:a', 'aac_adtstoasc', '-avoid_negative_ts', 'make_zero',
       '-movflags', '+faststart', destino,
@@ -672,9 +755,13 @@ function baixarPedacos(ffmpeg, segs, destino, avisar) {
       const estimado = proximoEscrever ? (mb / proximoEscrever) * total : 0;
       const seg = (Date.now() - comeco) / 1000;
       const vel = seg > 1 ? mb / seg : 0;
+      const velTxt = vel ? vel.toFixed(1).replace('.', ',') + ' MB/s' : '';
+      const restSeg = vel > 0.1 && estimado > mb ? Math.round((estimado - mb) / vel) : 0;
+      const eta = restSeg > 0 ? Math.floor(restSeg / 60) + ':' + String(restSeg % 60).padStart(2, '0') : '';
       avisar(Math.min(0.99, frac), 'Baixando a live... ' + Math.round(frac * 100) + '%' +
         (estimado ? ' · ' + gb(mb) + ' de ~' + gb(estimado) : '') +
-        (vel ? ' · ' + vel.toFixed(1).replace('.', ',') + ' MB/s' : ''));
+        (velTxt ? ' · ' + velTxt : ''),
+        { fase: 'baixando', vel: velTxt, total: estimado ? '~' + gb(estimado) : '', eta });
     }
 
     function desistir(e) {
@@ -745,4 +832,4 @@ function ffmpegDeHls(ffmpeg, url, trecho, destino, avisar) {
   });
 }
 
-module.exports = { baixar, espiar, garantirYtDlp, pareceLink, ehHls, espiarHls, baixarHls };
+module.exports = { baixar, espiar, garantirYtDlp, pareceLink, ehHls, espiarHls, baixarHls, consultarJsonKick };

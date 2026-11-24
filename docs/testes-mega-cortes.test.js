@@ -236,3 +236,50 @@ test('mega/vinhetas: inserirVinhetas() insere 2 vinhetas (apos 3s e no fim) mant
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
 });
+
+test('mega/beavernet: ordem de fallback (MeroMero 26B >> Nemotron >> Gemma-4 4B >> Qwen 0.8B), chave opcional e sem auto-updater', async () => {
+  const pro = require(path.join(RAIZ, 'src', 'pro'));
+  assert.equal(pro.BEAVERNET_BASE_URL, 'https://net.beaverai.org/v1');
+  assert.deepEqual(pro.BEAVERNET_MODELOS_PADRAO, [
+    'Linkpharm/MeroMero 26B A4B Uncensored Q4',
+    'serranoprime1/nvidia/nemotron-3.5-super-vl:free',
+    'Meus Artis/Gemma-4-E4B-it-Ultra-Uncensored-Heretic',
+    'pixel.dust/Qwen3.5-0.8B-Space-Programming',
+  ]);
+  assert.ok(pro.PROVEDORES.includes('beavernet'));
+  assert.ok(pro.PROVEDORES.includes('gemini'));
+  assert.ok(pro.PROVEDORES.includes('openai'));
+  assert.ok(pro.PROVEDORES.includes('anthropic'));
+
+  // Nao deve existir auto-updater do upstream no Mega Cortes HD
+  assert.equal(fs.existsSync(path.join(RAIZ, 'src', 'atualizar.js')), false, 'auto-updater nao deve estar presente');
+
+  // Estado padrao ou BeaverNet sem chave deve estar pronto sem exigir API key
+  const st = await pro.obterEstado();
+  assert.equal(typeof st.provedor, 'string');
+  assert.ok(Array.isArray(st.beavernetModelos) && st.beavernetModelos.length === 4);
+});
+
+test('mega/splitter-e-ia: rotas /splitter/, /api/splitter/status, /api/ia/config e /api/fontes-sistema respondem HTTP 200', async () => {
+  const porta = 4470 + Math.floor(Math.random() * 40);
+  const env = Object.assign({}, process.env, { NAO_ABRIR: '1', PORTA: String(porta), PYTHONNOUSERSITE: '1' });
+  if (fs.existsSync(EMBED_PY)) env.PYTHON_BIN = EMBED_PY;
+
+  const srv = spawn(process.execPath, [path.join(RAIZ, 'src', 'server.js')], { env, stdio: 'pipe', windowsHide: true });
+  try {
+    for (let i = 0; i < 40; i++) {
+      try { const r = await fetch(`http://127.0.0.1:${porta}/api/rede`); if (r.ok) break; } catch (_) {}
+      await new Promise((r) => setTimeout(r, 150));
+    }
+    for (const rota of ['/splitter/', '/api/splitter/status', '/api/splitter/biblioteca', '/api/ia/config', '/api/fontes-sistema']) {
+      const r = await fetch(`http://127.0.0.1:${porta}${rota}`);
+      assert.equal(r.status, 200, `rota ${rota} deve responder 200`);
+    }
+    const ia = await fetch(`http://127.0.0.1:${porta}/api/ia/config`).then((r) => r.json());
+    assert.ok(Array.isArray(ia.beavernetModelos) && ia.beavernetModelos.length === 4);
+    const fontes = await fetch(`http://127.0.0.1:${porta}/api/fontes-sistema`).then((r) => r.json());
+    assert.ok(Array.isArray(fontes.fontes) && fontes.fontes.length > 0);
+  } finally {
+    try { srv.kill(); } catch (_) {}
+  }
+});

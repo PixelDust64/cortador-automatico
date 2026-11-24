@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/gabrielworkspace/cortador-automatico"><img src="https://img.shields.io/badge/compat%C3%ADvel%20com-cortador--automatico%20v2.0.7-22c55e?style=flat-square" alt="Compatível com cortador-automatico v2.0.7" /></a>
+  <a href="https://github.com/gabrielworkspace/cortador-automatico"><img src="https://img.shields.io/badge/compat%C3%ADvel%20com-cortador--automatico%20v2.0.8-22c55e?style=flat-square" alt="Compatível com cortador-automatico v2.0.8" /></a>
   <a href="docs/testes-base-original.test.js"><img src="https://img.shields.io/badge/base%20original-100%25%20compat%C3%ADvel-3b82f6?style=flat-square" alt="Base original 100% compatível" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/licen%C3%A7a-MIT-a855f7?style=flat-square" alt="Licença MIT" /></a>
 </p>
@@ -33,6 +33,15 @@ Guia de uso detalhado: [LEIA-ME.txt](LEIA-ME.txt) · Documentação da API HTTP 
 - **Croma Studio integrado (aba própria na barra superior):** crie thumbnails, banners, marcas d'água, QR Codes e salve até 10 gradientes e 10 thumbs favoritas (incluindo **`★ Final padrão`** e até 2 vinhetas com silêncio ou jingle nos cortes).
 - **Splitter Studio integrado (aba própria na barra superior):** estúdio completo de manipulação de áudio com **8 ferramentas**, reaproveitamento automático da pasta `baixados/` (sem baixar o mesmo link duas vezes) e instalação adaptativa de IA (GPU CUDA ou CPU).
 - **Fila lateral ao vivo:** acompanhe o progresso de múltiplos vídeos, reordene trabalhos pendentes ou cancele cortes em andamento sem sair da tela principal.
+- **Diretor IA opcional (BeaverNet gratuito + Gemini / OpenAI / Claude):** além do **Motor Local** 100% offline e ilimitado, você pode ativar o Diretor IA nos Ajustes para analisar a transcrição inteira e gerar títulos e ganchos ainda mais precisos.
+
+## Diretor IA Gratuito com BeaverNet (BeaverAI)
+
+O **Mega Cortes HD** traz integração nativa com o **[BeaverNet](https://net.beaverai.org)** (`https://net.beaverai.org/v1`) — um **pool comunitário de computação LLM** onde colaboradores com GPUs disponíveis compartilham modelos de IA abertos através de uma única API compatível com OpenAI ([documentação oficial](https://net.beaverai.org/docs/platform/overview) · [modelos online](https://net.beaverai.org/models)).
+
+- **100% gratuito (sem cartão e sem pagar nada):** o BeaverNet funciona até mesmo **sem chave de API** (com limites comunitários reduzidos por IP), mas **recomenda-se criar uma conta gratuita em [net.beaverai.org/account](https://net.beaverai.org/account) e gerar sua chave de API gratuita** para liberar limites maiores de requisições e respostas — sem precisar cadastrar pagamento nem pagar nada.
+- **Seleção manual + fallback automático:** nos **Ajustes**, você pode escolher manualmente qualquer modelo hospedado no BeaverNet (com botão para atualizar a lista online) ou deixar no modo automático, que faz fallback na ordem de preferência: `MeroMero 26B` → `Nemotron 3.5` → `Gemma-4 4B` → `Qwen3.5 0.8B`.
+- **Outras APIs opcionais:** também aceita sua própria chave de API do **Google Gemini**, **OpenAI (ChatGPT)** ou **Anthropic (Claude)** — tudo chamado direto do seu computador, sem intermediários.
 
 ## Splitter Studio — Estúdio de Áudio e IA Integrado
 
@@ -112,8 +121,9 @@ O programa não envia dados para terceiros, exceto quando você solicita baixar 
 
 > **Aviso de segurança (uso local / monousuário):** esta aplicação foi projetada para uso **monousuário** e **não possui medidas avançadas de segurança** (como controle de acesso multiusuário, isolamento de permissões ou proteção contra exposição pública), devido ao seu foco exclusivo em execução com recursos locais. Aconselha-se utilizar o programa **apenas na própria máquina ou em uma rede local privada confiável**, evitando expor a porta diretamente para a internet pública.
 
-## Créditos e Licença
+## Créditos, Agradecimentos e Licença
 
 - **Projeto original e autor base:** **Gabriel Workspace** ([github.com/gabrielworkspace/cortador-automatico](https://github.com/gabrielworkspace/cortador-automatico) · Instagram [@gabriel.workspace](https://www.instagram.com/gabriel.workspace/)).
+- **Agradecimentos à comunidade BeaverNet / BeaverAI:** agradecemos ao **[BeaverNet](https://net.beaverai.org)** e a todos os provedores comunitários (como *Linkpharm*, *serranoprime1*, *Meus Artis* e demais colaboradores) que disponibilizam modelos abertos gratuitamente para a comunidade através da API aberta ([docs](https://net.beaverai.org/docs/platform/overview)).
 - **Licença do código:** [MIT](LICENSE) — mantendo integralmente o aviso de copyright original. O instalador inclui ferramentas de terceiros sob suas respectivas licenças (`Node.js`, `Python`, `faster-whisper`, `ffmpeg` e `yt-dlp`).
 - **Marca:** em conformidade com [MARCA.md](MARCA.md), o nome *"Cortador Automático"*, o nome *"Gabriel Workspace"* e o logo original não pertencem a este fork; esta versão independente utiliza nome próprio (**Mega Cortes HD**) e identidade visual própria.

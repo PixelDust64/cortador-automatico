@@ -1139,24 +1139,36 @@
     color: #f6f8fc; text-align: left;
   }
   .dsp-caixa.of-caixa .of-sub { margin: 0 0 20px; color: var(--texto2); font-size: 14px; font-weight: 400; line-height: 1.55; text-align: left; }
-  .of-tabela {
-    border-radius: 14px; overflow: hidden; margin-bottom: 14px;
-    border: 1px solid rgba(255,255,255,.09); background: rgba(255,255,255,.02);
+  .of-sec-rot {
+    font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--texto3); margin: 0 0 8px; display: flex; align-items: center; gap: 6px;
   }
-  .of-t-row {
-    display: grid; grid-template-columns: 1.15fr .85fr 1.15fr; align-items: center;
-    padding: 10px 14px; gap: 10px; font-size: 12.5px; border-top: 1px solid rgba(255,255,255,.06);
+  .of-sec-rot svg { width: 13px; height: 13px; color: #7fb2ff; margin: 0; vertical-align: 0; }
+  .of-duas { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .of-box {
+    padding: 13px 15px; border-radius: 13px; background: rgba(255,255,255,.025);
+    border: 1px solid rgba(255,255,255,.08); display: grid; gap: 6px; align-content: start;
   }
-  .of-t-row.cab {
-    border-top: 0; padding: 9px 14px; background: rgba(255,255,255,.035);
-    font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--texto3);
+  .of-box.pro {
+    background: linear-gradient(160deg, rgba(61,139,255,.11), rgba(61,139,255,.025));
+    border-color: rgba(127,178,255,.32);
   }
-  .of-t-row.cab .c-pro { color: #8ec0ff; }
-  .of-t-row .c-rec { color: var(--texto); font-weight: 500; display: flex; align-items: center; gap: 8px; }
-  .of-t-row .c-rec svg { width: 14px; height: 14px; color: #7fb2ff; flex: none; margin: 0; vertical-align: 0; }
-  .of-t-row .c-loc { color: var(--texto3); font-weight: 400; }
-  .of-t-row .c-pro { color: #dceaff; font-weight: 500; display: flex; align-items: center; gap: 6px; }
-  .of-t-row .c-pro svg { width: 14px; height: 14px; color: #5da0ff; flex: none; margin: 0; vertical-align: 0; }
+  .of-box-tit {
+    display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    font-size: 13px; font-weight: 600; color: var(--texto); margin-bottom: 2px;
+  }
+  .of-box.pro .of-box-tit { color: #a8ceff; }
+  .of-box-tit .tag-m {
+    font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 99px;
+    background: rgba(255,255,255,.06); color: var(--texto3);
+  }
+  .of-box.pro .of-box-tit .tag-m { background: rgba(61,139,255,.22); color: #b5d4ff; }
+  .of-li { display: flex; align-items: flex-start; gap: 7px; font-size: 12px; color: var(--texto2); line-height: 1.45; }
+  .of-li svg { width: 13px; height: 13px; flex: none; margin-top: 2px; color: var(--texto3); }
+  .of-box.pro .of-li { color: #e2eeff; }
+  .of-box.pro .of-li svg { color: #5da0ff; }
+  .of-motor-txt { font-size: 12px; color: var(--texto3); line-height: 1.5; margin: 0; }
+  .of-box.pro .of-motor-txt { color: #cfe2ff; }
   .of-ias {
     display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
     padding: 10px 14px; border-radius: 12px; margin-bottom: 14px;
@@ -1229,7 +1241,7 @@
     background: rgba(0,0,0,.35); border: 1px dashed rgba(127,178,255,.35);
   }
   .vip-chave-box code { font: 600 15px Consolas, monospace; color: #8ec0ff; letter-spacing: .8px; }
-  @media (max-width: 600px) { .of-grade { grid-template-columns: 1fr; } .of-caixa { padding: 22px 20px 18px; } }
+  @media (max-width: 600px) { .of-duas { grid-template-columns: 1fr; } .of-caixa { padding: 22px 20px 18px; } }
 </style>
 </head>
 <body data-modo="fluxo">
@@ -1970,47 +1982,44 @@
       <button class="of-x" id="btnFecharPro" type="button" aria-label="Fechar"><i data-lucide="x" class="i"></i></button>
     </div>
     <h2 id="proModalTitulo">Mais precisão, qualidade e engajamento com Google Gemini.</h2>
-    <p id="proModalSub">O <b>Google Gemini</b> lê a conversa inteira como um editor humano, encontra exatamente o momento que você descrever e entrega cortes cirúrgicos com gancho de retenção e SEO prontos para viralizar.</p>
+    <p id="proModalSub">Compare o que já é gratuito para sempre com o que você desbloqueia no Plano Pro — e veja como os dois motores trabalham:</p>
 
-    <div class="of-tabela">
-      <div class="of-t-row cab">
-        <span>Recurso</span>
-        <span>Grátis (Local)</span>
-        <span class="c-pro">Diretor IA Pro · Gemini</span>
+    <div class="of-sec-rot"><i data-lucide="layers" class="i"></i> 1. Recursos · Grátis vs. Plano Pro</div>
+    <div class="of-duas">
+      <div class="of-box">
+        <div class="of-box-tit"><span>Plano Grátis</span><span class="tag-m">Pra sempre</span></div>
+        <div class="of-li"><i data-lucide="check" class="i"></i><span>Cortes ilimitados em vídeos e lives</span></div>
+        <div class="of-li"><i data-lucide="check" class="i"></i><span>Enquadramento 9:16 + webcam automática</span></div>
+        <div class="of-li"><i data-lucide="check" class="i"></i><span>Legenda palavra por palavra + áudio sincronizado</span></div>
+        <div class="of-li"><i data-lucide="check" class="i"></i><span>3 testes grátis do Pro (até 1 live de 15 min)</span></div>
       </div>
-      <div class="of-t-row">
-        <span class="c-rec"><i data-lucide="sparkles" class="i"></i> Precisão com Gemini</span>
-        <span class="c-loc">Volume e chat</span>
-        <span class="c-pro"><i data-lucide="check" class="i"></i> Lê a história e o contexto</span>
+      <div class="of-box pro">
+        <div class="of-box-tit"><span>Plano Pro</span><span class="tag-m">Completo</span></div>
+        <div class="of-li"><i data-lucide="check" class="i"></i><span>Tudo do grátis + Google Gemini já incluso</span></div>
+        <div class="of-li"><i data-lucide="check" class="i"></i><span>Lives inteiras com IA sem limite de 15 min</span></div>
+        <div class="of-li"><i data-lucide="check" class="i"></i><span>Até 80 vídeos/mês com precisão de editor</span></div>
+        <div class="of-li"><i data-lucide="check" class="i"></i><span>Gancho 4s + títulos e SEO por rede</span></div>
       </div>
-      <div class="of-t-row">
-        <span class="c-rec"><i data-lucide="scissors" class="i"></i> Qualidade do corte</span>
-        <span class="c-loc">Tempo aproximado</span>
-        <span class="c-pro"><i data-lucide="check" class="i"></i> Início e fim exatos da fala</span>
+    </div>
+
+    <div class="of-sec-rot"><i data-lucide="cpu" class="i"></i> 2. Diferença dos motores</div>
+    <div class="of-duas">
+      <div class="of-box">
+        <div class="of-box-tit"><span>Motor Local</span><span class="tag-m">Offline no PC</span></div>
+        <p class="of-motor-txt">Corta por <b>volume da voz, explosão do chat e palavras-chave</b>. Ótimo pra gritos e reações rápidas, mas não lê o contexto da história.</p>
       </div>
-      <div class="of-t-row">
-        <span class="c-rec"><i data-lucide="flame" class="i"></i> Engajamento e retenção</span>
-        <span class="c-loc">Títulos padrão</span>
-        <span class="c-pro"><i data-lucide="check" class="i"></i> Gancho 4s + SEO por rede</span>
-      </div>
-      <div class="of-t-row">
-        <span class="c-rec"><i data-lucide="search" class="i"></i> Você escreve, a IA acha</span>
-        <span class="c-loc">Palavras-chave</span>
-        <span class="c-pro"><i data-lucide="check" class="i"></i> Gemini acha o momento exato</span>
-      </div>
-      <div class="of-t-row">
-        <span class="c-rec"><i data-lucide="radio" class="i"></i> IA na Live ao vivo</span>
-        <span class="c-loc">15 min de teste</span>
-        <span class="c-pro"><i data-lucide="check" class="i"></i> Live inteira sem limite</span>
+      <div class="of-box pro">
+        <div class="of-box-tit"><span>Diretor IA Pro · Gemini</span><span class="tag-m">Alta precisão</span></div>
+        <p class="of-motor-txt">O <b>Google Gemini</b> lê a conversa inteira, <b>encontra o momento que você escrever</b>, acerta início e fim exatos da fala e gera cortes com muito mais engajamento.</p>
       </div>
     </div>
 
     <div class="of-ias">
-      <span class="of-ias-rot"><i data-lucide="cpu" class="i"></i> Já vem pronto · sem configurar API</span>
+      <span class="of-ias-rot"><i data-lucide="plug" class="i"></i> Integração de IA</span>
       <div class="of-ias-pills">
         <span class="of-ia-pill">Google Gemini <small>incluso</small></span>
-        <span class="of-ia-pill">Claude <small>opcional</small></span>
-        <span class="of-ia-pill">ChatGPT <small>opcional</small></span>
+        <span class="of-ia-pill">Claude <small>API própria</small></span>
+        <span class="of-ia-pill">ChatGPT <small>API própria</small></span>
       </div>
     </div>
 
@@ -2099,39 +2108,36 @@
 
     <h2 class="of-titulo" id="oferta20Titulo">Mais precisão, qualidade e engajamento com Google Gemini.</h2>
     <p class="of-sub">
-      O <b>Diretor IA Pro</b> usa o <b>Google Gemini</b> incluso para ler a conversa inteira, encontrar exatamente o momento que você descrever e gerar cortes prontos para viralizar. Ao fechar esta tela, o valor volta para R$&nbsp;24,90.
+      Veja a diferença nos recursos e nos motores. Ao fechar esta mensagem, o valor volta para R$&nbsp;24,90.
     </p>
 
-    <div class="of-tabela">
-      <div class="of-t-row cab">
-        <span>Recurso</span>
-        <span>Grátis (Local)</span>
-        <span class="c-pro">Diretor IA Pro · Gemini</span>
+    <div class="of-sec-rot"><i data-lucide="layers" class="i"></i> 1. Recursos · Grátis vs. Plano Pro</div>
+    <div class="of-duas">
+      <div class="of-box">
+        <div class="of-box-tit"><span>Plano Grátis</span><span class="tag-m">Pra sempre</span></div>
+        <div class="of-li"><i data-lucide="check" class="i"></i><span>Cortes ilimitados em vídeos e lives</span></div>
+        <div class="of-li"><i data-lucide="check" class="i"></i><span>Enquadramento 9:16 + webcam</span></div>
+        <div class="of-li"><i data-lucide="check" class="i"></i><span>Legenda + áudio sincronizado</span></div>
+        <div class="of-li"><i data-lucide="check" class="i"></i><span>3 testes grátis (1 live de 15 min)</span></div>
       </div>
-      <div class="of-t-row">
-        <span class="c-rec"><i data-lucide="sparkles" class="i"></i> Precisão com Gemini</span>
-        <span class="c-loc">Volume e chat</span>
-        <span class="c-pro"><i data-lucide="check" class="i"></i> Lê a história e o contexto</span>
+      <div class="of-box pro">
+        <div class="of-box-tit"><span>Plano Pro</span><span class="tag-m">Completo</span></div>
+        <div class="of-li"><i data-lucide="check" class="i"></i><span>Tudo do grátis + Google Gemini incluso</span></div>
+        <div class="of-li"><i data-lucide="check" class="i"></i><span>Lives inteiras com IA sem limite</span></div>
+        <div class="of-li"><i data-lucide="check" class="i"></i><span>Até 80 vídeos/mês com IA de editor</span></div>
+        <div class="of-li"><i data-lucide="check" class="i"></i><span>Gancho 4s + títulos e SEO por rede</span></div>
       </div>
-      <div class="of-t-row">
-        <span class="c-rec"><i data-lucide="scissors" class="i"></i> Qualidade do corte</span>
-        <span class="c-loc">Tempo aproximado</span>
-        <span class="c-pro"><i data-lucide="check" class="i"></i> Início e fim exatos da fala</span>
+    </div>
+
+    <div class="of-sec-rot"><i data-lucide="cpu" class="i"></i> 2. Diferença dos motores</div>
+    <div class="of-duas">
+      <div class="of-box">
+        <div class="of-box-tit"><span>Motor Local</span><span class="tag-m">Grátis</span></div>
+        <p class="of-motor-txt">Escolhe por <b>volume, chat e palavras-chave</b>. Ótimo para reações rápidas, mas sem ler o contexto da história.</p>
       </div>
-      <div class="of-t-row">
-        <span class="c-rec"><i data-lucide="flame" class="i"></i> Engajamento e retenção</span>
-        <span class="c-loc">Títulos padrão</span>
-        <span class="c-pro"><i data-lucide="check" class="i"></i> Gancho 4s + SEO por rede</span>
-      </div>
-      <div class="of-t-row">
-        <span class="c-rec"><i data-lucide="search" class="i"></i> Você escreve, a IA acha</span>
-        <span class="c-loc">Palavras-chave</span>
-        <span class="c-pro"><i data-lucide="check" class="i"></i> Gemini acha o momento exato</span>
-      </div>
-      <div class="of-t-row">
-        <span class="c-rec"><i data-lucide="radio" class="i"></i> IA na Live ao vivo</span>
-        <span class="c-loc">15 min de teste</span>
-        <span class="c-pro"><i data-lucide="check" class="i"></i> Live inteira sem limite</span>
+      <div class="of-box pro">
+        <div class="of-box-tit"><span>Diretor IA Pro · Gemini</span><span class="tag-m">Precisão</span></div>
+        <p class="of-motor-txt">O <b>Gemini</b> lê a conversa toda, <b>acha o momento que você escrever</b>, corta no ponto exato e aumenta retenção e engajamento.</p>
       </div>
     </div>
 

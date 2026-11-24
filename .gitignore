@@ -16,9 +16,11 @@ instalador/cache/
 instalador/montagem/
 instalador/dist/
 
-# Segredos
+# Segredos e backend privado do Pro
 .env
 *.key
+servidor-pro/
+git-rev.json
 
 # Backups locais
 *.antigo

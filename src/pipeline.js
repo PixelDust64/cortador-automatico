@@ -64,6 +64,8 @@ function acharPython() {
 
   const tentativas = [];
   if (process.platform === 'win32') {
+    tentativas.push(path.join(RAIZ, 'runtime', 'python', 'python.exe'));
+    tentativas.push(path.join(RAIZ, '..', 'runtime', 'python', 'python.exe'));
     tentativas.push(path.join(RAIZ, 'ambiente', 'Scripts', 'python.exe'));
     const local = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
     const programas = process.env.ProgramFiles || 'C:\\Program Files';
@@ -294,7 +296,7 @@ async function prepararAnalise(video, opcoes, emitir, avisar) {
         });
         // Lista vazia nao entra no cache: pode ter sido uma falha passageira do ffmpeg
         if (picos.length) {
-          try { fs.writeFileSync(jsonPicos, JSON.stringify(picos), 'utf8'); } catch (_) {}
+          try { fs.writeFileSync(jsonPicos, JSON.stringify(picos), 'utf8'); } catch (_) { }
         }
       } catch (e) {
         avisar({ tipo: 'aviso', msg: 'Nao consegui analisar os picos (' + e.message + ').' });
@@ -354,9 +356,28 @@ async function processar(opcoes, avisar) {
 
   // ---- 5. escolher os melhores momentos
   let cortes;
+  let feitoComIa = false;
   if (exato) {
     emitir(64, 'analise', 'Montando o corte de ' + mmss(trecho.inicio) + ' a ' + mmss(trecho.fim) + '...');
     cortes = [corteDoTrecho(transcricao, energia, trecho, { momentos: picos, perfil: perfilFinal, intencao: intencao, sessao: sessao.id })];
+  } else if (opcoes.usarIaPro) {
+    const pro = require('./pro');
+    const ctxVid = contextoDoVideo(video);
+    emitir(64, 'analise', 'Diretor IA Pro lendo a conversa inteira e criando títulos virais...');
+    const resIa = await pro.analisarComIa(transcricao, picos, info.duracao, {
+      quantidade: opcoes.quantidade || 8,
+      minDur: opcoes.minDur || 28,
+      maxDur: opcoes.maxDur || 62,
+      descricao: opcoes.descricao,
+      contexto: ctxVid.texto,
+      canal: ctxVid.canal,
+      trecho: trecho,
+    });
+    cortes = resIa.cortes;
+    feitoComIa = true;
+    if (resIa.usouTrial) {
+      avisar({ tipo: 'aviso', msg: '✨ Diretor IA Pro usado! Você ainda tem ' + resIa.trialsRestantes + ' teste(s) grátis.' });
+    }
   } else {
     emitir(64, 'analise', trecho
       ? 'Procurando os melhores momentos entre ' + mmss(trecho.inicio) + ' e ' + mmss(trecho.fim) + '...'
@@ -376,8 +397,8 @@ async function processar(opcoes, avisar) {
   if (!cortes.length) {
     throw new Error(trecho
       ? 'Entre ' + mmss(trecho.inicio) + ' e ' + mmss(trecho.fim) + ' não coube nenhum corte de ' +
-        (opcoes.minDur || 28) + ' a ' + (opcoes.maxDur || 62) + 's que comece e termine numa frase inteira. ' +
-        'Aumente o trecho, escolha cortes curtos ou peça um corte só com o trecho inteiro.'
+      (opcoes.minDur || 28) + ' a ' + (opcoes.maxDur || 62) + 's que comece e termine numa frase inteira. ' +
+      'Aumente o trecho, escolha cortes curtos ou peça um corte só com o trecho inteiro.'
       : 'Nao consegui montar nenhum corte. O video pode ter pouca fala.');
   }
 
@@ -387,8 +408,14 @@ async function processar(opcoes, avisar) {
   const pedidos = opcoes.quantidade || 8;
   let recado = null;
   if (!exato && cortes.length < pedidos) {
-    recado = explicarPoucos(cortes.length, pedidos,
-      diagnosticarCortes(transcricao, info.duracao, opcoes), opcoes);
+    recado = feitoComIa
+      ? {
+          titulo: 'Você pediu ' + pedidos + ' cortes e o Diretor IA Pro separou os ' + cortes.length + ' momentos realmente virais.',
+          detalhe: 'A IA analisou a conversa inteira e descartou trechos sem contexto, agradecimentos de live ou assuntos que não fechavam uma ideia forte.',
+          sugestao: null,
+        }
+      : explicarPoucos(cortes.length, pedidos,
+          diagnosticarCortes(transcricao, info.duracao, opcoes), opcoes);
     avisar({ tipo: 'aviso', msg: recado.titulo });
   }
 
@@ -485,9 +512,9 @@ function semPalavras(c) {
  * (<video>.cortador.json). Video do PC nao tem: fica so o nome do arquivo.
  */
 function contextoDoVideo(video) {
-  const nome = path.basename(video, path.extname(video)).replace(/s*[[^]]+]s*$/, '');
+  const nome = path.basename(video, path.extname(video)).replace(/\s*\[[^\]]+\]\s*$/, '');
   let info = {};
-  try { info = JSON.parse(fs.readFileSync(video + '.cortador.json', 'utf8')) || {}; } catch (_) {}
+  try { info = JSON.parse(fs.readFileSync(video + '.cortador.json', 'utf8')) || {}; } catch (_) { }
   return { texto: [info.titulo, nome].filter(Boolean).join(' · '), canal: info.canal || '' };
 }
 
@@ -499,12 +526,23 @@ function titular(cortes, video, sessao, nome) {
     // o gancho da tela (gerado depois, no render) usa o mesmo contexto
     c.contextoJogo = { texto: contexto.texto, canal: contexto.canal };
     const cp = gerarCopy(c, contexto, sessao, nome);
-    contexto.evitar.add(String(cp.titulo).toLowerCase());
-    c.titulo = cp.titulo;
-    c.titulos = cp.titulos;
-    // A legenda do post vai junto do clipe, pronta pra colar
-    c.hashtags = cp.hashtags;
-    c.legendaPost = cp.legenda;
+    if (c.geradoPorIa && c.tituloIa) {
+      c.titulo = c.tituloIa;
+      c.titulos = c.titulosIa && c.titulosIa.length ? c.titulosIa : cp.titulos;
+      c.hashtags = c.hashtagsIa && c.hashtagsIa.length ? c.hashtagsIa : cp.hashtags;
+      const seoIa = require('./copy').gerarSeoPlataformas(c, c.titulo, c.hashtags, contexto);
+      c.seo = Object.assign({}, seoIa, c.seoIa || {});
+      c.legendaPost = c.seo.tiktok || (c.titulo + '\n\n' + c.hashtags.map((h) => '#' + h).join(' '));
+      contexto.evitar.add(String(c.titulo).toLowerCase());
+    } else {
+      contexto.evitar.add(String(cp.titulo).toLowerCase());
+      c.titulo = cp.titulo;
+      c.titulos = cp.titulos;
+      // A legenda do post e o SEO por plataforma vao junto do clipe, prontos pra colar
+      c.hashtags = cp.hashtags;
+      c.seo = cp.seo;
+      c.legendaPost = cp.legenda;
+    }
   }
 }
 
@@ -526,11 +564,11 @@ async function gerarClipes(cortes, ctx) {
     // reescrever depois, quando bater o olho no resultado e pensar em algo melhor.
     // ganchoFixo: o gancho escrito a mao pra um trecho marcado, no lugar do gerado
     c.gancho = ctx.opcoes.textoGancho === false ? null
-      : (ctx.opcoes.ganchoFixo || gerarGanchoDeTela(c, ctx.opcoes.sessao));
+      : (ctx.opcoes.ganchoFixo || c.ganchoIa || gerarGanchoDeTela(c, ctx.opcoes.sessao));
 
     // A nota entra no nome: assim o ranking aparece na pasta do Windows tambem
     const base = 'clipe-' + String(c.numero).padStart(2, '0') +
-                 '-nota' + c.nota + '-' + limparNome(c.titulo);
+      '-nota' + c.nota + '-' + limparNome(c.titulo);
 
     const p0 = 68 + (i / cortes.length) * 30;
     const p1 = 68 + ((i + 1) / cortes.length) * 30;
@@ -604,27 +642,35 @@ function quebrar(texto, largura) {
 function explicarPoucos(sairam, pedidos, d, opcoes) {
   // com trecho marcado, a conta e so dele
   const oQue = opcoes.trecho ? 'trecho' : 'vídeo';
+  // Se cabiam mais cortes no tempo, mas o filtro de sentido descartou os fracos:
+  if (d.teto > sairam) {
+    return {
+      titulo: 'Você pediu ' + pedidos + ' cortes e separei os ' + sairam + ' melhores momentos reais.',
+      detalhe: 'Descartei os outros trechos porque ficariam sem contexto, cortados no meio ou eram só conversa parada / leitura de chat.',
+      sugestao: 'Se mesmo assim quiser tirar cortes extras do resto do ' + oQue + ', clique em "Extrair mais cortes" aqui em cima.',
+    };
+  }
   const titulo = 'Você pediu ' + pedidos + ' cortes e saíram ' + sairam +
-                 ' — é o que esse ' + oQue + ' dá.';
+    ' — é o que esse ' + oQue + ' dá.';
 
   const partes = [];
   const pct = d.duracao ? Math.round((d.falado / d.duracao) * 100) : 0;
   partes.push('O ' + oQue + ' tem ' + mmss(d.duracao) + ', mas só ' + mmss(d.falado) +
-              ' dele tem alguém falando (' + pct + '%)' +
-              (d.blocos > 1 ? ', divididos em ' + d.blocos + ' trechos separados por música ou ação' : '') + '.');
+    ' dele tem alguém falando (' + pct + '%)' +
+    (d.blocos > 1 ? ', divididos em ' + d.blocos + ' trechos separados por música ou ação' : '') + '.');
   partes.push('Cada corte precisa começar e terminar numa frase inteira, ' +
-              'então o que sobra pra cortar é isso — não a duração do vídeo.');
+    'então o que sobra pra cortar é isso — não a duração do vídeo.');
 
   let sugestao = null;
   const minAtual = opcoes.minDur || 28;
   const maxAtual = opcoes.maxDur || 62;
   if (d.tetoCurto > d.teto) {
     sugestao = 'Com cortes mais curtos (' + d.minCurto + ' a ' + d.maxCurto +
-               's) dava pra tirar até ' + d.tetoCurto + ' desse mesmo ' + oQue + ', ' +
-               'em vez de ' + d.teto + ' com os ' + minAtual + ' a ' + maxAtual + 's de agora.';
+      's) dava pra tirar até ' + d.tetoCurto + ' desse mesmo ' + oQue + ', ' +
+      'em vez de ' + d.teto + ' com os ' + minAtual + ' a ' + maxAtual + 's de agora.';
   } else if (sairam >= d.teto) {
     sugestao = 'Não dá pra tirar mais sem repetir trecho: ' + d.teto +
-               ' é o máximo que cabe sem dois cortes mostrarem a mesma coisa.';
+      ' é o máximo que cabe sem dois cortes mostrarem a mesma coisa.';
   }
 
   return { titulo, detalhe: partes.join(' '), sugestao };
@@ -643,8 +689,8 @@ function explicarPoucos(sairam, pedidos, d, opcoes) {
  */
 async function renderizarClipe(ctx, c) {
   const opcoes = ctx.opcoes || {};
-  const avisar = ctx.avisar || (() => {});
-  const aoProgredir = ctx.aoProgredir || (() => {});
+  const avisar = ctx.avisar || (() => { });
+  const aoProgredir = ctx.aoProgredir || (() => { });
   const rotulo = ctx.rotulo || 'clipe';
   const mp4 = path.join(ctx.pastaSaida, ctx.base + '.mp4');
 
@@ -660,7 +706,7 @@ async function renderizarClipe(ctx, c) {
   // pedacos do proprio rosto e ainda desenha uma linha no meio dele. Nesses
   // trechos o certo e o oposto - foco so na cara, sem divisao nenhuma.
   if (formatoDoClipe === 'split' && opcoes.detectarWebcam !== false &&
-      opcoes.recorte && opcoes.recorte.topo) {
+    opcoes.recorte && opcoes.recorte.topo) {
     aoProgredir(0, 'Conferindo o enquadramento do ' + rotulo + '...');
     const d = await media.detectarWebcam(ctx.video, c.inicio, c.duracao, opcoes.recorte.topo);
 
@@ -714,6 +760,7 @@ async function renderizarClipe(ctx, c) {
     // chamariz: 3s da carta na frente do corte (vem no proprio corte, porque
     // o instante da revelacao muda de clipe pra clipe)
     teaser: c.teaser || null,
+    atrasoAudio: c.atrasoAudio || 0,
     fontsdir: arquivoAss ? fontsdirRelativo() : null,
     pastaTrabalho: pastas.trabalho(),
     aoProgredir: (frac) => aoProgredir(frac,
@@ -726,7 +773,7 @@ async function renderizarClipe(ctx, c) {
   const miniatura = path.join(ctx.pastaSaida, ctx.base + '.jpg');
   await media.gerarMiniatura(ctx.video, c.inicio + c.duracao / 2, miniatura, ctx.vertical);
 
-  if (arquivoAss) { try { fs.unlinkSync(path.join(pastas.trabalho(), arquivoAss)); } catch (_) {} }
+  if (arquivoAss) { try { fs.unlinkSync(path.join(pastas.trabalho(), arquivoAss)); } catch (_) { } }
 
   return Object.assign(semPalavras(c), {
     arquivo: mp4,
@@ -746,7 +793,7 @@ const ARQUIVO_SESSAO = 'sessao.json';
 function gravarSessao(pasta, dados) {
   try {
     fs.writeFileSync(path.join(pasta, ARQUIVO_SESSAO), JSON.stringify(dados, null, 2), 'utf8');
-  } catch (_) {}
+  } catch (_) { }
 }
 
 function lerSessao(pasta) {
@@ -842,7 +889,7 @@ function doClipeDaLive(clipe) {
 }
 
 async function refazerClipe(pedido, avisar) {
-  avisar = avisar || (() => {});
+  avisar = avisar || (() => { });
   const emitir = (pct, msg) => avisar({ tipo: 'progresso', pct: Math.round(pct), etapa: 'cortando', msg });
 
   const sessao = lerSessao(pedido.pasta);
@@ -906,6 +953,8 @@ async function refazerClipe(pedido, avisar) {
     texto: texto,
     gancho: gancho,
     teaser: pedido.teaser === undefined ? antigo.teaser : pedido.teaser,
+    // ajuste do som desse clipe ("o audio esta atrasado"): fica no clipe pros proximos refazer
+    atrasoAudio: pedido.atrasoAudio === undefined ? (antigo.atrasoAudio || 0) : Math.max(-5, Math.min(5, Number(pedido.atrasoAudio) || 0)),
     legendar: legendar,
     edicoesLegenda: edicoes || undefined,
     editado: true,
@@ -942,7 +991,7 @@ function regravarRelatorio(pasta, sessao) {
     r.clipes = sessao.clipes;
     fs.writeFileSync(arquivo, JSON.stringify(r, null, 2), 'utf8');
     fs.writeFileSync(path.join(pasta, 'RELATORIO.txt'), textoDoRelatorio(r), 'utf8');
-  } catch (_) {}
+  } catch (_) { }
 }
 
 // ---------------------------------------------------------------- mais cortes
@@ -959,11 +1008,11 @@ function regravarRelatorio(pasta, sessao) {
  * @param {object} pedido  { pasta, quantidade, minDur, maxDur, trecho, modo }
  */
 async function extrairMais(pedido, avisar) {
-  avisar = avisar || (() => {});
+  avisar = avisar || (() => { });
   const emitir = (pct, etapa, msg) => avisar({ tipo: 'progresso', pct: Math.round(pct * 10) / 10, etapa, msg });
 
   const sessao = lerSessao(pedido.pasta);
-  if (!fs.existsSync(sessao.video)) {
+  if (!sessao.video || !fs.existsSync(sessao.video)) {
     throw new Error('O video original saiu do lugar: ' + sessao.video);
   }
 
@@ -1069,7 +1118,7 @@ function explicarPoucosNovos(sairam, pedidos, jaTinha, d, minAtual, trecho) {
   let sugestao = null;
   if (d.tetoCurto > sairam && minAtual > d.minCurto) {
     sugestao = 'Com cortes mais curtos (' + d.minCurto + ' a ' + d.maxCurto + 's) ainda cabem até ' +
-               d.tetoCurto + ' trechos novos ' + onde + '.';
+      d.tetoCurto + ' trechos novos ' + onde + '.';
   } else if (!sairam) {
     sugestao = trecho
       ? 'Aumente o trecho, ou peça um corte só com o trecho inteiro.'

@@ -25,8 +25,8 @@ using Microsoft.Win32;
 [assembly: System.Reflection.AssemblyDescription("Cortador Automático - Gabriel Workspace")]
 [assembly: System.Reflection.AssemblyCompany("Gabriel Workspace")]
 [assembly: System.Reflection.AssemblyCopyright("© 2026 Gabriel Workspace")]
-[assembly: System.Reflection.AssemblyVersion("2.0.7.0")]
-[assembly: System.Reflection.AssemblyFileVersion("2.0.7.0")]
+[assembly: System.Reflection.AssemblyVersion("2.0.8.0")]
+[assembly: System.Reflection.AssemblyFileVersion("2.0.8.0")]
 
 static class Programa
 {
@@ -106,7 +106,7 @@ static class Programa
 
     // ------------------------------------------------------------ servidor
 
-    static string SubirServidor()
+    static string SubirServidor(string portaFixa = null)
     {
         string node = Path.Combine(pastaApp, @"runtime\node\node.exe");
         string script = Path.Combine(pastaApp, @"app\src\server.js");
@@ -135,6 +135,8 @@ static class Programa
         amb["YTDLP_PATH"] = Path.Combine(runtime, "yt-dlp.exe");
         amb["PYTHONNOUSERSITE"] = "1"; // nao mistura com bibliotecas de outro Python da maquina
         amb["NAO_ABRIR"] = "1";   // quem abre a janela somos nos
+        amb["CORTADOR_AUTO_RESTART"] = "1"; // permite reinicio limpo apos atualizar em 1 clique
+        if (!string.IsNullOrEmpty(portaFixa)) amb["PORT"] = portaFixa;
         // o yt-dlp acha o ffmpeg pelo PATH pra juntar audio e video
         amb["PATH"] = Path.Combine(runtime, "ffmpeg") + ";" + Path.Combine(runtime, "node") + ";" + (amb["PATH"] ?? "");
 
@@ -176,7 +178,21 @@ static class Programa
     {
         if (encerrando) return;
         if (endereco == null) return; // ainda subindo: quem trata e o SubirServidor
-        Registrar("O servidor parou sozinho (codigo " + SafeExitCode() + ").");
+        string codigo = SafeExitCode();
+        // Codigo 42 = atualizacao em 1 clique concluida: sobe o servidor novo na mesma porta!
+        if (codigo == "42")
+        {
+            Registrar("Atualização aplicada: reiniciando servidor em " + endereco);
+            string porta = null;
+            var m = Regex.Match(endereco, @":(\d+)$");
+            if (m.Success) porta = m.Groups[1].Value;
+            endereco = null;
+            Thread.Sleep(500);
+            string erro = SubirServidor(porta);
+            if (erro == null) return;
+            Registrar("ERRO ao reiniciar apos atualizar: " + erro);
+        }
+        Registrar("O servidor parou sozinho (codigo " + codigo + ").");
         Executar(() =>
         {
             MessageBox.Show("O " + NOME + " parou de funcionar e vai fechar.\n\nDetalhes em:\n" + Path.Combine(pastaLocal, "registro.txt"),

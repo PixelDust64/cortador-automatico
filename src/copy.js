@@ -457,6 +457,57 @@ function montarLegenda(titulo, hashtags) {
 }
 
 /**
+ * Monta o pacote de SEO otimizado pro algoritmo de cada plataforma:
+ * - TikTok: palavras-chave de busca nas 2 primeiras linhas + tags de nicho + alcance
+ * - YouTube Shorts: titulo magnetico curto (<= 68 letras) com #shorts + descricao indexavel
+ * - Instagram Reels: gancho + pergunta que puxa comentario/compartilhamento + hashtags limpas
+ */
+function gerarSeoPlataformas(corte, tituloBase, hashtagsBase, contextoDoVideo) {
+  const ctx = lerContexto(contextoDoVideo);
+  const info = infoDeJogo(corte, contextoDoVideo);
+  const streamer = (info && info.streamer) || (ctx.canal ? String(ctx.canal).trim() : '');
+  const nomeJogo = (info && info.jogo) || (EH_GTA.test((corte.texto || '') + ' ' + ctx.texto) ? 'GTA 6' : '');
+  const assunto = extrairAssunto(corte.texto || '') || '';
+  const tagsNicho = (hashtagsBase || []).filter((t) => !ALCANCE.includes(t)).slice(0, 5);
+  if (!tagsNicho.length) tagsNicho.push('cortes', 'live');
+
+  // 1. TikTok SEO (indexa palavras escritas na descricao pra barra de pesquisa do TikTok)
+  const termosBusca = [streamer, nomeJogo, assunto ? 'momento ' + assunto : 'melhores momentos'].filter(Boolean).join(' · ');
+  const tagsTikTok = Array.from(new Set(tagsNicho.concat(['cortes', 'fyp', 'paravoce']))).slice(0, 6);
+  const tiktok = [
+    tituloBase,
+    termosBusca ? '🔎 ' + termosBusca : '',
+    tagsTikTok.map((h) => '#' + h).join(' '),
+  ].filter(Boolean).join('\n\n');
+
+  // 2. YouTube Shorts SEO (titulo <= 70 chars com #shorts + linha de contexto)
+  const titCurto = cortarEm(String(tituloBase || '').replace(/#\S+/g, '').trim(), 60);
+  const tagsShorts = Array.from(new Set(['shorts'].concat(tagsNicho.slice(0, 3)))).map((h) => '#' + h).join(' ');
+  const shortsTitulo = titCurto + ' #shorts';
+  const shortsDesc = [
+    streamer || nomeJogo ? ('Corte de ' + [streamer, nomeJogo].filter(Boolean).join(' jogando ') + '.') : '',
+    'Se inscreva para mais cortes todos os dias!',
+    tagsShorts,
+  ].filter(Boolean).join('\n');
+  const shorts = shortsTitulo + '\n\n' + shortsDesc;
+
+  // 3. Instagram Reels SEO (foco em salvamento, envio no Direct e comentario)
+  const tagsReels = Array.from(new Set(tagsNicho.concat(['reelsbrasil', 'cortesdelive']))).slice(0, 6);
+  const reels = [
+    tituloBase,
+    '💬 O que você achou desse momento? Manda pra quem precisa ver isso!',
+    tagsReels.map((h) => '#' + h).join(' '),
+  ].join('\n\n');
+
+  return {
+    tiktok,
+    shorts,
+    shortsTitulo,
+    reels,
+  };
+}
+
+/**
  * Enriquece um corte com a copy do post.
  * @param {object} corte
  * @param {string} contextoDoVideo  nome do arquivo original, ajuda a achar o jogo
@@ -479,13 +530,15 @@ function gerarCopy(corte, contextoDoVideo, sessao, nome) {
     titulos = gerarTitulos(corte);
   }
   const hashtags = gerarHashtags(corte, contextoDoVideo, sessao.id, sessao.hashtagsObrigatorias, nome);
+  const seo = gerarSeoPlataformas(corte, titulos[0].texto, hashtags, contextoDoVideo);
   return {
     titulos,
     titulo: titulos[0].texto,
     hashtags,
     textoPost: null,
-    legenda: montarLegenda(titulos[0].texto, hashtags),
+    legenda: seo.tiktok || montarLegenda(titulos[0].texto, hashtags),
+    seo,
   };
 }
 
-module.exports = { gerarCopy, gerarTitulos, gerarHashtags, montarLegenda, gerarGanchoDeTela, infoDeJogo };
+module.exports = { gerarCopy, gerarTitulos, gerarHashtags, montarLegenda, gerarSeoPlataformas, gerarGanchoDeTela, infoDeJogo };

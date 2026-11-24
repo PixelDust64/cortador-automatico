@@ -1,6 +1,8 @@
 'use strict';
 /** Servidor local que serve a janela e roda o processamento. */
 
+try { require('dns').setDefaultResultOrder('ipv4first'); } catch (_) {}
+
 const http = require('http');
 const crypto = require('crypto');
 const fs = require('fs');
@@ -109,10 +111,22 @@ function servirArquivo(req, res, arquivo) {
   const tipo = TIPOS[path.extname(arquivo).toLowerCase()] || 'application/octet-stream';
   const faixa = req.headers.range;
 
-  if (faixa) {
+  if (faixa && st.size > 0) {
     const m = /bytes=(\d*)-(\d*)/.exec(faixa);
-    const ini = m && m[1] ? Number(m[1]) : 0;
-    const fim = m && m[2] ? Number(m[2]) : st.size - 1;
+    if (!m) { res.writeHead(416, { 'Content-Range': 'bytes */' + st.size }); return res.end(); }
+    let ini, fim;
+    if (!m[1] && m[2]) {
+      const ult = Number(m[2]);
+      ini = Math.max(0, st.size - ult);
+      fim = st.size - 1;
+    } else {
+      ini = m[1] ? Number(m[1]) : 0;
+      fim = m[2] ? Math.min(Number(m[2]), st.size - 1) : st.size - 1;
+    }
+    if (!isFinite(ini) || !isFinite(fim) || ini < 0 || ini >= st.size || ini > fim) {
+      res.writeHead(416, { 'Content-Range': 'bytes */' + st.size });
+      return res.end();
+    }
     res.writeHead(206, {
       'Content-Type': tipo,
       'Content-Range': 'bytes ' + ini + '-' + fim + '/' + st.size,
@@ -368,7 +382,7 @@ function emitir(id, evento) {
   }
   if (evento.tipo === 'fim' || evento.tipo === 'erro' || evento.tipo === 'baixado') {
     t.terminou = true;
-    for (const res of t.ouvintes) { try { res.end(); } catch (_) {} }
+    for (const res of t.ouvintes) { try { res.end(); } catch (_) { } }
     t.ouvintes.clear();
   }
 }
@@ -500,6 +514,13 @@ const servidor = http.createServer(async (req, res) => {
       if (aoVivoAtual && !aoVivoAtual.parado) {
         return json(res, 409, { erro: 'Já tem uma live sendo gravada. Pare ela antes de começar outra.' });
       }
+      if (corpo.usarIaPro) {
+        const pro = require('./pro');
+        const estPro = await pro.obterEstado(true);
+        if (!estPro.podeUsar) {
+          return json(res, 402, { erro: 'Seus 3 testes grátis do Diretor IA Pro acabaram! Atualize o plano para usar a IA na live.', precisaUpgrade: true });
+        }
+      }
       const s = new aovivo.SessaoAoVivo(corpo, emitirAoVivo);
       aoVivoAtual = s;
       try {
@@ -526,6 +547,13 @@ const servidor = http.createServer(async (req, res) => {
 
     if (rota === '/api/aovivo/ajustar' && req.method === 'POST') {
       const corpo = await lerCorpo(req);
+      if (corpo.usarIaPro) {
+        const pro = require('./pro');
+        const estPro = await pro.obterEstado(true);
+        if (!estPro.podeUsar) {
+          return json(res, 402, { erro: 'Seus 3 testes grátis do Diretor IA Pro acabaram! Atualize o plano para usar a IA na live.', precisaUpgrade: true });
+        }
+      }
       if (aoVivoAtual && !aoVivoAtual.parado) aoVivoAtual.ajustar(corpo);
       return json(res, 200, { ok: true });
     }
@@ -555,6 +583,18 @@ const servidor = http.createServer(async (req, res) => {
       return json(res, 502, { erro: 'Não consegui ler a imagem da live (' + motivo.slice(0, 160) + ').' });
     }
 
+    // Procura a webcam automaticamente nos pedacos ja gravados da live
+    if (rota === '/api/aovivo/achar-webcam' && req.method === 'POST') {
+      const pedacos = aoVivoAtual ? aoVivoAtual.ultimosPedacos(6) : [];
+      if (pedacos.length < 2) return json(res, 200, { achou: false, aguardando: true });
+      try {
+        const achado = await media.acharWebcamAoVivo(pedacos);
+        return json(res, 200, achado || { achou: false });
+      } catch (e) {
+        return json(res, 200, { achou: false, erro: e.message });
+      }
+    }
+
     // Previa do enquadramento em cima da imagem da live
     if (rota === '/api/aovivo/previa' && req.method === 'POST') {
       const corpo = await lerCorpo(req);
@@ -562,7 +602,7 @@ const servidor = http.createServer(async (req, res) => {
       if (!ped) return json(res, 400, { erro: 'Ainda não tem imagem da live.' });
       fs.mkdirSync(pastas.trabalho(), { recursive: true });
       const alvo = path.join(pastas.trabalho(), 'aovivo-previa.jpg');
-      await media.gerarPrevia(ped, 0, corpo.formato || 'vertical', corpo.recorte, alvo, textoDaPrevia(corpo.textoFixo, 'aovivo'));
+      await media.gerarPrevia(ped, 0, corpo.formato || 'vertical', corpo.recorte, alvo, textoDaPrevia(corpo.textoFixo, 'aovivo', corpo.formato || 'vertical', corpo.recorte));
       return enviarImagem(res, alvo);
     }
 
@@ -579,7 +619,7 @@ const servidor = http.createServer(async (req, res) => {
         for (const c of aoVivoAtual.clipes) res.write('data: ' + JSON.stringify({ tipo: 'clipe', clipe: c, antigo: true }) + '\n\n');
       }
       ouvintesAoVivo.add(res);
-      const vivo = setInterval(() => { try { res.write(': ping\n\n'); } catch (_) {} }, 20000);
+      const vivo = setInterval(() => { try { res.write(': ping\n\n'); } catch (_) { } }, 20000);
       req.on('close', () => { clearInterval(vivo); ouvintesAoVivo.delete(res); });
       return;
     }
@@ -606,9 +646,9 @@ const servidor = http.createServer(async (req, res) => {
       const id = novoTrabalho();
       json(res, 200, { id });
 
-      const aoProgredir = (frac, msg) => emitir(id, {
+      const aoProgredir = (frac, msg, meta) => emitir(id, Object.assign({
         tipo: 'progresso', pct: Math.round(frac * 100), etapa: 'baixando', msg,
-      });
+      }, meta || {}));
       // Replay de live (.m3u8): baixa em paralelo, e da pra pedir so um pedaco
       const baixando = baixador.ehHls(url)
         ? baixador.baixarHls(url, {
@@ -621,10 +661,12 @@ const servidor = http.createServer(async (req, res) => {
       baixando
         .then(async (caminho) => {
           // canal e titulo do link, pro titulo dos cortes sair com o nome do streamer e do jogo
-          try {
-            const info = await baixador.espiar(url);
-            fs.writeFileSync(caminho + '.cortador.json', JSON.stringify({ titulo: info.titulo, canal: info.canal, url }), 'utf8');
-          } catch (_) { /* sem isso o titulo so perde o nome do canal */ }
+          if (!baixador.ehHls(url)) {
+            try {
+              const info = corpo.titulo ? { titulo: corpo.titulo, canal: corpo.canal || '' } : await baixador.espiar(url);
+              fs.writeFileSync(caminho + '.cortador.json', JSON.stringify({ titulo: info.titulo, canal: info.canal, url }), 'utf8');
+            } catch (_) { /* sem isso o titulo so perde o nome do canal */ }
+          }
           return caminho;
         })
         .then((caminho) => emitir(id, { tipo: 'baixado', caminho }))
@@ -736,6 +778,7 @@ const servidor = http.createServer(async (req, res) => {
         // legenda palavra por palavra neste clipe e o que a pessoa corrigiu nela
         legendar: typeof corpo.legendar === 'boolean' ? corpo.legendar : undefined,
         edicoes: corpo.edicoes && typeof corpo.edicoes === 'object' ? corpo.edicoes : undefined,
+        atrasoAudio: Number.isFinite(Number(corpo.atrasoAudio)) && corpo.atrasoAudio !== null && corpo.atrasoAudio !== undefined ? Number(corpo.atrasoAudio) : undefined,
       }, (ev) => emitir(id, ev))
         .then((pronto) => {
           // Clipe da live que ainda esta gravando: a live guarda a lista dos
@@ -862,8 +905,8 @@ const servidor = http.createServer(async (req, res) => {
       // devolvemos o link de download pra pessoa baixar o clipe direto.
       if (process.platform === 'win32' && fs.existsSync(alvo)) {
         const st = fs.statSync(alvo);
-        if (st.isDirectory()) execFile(EXPLORER, [alvo], () => {});
-        else execFile(EXPLORER, ['/select,', alvo], () => {});
+        if (st.isDirectory()) execFile(EXPLORER, [alvo], () => { });
+        else execFile(EXPLORER, ['/select,', alvo], () => { });
       }
       return json(res, 200, { ok: true, url: '/arquivo?p=' + encodeURIComponent(alvo) });
     }
@@ -918,6 +961,109 @@ const servidor = http.createServer(async (req, res) => {
         return json(res, 200, estadoArmazenamento());
       } catch (e) {
         return json(res, 400, { erro: e.message });
+      }
+    }
+
+    // ---------------------------------------------------------- cortador pro (ia na nuvem + infinitepay)
+    if (rota === '/api/pro/estado' && req.method === 'GET') {
+      const pro = require('./pro');
+      const forcar = url.searchParams.get('forcar') === '1';
+      return json(res, 200, await pro.obterEstado(forcar));
+    }
+
+    if (rota === '/api/pro/ativar' && req.method === 'POST') {
+      const corpo = await lerCorpo(req);
+      const pro = require('./pro');
+      try {
+        return json(res, 200, await pro.ativarChave(corpo.chave));
+      } catch (e) {
+        return json(res, 400, { erro: e.message });
+      }
+    }
+
+    if (rota === '/api/pro/sair' && req.method === 'POST') {
+      const pro = require('./pro');
+      pro.sairDaChave();
+      return json(res, 200, await pro.obterEstado(true));
+    }
+
+    if (rota === '/api/pro/provedor' && req.method === 'POST') {
+      const corpo = await lerCorpo(req);
+      const pro = require('./pro');
+      try {
+        return json(res, 200, pro.salvarProvedor(corpo.provedor, corpo.chave, corpo.modelo));
+      } catch (e) {
+        return json(res, 400, { erro: e.message });
+      }
+    }
+
+    if (rota === '/api/pro/checkout' && req.method === 'POST') {
+      const corpo = await lerCorpo(req);
+      const pro = require('./pro');
+      try {
+        return json(res, 200, await pro.criarCheckout(corpo.plano));
+      } catch (e) {
+        return json(res, 400, { erro: e.message });
+      }
+    }
+
+    if (rota === '/api/pro/pedido' && req.method === 'GET') {
+      const pro = require('./pro');
+      try {
+        return json(res, 200, await pro.checarPedido(url.searchParams.get('id')));
+      } catch (e) {
+        return json(res, 200, { pago: false });
+      }
+    }
+
+    // ---------------------------------------------------------- avisos e atualizacao
+    if (rota === '/api/comunicados' && req.method === 'GET') {
+      const atualizador = require('./atualizar');
+      const forcar = url.searchParams.get('forcar') === '1';
+      return json(res, 200, await atualizador.checarRemoto(forcar));
+    }
+
+    if (rota === '/api/atualizar' && req.method === 'POST') {
+      if (jobAtivo) return json(res, 409, { erro: 'Espere terminar os cortes em andamento antes de atualizar.', ocupado: true });
+      if (aoVivoAtual && !aoVivoAtual.parado) return json(res, 409, { erro: 'Pare a gravação da live antes de atualizar.', ocupado: true });
+      const atualizador = require('./atualizar');
+      try {
+        const r = await atualizador.aplicarAtualizacao();
+        json(res, 200, r);
+        setTimeout(() => {
+          if (process.env.CORTADOR_AUTO_RESTART === '1') {
+            process.exit(42);
+          } else {
+            // Reinicia o proprio processo Node na mesma porta (iniciar.bat / terminal)
+            try {
+              servidor.close(() => {
+                spawn(process.execPath, process.argv.slice(1), {
+                  cwd: RAIZ,
+                  env: Object.assign({}, process.env, { NAO_ABRIR: '1' }),
+                  detached: true,
+                  stdio: 'ignore',
+                  windowsHide: true,
+                }).unref();
+                process.exit(0);
+              });
+              setTimeout(() => {
+                spawn(process.execPath, process.argv.slice(1), {
+                  cwd: RAIZ,
+                  env: Object.assign({}, process.env, { NAO_ABRIR: '1' }),
+                  detached: true,
+                  stdio: 'ignore',
+                  windowsHide: true,
+                }).unref();
+                process.exit(0);
+              }, 1200);
+            } catch (_) {
+              process.exit(0);
+            }
+          }
+        }, 450);
+        return;
+      } catch (e) {
+        return json(res, 500, { erro: e.message || 'Não consegui concluir a atualização.' });
       }
     }
 
@@ -989,10 +1135,10 @@ function abrirJanela(endereco) {
       return;
     }
   }
-  execFile('cmd', ['/c', 'start', '', endereco], { windowsHide: true }, () => {});
+  execFile('cmd', ['/c', 'start', '', endereco], { windowsHide: true }, () => { });
 }
 
 aovivo.limparSobras();
 // testa a placa de video em segundo plano (meio segundo de video), pra opcao dos Ajustes
-media.garantirFfmpeg().then(({ ffmpeg }) => desempenho.detectarPlaca(ffmpeg)).catch(() => {});
+media.garantirFfmpeg().then(({ ffmpeg }) => desempenho.detectarPlaca(ffmpeg)).catch(() => { });
 subir(PORTA_INICIAL, 20);

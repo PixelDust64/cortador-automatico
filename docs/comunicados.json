@@ -1,0 +1,16 @@
+{
+  "versao": "2.0.8",
+  "resumoVersao": "Correção da Kick (live e VOD), áudio sincronizado no YouTube ao vivo, seleção inteligente e modo Diretor IA Pro.",
+  "precisaInstalador": false,
+  "proApiUrl": "https://cortador-pro.gabrielhraa.workers.dev",
+  "aviso": {
+    "id": "instagram-duvidas-v1",
+    "ativo": true,
+    "tipo": "info",
+    "titulo": "Alguma dúvida ou sugestão?",
+    "texto": "Siga @gabriel.workspace no Instagram para acompanhar as novidades e mandar qualquer dúvida por lá.",
+    "botaoTexto": "Seguir no Instagram",
+    "botaoUrl": "https://www.instagram.com/gabriel.workspace/",
+    "fixo": false
+  }
+}

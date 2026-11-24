@@ -178,8 +178,10 @@ function liberarVideo(caminho) {
 /** A transcricao desse video, se ele ja foi ouvido alguma vez. Prefere a mais precisa. */
 function transcricaoGuardada(assinatura) {
   for (const modelo of ['medium', 'small', 'base']) {
-    const arquivo = path.join(pastas.trabalho(), assinatura + '-' + modelo + '-v2.json');
-    if (fs.existsSync(arquivo)) return arquivo;
+    for (const sufixo of ['-pt-v3.json', '-auto-v3.json', '-v2.json']) {
+      const arquivo = path.join(pastas.trabalho(), assinatura + '-' + modelo + sufixo);
+      if (fs.existsSync(arquivo)) return arquivo;
+    }
   }
   return null;
 }

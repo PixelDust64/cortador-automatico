@@ -123,6 +123,17 @@ function montarApp() {
   // PC tem fonte paga (Burbank) que nao pode ir num instalador publico.
   for (const pasta of ['src', 'py']) copiar(path.join(RAIZ, pasta), path.join(app, pasta), semLixo);
   fs.copyFileSync(path.join(RAIZ, 'package.json'), path.join(app, 'package.json'));
+  const arqNov = path.join(RAIZ, 'LEIA-ME-NOVIDADES.txt');
+  if (fs.existsSync(arqNov)) {
+    fs.copyFileSync(arqNov, path.join(MONTAGEM, 'LEIA-ME-NOVIDADES.txt'));
+    fs.copyFileSync(arqNov, path.join(app, 'LEIA-ME-NOVIDADES.txt'));
+  }
+  try {
+    const sha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: RAIZ, encoding: 'utf8', windowsHide: true }).trim();
+    if (/^[0-9a-f]{40}$/i.test(sha)) {
+      fs.writeFileSync(path.join(app, 'git-rev.json'), JSON.stringify({ sha, gravadoEm: new Date().toISOString() }, null, 2), 'utf8');
+    }
+  } catch (_) {}
 }
 
 function montarNode() {

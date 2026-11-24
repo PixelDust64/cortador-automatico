@@ -19,6 +19,8 @@
  * render dividindo o mesmo processador atrasariam as duas.
  */
 
+try { require('dns').setDefaultResultOrder('ipv4first'); } catch (_) {}
+
 const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
@@ -27,7 +29,7 @@ const media = require('./media');
 const baixador = require('./baixar');
 const sessoes = require('./sessoes');
 const legenda = require('./legenda');
-const { gerarCopy } = require('./copy');
+const { gerarCopy, gerarSeoPlataformas } = require('./copy');
 const { transcrever, fontsdirRelativo } = require('./pipeline');
 const pastas = require('./pastas');
 
@@ -37,7 +39,7 @@ const DUR_PEDACO = 4;
 const MARGEM_EDICAO = 10;
 
 // Quanto o nivel (0-100) precisa passar pra virar clipe automatico
-const LIMIAR = { alta: 45, media: 60, baixa: 75 };
+const LIMIAR = { alta: 42, media: 56, baixa: 72 };
 
 // ---------------------------------------------------------------- utilidades
 
@@ -121,27 +123,72 @@ function motivoDaFalha(bruto) {
   return linha ? linha.replace(/^\[[^\]]+\]\s*/, '').slice(0, 120) : 'motivo desconhecido';
 }
 
+async function resolverAoVivoKick(url) {
+  const slug = canalDoLink(url);
+  if (!slug) return null;
+  try {
+    const j = await baixador.consultarJsonKick('https://kick.com/api/v2/channels/' + encodeURIComponent(slug));
+    if (!j || typeof j !== 'object') return null;
+    if (!j.livestream || !j.livestream.is_live) return { aoVivo: false, offline: true };
+    if (!j.playback_url) return null;
+    return {
+      aoVivo: true,
+      canal: (j.user && j.user.username) || j.slug || slug,
+      titulo: j.livestream.session_title || null,
+      m3u8: j.playback_url,
+      audio: null,
+      salaChat: (j.chatroom && j.chatroom.id) || null,
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
 async function resolverAoVivo(url) {
+  // Kick: a API publica responde em ~200ms com o playback_url direto, evitando
+  // lentidao ou bloqueio do extrator do yt-dlp. Se falhar, cai pro yt-dlp.
+  if (plataformaDe(url) === 'kick') {
+    const k = await resolverAoVivoKick(url);
+    if (k) return k;
+    let ultimoKick = null;
+    for (const e of [[], ['--impersonate', 'chrome'], ['--impersonate', 'edge']]) {
+      try { return await resolverAoVivoUma(url, e, false); }
+      catch (err) {
+        if (/network|unreachable|getaddrinfo|urlopen/i.test(err.message)) {
+          try { return await resolverAoVivoUma(url, e, true); } catch (err2) { ultimoKick = err2; continue; }
+        }
+        ultimoKick = err;
+      }
+    }
+    throw ultimoKick || new Error('Não consegui conectar nessa live da Kick.');
+  }
   // YouTube pedindo "confirme que nao e um robo": tenta de novo com o login do navegador
   const extras = [[]].concat(/youtube\.com|youtu\.be/i.test(String(url))
     ? [['--cookies-from-browser', 'firefox'], ['--cookies-from-browser', 'edge'], ['--cookies-from-browser', 'chrome']]
     : []);
   let ultimo = null;
   for (const e of extras) {
-    try { return await resolverAoVivoUma(url, e); }
-    catch (err) { ultimo = err; if (!/sign in|not a bot|confirm/i.test(err.message)) throw err; }
+    try { return await resolverAoVivoUma(url, e, false); }
+    catch (err) {
+      if (/network|unreachable|getaddrinfo|urlopen/i.test(err.message)) {
+        try { return await resolverAoVivoUma(url, e, true); } catch (err2) { err = err2; }
+      }
+      ultimo = err;
+      if (!/sign in|not a bot|confirm/i.test(err.message)) throw err;
+    }
   }
   throw new Error('O YouTube pediu pra confirmar que não é um robô. Abra o YouTube no Firefox, Edge ou Chrome, entre na sua conta e tente de novo.');
 }
 
-async function resolverAoVivoUma(url, extras) {
+async function resolverAoVivoUma(url, extras, semForcarIpv4) {
   const bin = await baixador.garantirYtDlp();
   return new Promise((resolve, reject) => {
     const p = spawn(bin, [
-      '--no-warnings', '--no-playlist',
-      // Twitch e Kick mandam imagem e som juntos; o YouTube ao vivo manda
-      // separados - ai vem um endereco de cada e a gravacao junta os dois
-      '-f', 'b[height<=1080][fps<=60]/bv*[height<=1080][fps<=60]+ba/bv*[height<=1080]+ba/b/bv*+ba',
+      '--no-warnings', '--no-playlist', '--socket-timeout', '15',
+      ...(semForcarIpv4 ? [] : ['--force-ipv4']),
+      // Prefere H.264 (avc1) pra garantir compatibilidade com .ts e evitar
+      // segmentos fMP4/HEVC/VP9 sem cabecalho que falham na captura da webcam.
+      '-f', 'b[vcodec^=avc1][height<=1080][fps<=60]/b[height<=1080][fps<=60]/bv*[vcodec^=avc1][height<=1080][fps<=60]+ba/bv*[height<=1080][fps<=60]+ba/b[height<=1080]/bv*[height<=1080]+ba/b/bv*+ba',
       '--print', '%(is_live)s\t%(uploader)s\t%(title)s',
       '--print', 'urls',
     ].concat(extras || [], [url]), { windowsHide: true });
@@ -196,7 +243,7 @@ async function checarLink(bruto) {
   if (/youtube\.com\/(watch|shorts\/|live\/)|youtu\.be\//i.test(url)) {
     const info = await baixador.espiar(url);
     if (info.aoVivo) return { url, plataforma, tipo: 'aovivo', canal: info.canal || canal, titulo: info.titulo };
-    return { url, plataforma, tipo: 'video', canal: info.canal || canal, titulo: info.titulo, duracao: info.duracao };
+    return { url, plataforma, tipo: 'video', canal: info.canal || canal, titulo: info.titulo, duracao: info.duracao, thumbnail: info.thumbnail || '', resolucoes: info.resolucoes || [1080, 720, 480] };
   }
   if (!pareceVod) {
     try {
@@ -209,7 +256,7 @@ async function checarLink(bruto) {
     }
   }
   const info = await baixador.espiar(url);
-  return { url, plataforma, tipo: 'video', canal: info.canal || canal, titulo: info.titulo, duracao: info.duracao };
+  return { url, plataforma, tipo: 'video', canal: info.canal || canal, titulo: info.titulo, duracao: info.duracao, thumbnail: info.thumbnail || '', resolucoes: info.resolucoes || [1080, 720, 480] };
 }
 
 // ---------------------------------------------------------------- chat
@@ -256,13 +303,13 @@ function chatTwitch(canal, aoMsg, aoStatus) {
  * volume e a janela avisa.
  */
 const CHAVES_KICK = (process.env.KICK_PUSHER_KEY ? [process.env.KICK_PUSHER_KEY] : [])
-  .concat(['eb1d5f283081a78b932c', '32cbd69e4b950bf97679']);
+  .concat(['32cbd69e4b950bf97679', 'eb1d5f283081a78b932c']);
 
-function chatKick(slug, aoMsg, aoStatus) {
+function chatKick(slug, salaInicial, aoMsg, aoStatus) {
   let ws = null;
   let fechado = false;
   let chaveIdx = 0;
-  let sala = null;
+  let sala = salaInicial || null;
 
   const conectar = () => {
     if (fechado || !sala) return;
@@ -281,7 +328,6 @@ function chatKick(slug, aoMsg, aoStatus) {
         deuCerto = true;
         aoStatus('conectado');
       } else if (j.event === 'pusher:error') {
-        // chave velha: tenta a proxima
         chaveIdx++;
         try { ws.close(); } catch (_) {}
       } else if (/ChatMessageEvent/.test(j.event || '')) {
@@ -301,10 +347,13 @@ function chatKick(slug, aoMsg, aoStatus) {
     ws.onerror = () => {};
   };
 
-  fetch('https://kick.com/api/v2/channels/' + encodeURIComponent(slug), { headers: { Accept: 'application/json' } })
-    .then((r) => r.json())
-    .then((j) => { sala = j && j.chatroom && j.chatroom.id; if (sala) conectar(); else aoStatus('sem chat'); })
-    .catch(() => aoStatus('sem chat'));
+  if (sala) {
+    conectar();
+  } else {
+    baixador.consultarJsonKick('https://kick.com/api/v2/channels/' + encodeURIComponent(slug))
+      .then((j) => { sala = j && j.chatroom && j.chatroom.id; if (sala) conectar(); else aoStatus('sem chat'); })
+      .catch(() => aoStatus('sem chat'));
+  }
 
   return () => { fechado = true; try { ws && ws.close(); } catch (_) {} };
 }
@@ -334,6 +383,9 @@ class SessaoAoVivo {
     this.idioma = /^[a-z]{2}$|^auto$/.test(String(o.idioma || '')) ? o.idioma : 'pt';
     // texto fixo na tela de todo clipe: { texto, posicao, duracao, cor, tamanho }
     this.textoFixo = o.textoFixo || null;
+    // Diretor IA Pro na live: refina inicio/fim pela conversa e cria titulo + gancho + SEO
+    this.usarIaPro = !!o.usarIaPro;
+    this.salaChat = null;
     // "preparar": conecta e ja guarda a live, mas so clipa depois que a pessoa
     // marcar webcam/foco/texto e apertar "Comecar a clipar"
     this.clipando = !o.preparar;
@@ -379,6 +431,7 @@ class SessaoAoVivo {
     this.titulo = r.titulo;
     this.canal = this.canal || limparNome(r.canal || 'live').toLowerCase();
     this.nomeCanal = r.canal || this.canal;
+    this.salaChat = r.salaChat || null;
 
     const perfil = sessoes.pegar();
     const d = new Date();
@@ -415,6 +468,7 @@ class SessaoAoVivo {
       pasta: this.pasta || null,
       quantidade: this.clipes.length,
       clipando: this.clipando,
+      usarIaPro: !!this.usarIaPro,
       textoFixo: this.textoFixo,
       // o pedaco mais novo: e dele que sai a imagem pra marcar webcam e foco
       ultimoPedaco: this.ultimoPedaco(),
@@ -427,7 +481,21 @@ class SessaoAoVivo {
   // ------------------------------------------------------------ gravacao
 
   async gravar(m3u8, audio) {
-    if (this.plataforma === 'twitch') return this.gravarTwitch(m3u8);
+    // Leitura nativa de HLS em Node.js:
+    // - Twitch e Kick (Amazon IVS) usam playlist .m3u8 de segmentos .ts de 2s.
+    //   Passar isso pro ffmpeg com -reconnect_streamed fazia o ffmpeg travar em
+    //   loop no EOF do texto da playlist sem gravar nada.
+    // - YouTube Live entrega video e audio em duas playlists .m3u8 separadas
+    //   (com 1h de DVR): casar os segmentos pelo mesmo #EXT-X-MEDIA-SEQUENCE na
+    //   borda ao vivo elimina o atraso de 5s no audio e o atraso de video.
+    if (!this.viaYtDlp) {
+      if (!audio && (this.plataforma === 'twitch' || this.plataforma === 'kick' || /\.m3u8(?:[?#]|$)/i.test(m3u8))) {
+        return this.gravarHls(m3u8);
+      }
+      if (audio && this.plataforma === 'youtube') {
+        return this.gravarYoutubeHls(m3u8, audio);
+      }
+    }
     const { ffmpeg } = await media.garantirFfmpeg();
     this.rodada++;
     this.lidosPorRodada = 0;
@@ -437,13 +505,11 @@ class SessaoAoVivo {
     this.ultimoPedacoEm = Date.now();
 
     // Segundo caminho: o proprio yt-dlp baixa a live e entrega pro ffmpeg.
-    // Ele manda os cabecalhos que o site espera - passa onde o ffmpeg direto
-    // toma recusa (aconteceu com a Kick no PC de quem usa).
     let yt = null;
     let entrada = ['-i', m3u8];
     if (this.viaYtDlp) {
       const bin = await baixador.garantirYtDlp();
-      yt = spawn(bin, ['--no-warnings', '--no-part', '--hls-use-mpegts', '-f', FORMATO_UNICO, '-o', '-', this.url], { windowsHide: true });
+      yt = spawn(bin, ['--no-warnings', '--force-ipv4', '--no-part', '--hls-use-mpegts', '-f', FORMATO_UNICO, '-o', '-', this.url], { windowsHide: true });
       yt.stderr.setEncoding('utf8');
       yt.stderr.on('data', (d) => { this.erroYt = (String(this.erroYt || '') + d.toString()).slice(-600); });
       yt.on('error', () => {});
@@ -453,9 +519,10 @@ class SessaoAoVivo {
     }
     const args = [
       '-hide_banner', '-loglevel', 'error',
-    ].concat(this.viaYtDlp ? [] : ['-reconnect', '1', '-reconnect_streamed', '1', '-reconnect_delay_max', '5'])
+    ].concat(this.viaYtDlp ? [] : ['-reconnect', '1', '-reconnect_delay_max', '5'])
+    .concat(audio ? ['-copyts', '-start_at_zero'] : [])
     .concat(entrada).concat(audio ? [
-      '-reconnect', '1', '-reconnect_streamed', '1', '-reconnect_delay_max', '5',
+      '-reconnect', '1', '-reconnect_delay_max', '5',
       '-i', audio, '-map', '0:v:0', '-map', '1:a:0',
     ] : ['-map', '0:v:0', '-map', '0:a:0?']).concat([
       '-c', 'copy',
@@ -495,43 +562,92 @@ class SessaoAoVivo {
     this.status('gravando', 'Gravando a live.');
   }
 
+  /** Se o endereco for uma Master Playlist (#EXT-X-STREAM-INF), escolhe a melhor variante <= 1080p. */
+  async resolverPlaylistMestre(url) {
+    try {
+      const r = await fetch(url, { signal: AbortSignal.timeout(10000) });
+      if (!r.ok) return url;
+      const texto = await r.text();
+      if (!/#EXT-X-STREAM-INF/i.test(texto)) return url;
+      const linhas = texto.split(/\r?\n/).map((l) => l.trim());
+      const variantes = [];
+      for (let i = 0; i < linhas.length; i++) {
+        if (!/^#EXT-X-STREAM-INF:/i.test(linhas[i])) continue;
+        const alvo = linhas[i + 1];
+        if (!alvo || alvo.startsWith('#')) continue;
+        const banda = Number((/BANDWIDTH=(\d+)/i.exec(linhas[i]) || [])[1] || 0);
+        const res = /RESOLUTION=\d+x(\d+)/i.exec(linhas[i]);
+        const altura = res ? Number(res[1]) : 0;
+        const avc = /CODECS="[^"]*avc1/i.test(linhas[i]) ? 1 : 0;
+        variantes.push({ url: new URL(alvo, url).href, banda, altura, avc });
+      }
+      if (!variantes.length) return url;
+      const ate1080 = variantes.filter((v) => !v.altura || v.altura <= 1080);
+      const pool = ate1080.length ? ate1080 : variantes;
+      pool.sort((a, b) => (b.avc - a.avc) || (b.altura - a.altura) || (b.banda - a.banda));
+      return pool[0].url;
+    } catch (_) {
+      return url;
+    }
+  }
+
   /**
-   * Twitch: le a playlist da live direto, pedaco por pedaco (2s cada).
-   *
-   * Pra quem assiste sem login a Twitch costura anuncio dentro da propria
-   * transmissao - 30s logo ao conectar, e mais quando o streamer roda
-   * comercial. O pedaco de live vem marcado como "live" e o de anuncio como
-   * "Amazon|..." (ou outro nome): aqui o anuncio e jogado fora, entao nenhum
-   * clipe sai com a tela roxa de "Commercial break". Durante o anuncio a
-   * Twitch nao manda a live, entao esse pedaco fica sem gravar.
+   * Le a playlist HLS direto, pedaco por pedaco (Twitch, Kick e outros HLS).
+   * - Comeca na borda ao vivo (ultimos 2 pedacos), evitando video atrasado.
+   * - Na Twitch, pula os segmentos de anuncio ("Amazon|...") automaticamente.
+   * - Suporta #EXT-X-MAP (fMP4) colando o cabecalho init em cada segmento.
+   * - Grava em .part e renomeia atomicamente pra nunca corromper a captura da webcam.
    */
-  async gravarTwitch(m3u8) {
+  async gravarHls(m3u8) {
     const rodada = ++this.rodada;
+    this.status('gravando', 'Gravando a live.');
+    const mediaUrl = await this.resolverPlaylistMestre(m3u8);
+    if (this.parado || rodada !== this.rodada) return;
+
     let ultimoSeq = -1;
     let falhas = 0;
     let emAnuncio = false;
-    this.status('gravando', 'Gravando a live.');
+    let initMapUrl = null;
+    let initMapBuf = null;
 
     const passo = async () => {
       if (this.parado || rodada !== this.rodada) return;
       try {
-        const r = await fetch(m3u8, { signal: AbortSignal.timeout(10000) });
+        const r = await fetch(mediaUrl, { signal: AbortSignal.timeout(10000) });
         if (!r.ok) throw new Error('playlist ' + r.status);
         const texto = await r.text();
         if (/#EXT-X-ENDLIST/.test(texto) && !/#EXTINF/.test(texto)) throw new Error('fim');
+
+        const mapMatch = /#EXT-X-MAP:[^\r\n]*URI="([^"]+)"/i.exec(texto);
+        if (mapMatch) {
+          const uMap = new URL(mapMatch[1], mediaUrl).href;
+          if (uMap !== initMapUrl) {
+            const rm = await fetch(uMap, { signal: AbortSignal.timeout(10000) });
+            if (rm.ok) { initMapBuf = Buffer.from(await rm.arrayBuffer()); initMapUrl = uMap; }
+          }
+        }
+
         let seq = Number((/#EXT-X-MEDIA-SEQUENCE:(\d+)/.exec(texto) || [])[1] || 0);
         let inf = null;
-        const novos = [];
+        let novos = [];
         for (const linha of texto.split(/\r?\n/)) {
           if (linha.startsWith('#EXTINF:')) {
             const m = /#EXTINF:([\d.]+),?(.*)$/.exec(linha);
             inf = { dur: Number(m && m[1]) || 2, titulo: (m && m[2] || '').trim() };
           } else if (linha && !linha.startsWith('#')) {
-            if (inf && seq > ultimoSeq) novos.push({ seq, url: new URL(linha, m3u8).href, dur: inf.dur, anuncio: !!inf.titulo && inf.titulo !== 'live' });
+            const ehAnuncio = this.plataforma === 'twitch' && !!inf && !!inf.titulo && inf.titulo !== 'live';
+            if (inf && seq > ultimoSeq) novos.push({ seq, url: new URL(linha, mediaUrl).href, dur: inf.dur, anuncio: ehAnuncio });
             seq++;
             inf = null;
           }
         }
+
+        // Primeira leitura: pula segmentos antigos e comeca na borda ao vivo
+        if (ultimoSeq === -1 && novos.length > 2) {
+          ultimoSeq = novos[novos.length - 3].seq;
+          novos = novos.slice(-2);
+        }
+
         for (const s of novos) {
           if (this.parado || rodada !== this.rodada) return;
           ultimoSeq = s.seq;
@@ -545,9 +661,14 @@ class SessaoAoVivo {
           if (emAnuncio) { emAnuncio = false; this.emitir({ tipo: 'aviso', msg: 'Anúncio acabou, voltou a gravar a live.' }); }
           const resp = await fetch(s.url, { signal: AbortSignal.timeout(15000) });
           if (!resp.ok) continue;
+          let buf = Buffer.from(await resp.arrayBuffer());
+          if (buf.length < 512) continue;
+          if (initMapBuf) buf = Buffer.concat([initMapBuf, buf]);
           const nome = 'p' + String(this.proxNumero++).padStart(7, '0') + '.ts';
           const arquivo = path.join(this.dir, nome);
-          fs.writeFileSync(arquivo, Buffer.from(await resp.arrayBuffer()));
+          const tmp = arquivo + '.part';
+          fs.writeFileSync(tmp, buf);
+          fs.renameSync(tmp, arquivo);
           this.adicionarPedaco(nome, arquivo, s.dur);
         }
         falhas = 0;
@@ -555,10 +676,121 @@ class SessaoAoVivo {
         if (++falhas >= 5 || /fim/.test(e.message)) {
           if (rodada !== this.rodada || this.parado) return;
           this.status('reconectando', 'A transmissão caiu. Reconectando...');
-          return setTimeout(() => this.reconectar(), 3000);
+          this.timerHls = setTimeout(() => this.reconectar(), 3000);
+          return;
         }
       }
-      setTimeout(passo, 1500);
+      if (!this.parado && rodada === this.rodada) this.timerHls = setTimeout(passo, 1500);
+    };
+    passo();
+  }
+
+  /**
+   * YouTube Live: video (.ts) e audio (.aac ADTS) vem em duas playlists .m3u8
+   * separadas com 1h de DVR. Baixar em paralelo casando o mesmo numero de
+   * sequencia (#EXT-X-MEDIA-SEQUENCE) na borda ao vivo garante 0s de atraso
+   * entre audio e video e evita ficar preso na janela DVR antiga.
+   */
+  async gravarYoutubeHls(m3u8Video, m3u8Audio) {
+    const rodada = ++this.rodada;
+    const { ffmpeg } = await media.garantirFfmpeg();
+    this.status('gravando', 'Gravando a live.');
+    const [urlV, urlA] = await Promise.all([
+      this.resolverPlaylistMestre(m3u8Video),
+      this.resolverPlaylistMestre(m3u8Audio),
+    ]);
+    if (this.parado || rodada !== this.rodada) return;
+
+    let ultimoSeq = -1;
+    let falhas = 0;
+
+    const parsear = (texto, base) => {
+      let seq = Number((/#EXT-X-MEDIA-SEQUENCE:(\d+)/.exec(texto) || [])[1] || 0);
+      let dur = 5;
+      const mapa = new Map();
+      for (const l of texto.split(/\r?\n/)) {
+        if (l.startsWith('#EXTINF:')) dur = Number((/#EXTINF:([\d.]+)/.exec(l) || [])[1]) || 5;
+        else if (l && !l.startsWith('#')) { mapa.set(seq++, { url: new URL(l.trim(), base).href, dur }); }
+      }
+      return mapa;
+    };
+
+    const passo = async () => {
+      if (this.parado || rodada !== this.rodada) return;
+      try {
+        const [rv, ra] = await Promise.all([
+          fetch(urlV, { signal: AbortSignal.timeout(10000) }),
+          fetch(urlA, { signal: AbortSignal.timeout(10000) }),
+        ]);
+        if (!rv.ok || !ra.ok) throw new Error('playlist ' + rv.status + '/' + ra.status);
+        const [tv, ta] = await Promise.all([rv.text(), ra.text()]);
+        if (/#EXT-X-ENDLIST/.test(tv) && !/#EXTINF/.test(tv)) throw new Error('fim');
+
+        const mapV = parsear(tv, urlV);
+        const mapA = parsear(ta, urlA);
+        let comuns = [];
+        for (const [seq, sv] of mapV.entries()) {
+          if (seq > ultimoSeq && mapA.has(seq)) comuns.push({ seq, v: sv, a: mapA.get(seq) });
+        }
+        comuns.sort((a, b) => a.seq - b.seq);
+
+        // Primeira leitura: pula a janela DVR de 1h e comeca na borda ao vivo
+        if (ultimoSeq === -1 && comuns.length > 2) {
+          ultimoSeq = comuns[comuns.length - 3].seq;
+          comuns = comuns.slice(-2);
+        }
+
+        for (const par of comuns) {
+          if (this.parado || rodada !== this.rodada) return;
+          ultimoSeq = par.seq;
+          const [respV, respA] = await Promise.all([
+            fetch(par.v.url, { signal: AbortSignal.timeout(15000) }),
+            fetch(par.a.url, { signal: AbortSignal.timeout(15000) }),
+          ]);
+          if (!respV.ok || !respA.ok) continue;
+          const [bv, ba] = await Promise.all([
+            respV.arrayBuffer().then(Buffer.from),
+            respA.arrayBuffer().then(Buffer.from),
+          ]);
+          if (bv.length < 512 || ba.length < 128) continue;
+
+          const num = this.proxNumero++;
+          const nome = 'p' + String(num).padStart(7, '0') + '.ts';
+          const arquivo = path.join(this.dir, nome);
+          const tmpV = path.join(this.dir, 'v-' + num + '.ts');
+          const tmpA = path.join(this.dir, 'a-' + num + '.aac');
+          const tmpOut = arquivo + '.part';
+          try {
+            fs.writeFileSync(tmpV, bv);
+            fs.writeFileSync(tmpA, ba);
+            await media.rodar(ffmpeg, [
+              '-y', '-hide_banner', '-loglevel', 'error',
+              '-copyts',
+              '-i', tmpV, '-i', tmpA,
+              '-map', '0:v:0', '-map', '1:a:0',
+              '-c', 'copy', '-mpegts_copyts', '1',
+              '-f', 'mpegts', tmpOut,
+            ]);
+            if (fs.existsSync(tmpOut) && fs.statSync(tmpOut).size > 512) {
+              fs.renameSync(tmpOut, arquivo);
+              this.adicionarPedaco(nome, arquivo, par.v.dur);
+            }
+          } finally {
+            try { fs.unlinkSync(tmpV); } catch (_) {}
+            try { fs.unlinkSync(tmpA); } catch (_) {}
+            try { if (fs.existsSync(tmpOut)) fs.unlinkSync(tmpOut); } catch (_) {}
+          }
+        }
+        falhas = 0;
+      } catch (e) {
+        if (++falhas >= 5 || /fim/.test(e.message)) {
+          if (rodada !== this.rodada || this.parado) return;
+          this.status('reconectando', 'A transmissão caiu. Reconectando...');
+          this.timerHls = setTimeout(() => this.reconectar(), 3000);
+          return;
+        }
+      }
+      if (!this.parado && rodada === this.rodada) this.timerHls = setTimeout(passo, 2000);
     };
     passo();
   }
@@ -639,7 +871,7 @@ class SessaoAoVivo {
       this.emitir(Object.assign({ tipo: 'estado' }, this.resumo()));
     };
     if (this.plataforma === 'twitch' && this.canal) this.fecharChat = chatTwitch(this.canal, aoMsg, aoStatus);
-    else if (this.plataforma === 'kick' && this.canal) this.fecharChat = chatKick(this.canal, aoMsg, aoStatus);
+    else if (this.plataforma === 'kick' && this.canal) this.fecharChat = chatKick(this.canal, this.salaChat, aoMsg, aoStatus);
     else this.chatStatus = 'sem chat';
   }
 
@@ -669,13 +901,13 @@ class SessaoAoVivo {
     if (nivel) {
       this.emitir(Object.assign({ tipo: 'nivel' }, nivel, { gravado: Math.round(this.total) }));
       if (this.clipando && this.auto && !this.pendente && nivel.nivel >= LIMIAR[this.sensibilidade] &&
-          this.agora() - this.ultimoGatilho > Math.max(35, this.duracao * 0.9)) {
+          this.agora() - this.ultimoGatilho > Math.max(26, this.duracao * 0.8)) {
         this.disparar(nivel);
       }
     }
 
-    // o gatilho espera o "depois" do lance ser gravado pra cortar
-    if (this.pendente && this.total >= this.pendente.fim) {
+    // o gatilho espera o "depois" do lance (+ margem pra achar pausa) ser gravado pra cortar
+    if (this.pendente && this.total >= this.pendente.fim + 1.5) {
       const p = this.pendente;
       this.pendente = null;
       this.enfileirar(p);
@@ -683,7 +915,7 @@ class SessaoAoVivo {
   }
 
   medirNivel() {
-    if (this.total < 30) return null;
+    if (this.total < 24) return null;
     const agoraW = Date.now();
 
     // chat: mensagens (com peso) nos ultimos 5s, contra a mediana dos ultimos 5 min
@@ -693,22 +925,42 @@ class SessaoAoVivo {
     this.historicoChat.push(cur);
     if (this.historicoChat.length > 300) this.historicoChat.shift();
     const baseChat = mediana(this.historicoChat);
-    const temChat = this.chatStatus === 'conectado' && this.historicoChat.length >= 20;
+    const temChat = this.chatStatus === 'conectado' && this.historicoChat.length >= 16;
     const razao = (cur + 1) / (baseChat + 1);
-    const notaChat = temChat && cur >= 4 ? limitar((razao - 1.6) / 2.4, 0, 1) : 0;
+    const notaChat = temChat && cur >= 3 ? limitar((razao - 1.45) / 2.0, 0, 1) : 0;
 
-    // audio: o mais alto dos ultimos 4s gravados, contra a mediana
+    // audio adaptativo a prova de compressor/limiter do OBS:
+    // Streamers usam limiter que trava o volume maximo perto de -6 dB, entao um
+    // delta fixo de +12 dB quase nunca acontecia em 1h de live. Medir o desvio
+    // padrao (dinamica propria do microfone dele) + o salto contra os 18s anteriores
+    // detecta risadas, sustos e reacoes reais mesmo em live comprimida.
     const fim = this.total;
-    const recentes = this.audio.filter((a) => a.t >= fim - 4).map((a) => a.db);
-    const base = mediana(this.audio.filter((a) => a.db > -80).map((a) => a.db));
-    const pico = recentes.length ? Math.max.apply(null, recentes) : -90;
-    // sem medicao recente (o pedaco novo ainda esta sendo medido) nao inventa numero
-    const delta = this.audio.length > 40 && recentes.length ? Math.max(0, pico - base) : null;
-    const notaAudio = delta == null ? 0 : limitar((delta - 6) / 10, 0, 1);
+    const validos = this.audio.filter((a) => a.db > -75);
+    const recentes = this.audio.filter((a) => a.t >= fim - 4).map((a) => a.db).sort((a, b) => b - a);
+    const antes18s = this.audio.filter((a) => a.t >= fim - 22 && a.t < fim - 4 && a.db > -75).map((a) => a.db);
+    const base = validos.length ? mediana(validos.map((a) => a.db)) : -30;
+    const baseCurta = antes18s.length >= 6 ? mediana(antes18s) : base;
 
-    // os dois juntos valem mais; um so, bem forte, tambem dispara
-    const junto = temChat ? 0.6 * notaChat + 0.5 * notaAudio : notaAudio;
-    const n = Math.round(100 * limitar(Math.max(junto, notaChat * 0.85, notaAudio * 0.8), 0, 1));
+    // Desvio medio robusto (MAD * 1.4826) da fala normal do streamer, com piso de 1.7 dB
+    const desvios = validos.map((a) => Math.abs(a.db - base));
+    const desvioDb = Math.max(1.7, Math.min(5.5, (mediana(desvios) || 2.0) * 1.4826));
+
+    // Exige pelo menos 1s sustentado (2o maior valor na janela de 4s) pra ignorar esbarrao no mic
+    const pico = recentes.length >= 2 ? recentes[1] : (recentes.length ? recentes[0] : -90);
+    const delta = this.audio.length >= 28 && recentes.length ? Math.max(0, pico - base) : null;
+    const saltoCurto = delta == null ? 0 : Math.max(0, pico - baseCurta);
+
+    let notaAudio = 0;
+    if (delta != null && pico > -46) {
+      const zGlobal = delta / desvioDb;             // ~1.8 = animou, ~2.5 = reacao forte, ~3.3 = grito/explosao
+      const zSalto = saltoCurto / desvioDb;         // subida subita apos tensao/silencio
+      const zCombinado = Math.max(zGlobal, zGlobal * 0.65 + zSalto * 0.50);
+      notaAudio = limitar((zCombinado - 1.25) / 1.95, 0, 1);
+    }
+
+    // Combina chat + voz sem penalizar lives sem chat (ex: YouTube ou chat quieto)
+    const junto = temChat ? Math.min(1, 0.58 * notaChat + 0.58 * notaAudio) : notaAudio;
+    const n = Math.round(100 * limitar(Math.max(junto, notaChat * 0.92, notaAudio * 0.96), 0, 1));
 
     return {
       nivel: n,
@@ -723,21 +975,57 @@ class SessaoAoVivo {
   disparar(nivel) {
     // o pico: o chat reage uns 3s depois do lance; o grito e na hora
     const t = this.agora() - (nivel.notaChat >= nivel.notaAudio ? 3 : 1);
-    const antes = this.duracao * 0.7;
+    // Arco viral: climax nos ~76% finais do corte e fecho curto (4s a 9s) logo apos a reacao
+    const depois = limitar(this.duracao * 0.24, 4, 9);
+    const antes = this.duracao - depois;
     const motivos = [];
     if (nivel.notaChat > 0) motivos.push({ fator: 'Chat explodiu (' + nivel.razaoChat + 'x o normal)', pontos: Math.round(nivel.notaChat * 50) });
     if (nivel.notaAudio > 0) motivos.push({ fator: 'Pico de volume (+' + nivel.deltaDb + ' dB)', pontos: Math.round(nivel.notaAudio * 50) });
     this.ultimoGatilho = t;
     this.pendente = {
       origem: 'auto',
+      pico: t,
       inicio: Math.max(0, t - antes),
-      fim: t + (this.duracao - antes),
+      fim: t + depois,
       nota: nivel.nivel,
       motivos,
     };
-    // trava os pedacos que vao ser usados, pro buffer nao apagar antes do corte
-    this.travar(this.pendente, 1);
-    this.emitir({ tipo: 'gatilho', origem: 'auto', motivos, nivel: nivel.nivel, emSegundos: Math.max(0, Math.round(this.pendente.fim - this.total)) });
+    // trava os pedacos que vao ser usados (com margem pro ajuste de pausa), pro buffer nao apagar
+    this.travar({ inicio: Math.max(0, this.pendente.inicio - 3), fim: this.pendente.fim + 3 }, 1);
+    this.emitir({ tipo: 'gatilho', origem: 'auto', motivos, nivel: nivel.nivel, emSegundos: Math.max(0, Math.round(this.pendente.fim + 1.5 - this.total)) });
+  }
+
+  /**
+   * Ajusta o inicio e o fim do corte ao vivo pras pausas naturais de respiracao
+   * medidas em this.audio (a cada 0.5s), evitando cortar palavras pela metade.
+   */
+  ajustarBordasPeloAudio(pedido) {
+    if (!this.audio || this.audio.length < 8) return { inicio: pedido.inicio, fim: pedido.fim };
+    const minBuf = this.pedacos.length ? this.pedacos[0].t0 : 0;
+    const maxBuf = this.total;
+
+    const acharVale = (alvo, de, ate) => {
+      const cand = this.audio.filter((a) => a.t >= de && a.t <= ate);
+      if (!cand.length) return alvo;
+      let melhor = cand[0];
+      let menorCusto = Infinity;
+      for (const a of cand) {
+        const custo = a.db + Math.abs(a.t - alvo) * 1.6;
+        if (custo < menorCusto) { menorCusto = custo; melhor = a; }
+      }
+      return melhor.t;
+    };
+
+    const iniMin = Math.max(minBuf, pedido.inicio - 2.5);
+    const iniMax = Math.min(pedido.fim - 5, pedido.inicio + 2.5);
+    const inicio = iniMax > iniMin ? acharVale(pedido.inicio, iniMin, iniMax) + 0.1 : pedido.inicio;
+
+    const minFim = pedido.pico ? Math.max(inicio + 5, pedido.pico + 3.5) : inicio + 5;
+    const fimMin = Math.max(minFim, pedido.fim - 2.0);
+    const fimMax = Math.min(maxBuf, pedido.fim + 2.5);
+    const fim = fimMax > fimMin ? acharVale(pedido.fim, fimMin, fimMax) + 0.2 : Math.min(maxBuf, pedido.fim);
+
+    return { inicio: Math.max(minBuf, inicio), fim: Math.max(inicio + 4, Math.min(maxBuf, fim)) };
   }
 
   /** CLIPAR AGORA: os ultimos N segundos que ja estao gravados. */
@@ -789,14 +1077,16 @@ class SessaoAoVivo {
     } catch (e) {
       this.emitir({ tipo: 'aviso', msg: 'Um clipe falhou: ' + (e.message || e) });
     } finally {
-      this.travar(pedido, -1);
+      this.travar(pedido.origem === 'auto' ? { inicio: Math.max(0, pedido.inicio - 3), fim: pedido.fim + 3 } : pedido, -1);
       this.renderizando = false;
       this.proximoRender();
     }
   }
 
-  async renderizar(pedido) {
+  async renderizar(pedidoBruto) {
     const { ffmpeg } = await media.garantirFfmpeg();
+    const bordas = pedidoBruto.origem === 'auto' ? this.ajustarBordasPeloAudio(pedidoBruto) : { inicio: pedidoBruto.inicio, fim: pedidoBruto.fim };
+    const pedido = Object.assign({}, pedidoBruto, bordas);
     const usados = this.pedacos.filter((p) => p.t0 < pedido.fim && p.t0 + p.dur > pedido.inicio && fs.existsSync(p.arquivo));
     if (!usados.length) throw new Error('esse trecho já saiu do buffer');
 
@@ -826,36 +1116,34 @@ class SessaoAoVivo {
     // imagem e som juntos) e o corte exato e feito nele. Em .mkv, e nao .ts:
     // o .ts nao tem indice e o pulo caia depois do quadro-chave (mesmo vao).
     const junto = path.join(this.dir, nomeBase + '-junto.mkv');
-    await media.rodar(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', lista,
-      '-map', '0:v:0', '-map', '0:a:0?', '-c', 'copy', '-f', 'matroska', junto]);
+    await media.rodar(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error',
+      '-fflags', '+genpts+discardcorrupt', '-f', 'concat', '-safe', '0', '-i', lista,
+      '-map', '0:v:0', '-map', '0:a:0?', '-c', 'copy', '-avoid_negative_ts', 'make_zero', '-f', 'matroska', junto]);
     try { fs.unlinkSync(lista); } catch (_) {}
 
     let args;
     try {
       if (filtro) {
-        // -ss antes da entrada num arquivo comum: corte exato (decodifica desde
-        // o quadro-chave e descarta o que vem antes), e o clipe comeca no 0 -
-        // o texto "so no comeco" conta a partir dali.
         const fs2 = ass ? filtro.replace(/\[v\]$/, ',subtitles=' + ass + (fontsdirRelativo() ? ':fontsdir=' + fontsdirRelativo() : '') + '[v]') : filtro;
         args = ['-y', '-hide_banner', '-loglevel', 'error', '-ss', deslocamento.toFixed(3),
           '-i', junto, '-t', dur.toFixed(3),
           '-filter_complex', fs2, '-map', '[v]', '-map', '0:a?',
+          '-fps_mode', 'cfr', '-avoid_negative_ts', 'make_zero',
           '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '21', '-pix_fmt', 'yuv420p',
-          '-af', 'aresample=async=1:first_pts=0', '-c:a', 'aac', '-b:a', '160k', '-ar', '48000'];
+          '-af', 'aresample=async=1000:min_hard_comp=0.100000:first_pts=0', '-c:a', 'aac', '-b:a', '160k', '-ar', '48000'];
       } else {
-        // sem mexer na imagem, mas recodificando: copiar (-c copy) so comeca num
-        // quadro-chave, e o clipe saia ate alguns segundos antes do lance e mais
-        // comprido que o pedido. Recodificar corta no quadro exato.
         args = ['-y', '-hide_banner', '-loglevel', 'error', '-ss', deslocamento.toFixed(3), '-i', junto,
           '-t', dur.toFixed(3), '-map', '0:v:0', '-map', '0:a?',
+          '-fps_mode', 'cfr', '-avoid_negative_ts', 'make_zero',
           '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-pix_fmt', 'yuv420p',
-          '-af', 'aresample=async=1:first_pts=0', '-c:a', 'aac', '-b:a', '160k', '-ar', '48000'];
+          '-af', 'aresample=async=1000:min_hard_comp=0.100000:first_pts=0', '-c:a', 'aac', '-b:a', '160k', '-ar', '48000'];
       }
       args.push('-movflags', '+faststart', mp4);
       await media.rodar(ffmpeg, args, { cwd: pastas.trabalho() });
 
     } finally {
       try { fs.unlinkSync(junto); } catch (_) {}
+      if (ass) { try { fs.unlinkSync(path.join(pastas.trabalho(), ass)); } catch (_) {} }
     }
 
     const jpg = path.join(this.pasta, nomeBase + '.jpg');
@@ -895,9 +1183,16 @@ class SessaoAoVivo {
     try {
       const cp = gerarCopy({ texto: '', inicio: pedido.inicio, motivos: pedido.motivos, origem: pedido.origem },
         { texto: this.titulo || '', canal: this.nomeCanal || this.canal || '', evitar: (this.titulosUsados = this.titulosUsados || new Set()) }, sessoes.pegar());
-      if (cp && cp.titulo) { clipe.titulo = cp.titulo; clipe.titulos = cp.titulos; clipe.hashtags = cp.hashtags; this.titulosUsados.add(cp.titulo.toLowerCase()); }
+      if (cp && cp.titulo) {
+        clipe.titulo = cp.titulo;
+        clipe.titulos = cp.titulos;
+        clipe.hashtags = cp.hashtags;
+        clipe.seo = cp.seo;
+        this.titulosUsados.add(cp.titulo.toLowerCase());
+      }
     } catch (_) { /* fica o titulo simples */ }
-    clipe.legendaPost = clipe.titulo + '\n\n' + clipe.hashtags.map((h) => '#' + h).join(' ');
+    if (!clipe.seo) clipe.seo = gerarSeoPlataformas(clipe, clipe.titulo, clipe.hashtags, { texto: this.titulo || '', canal: this.nomeCanal || this.canal || '' });
+    clipe.legendaPost = (clipe.seo && clipe.seo.tiktok) || (clipe.titulo + '\n\n' + clipe.hashtags.map((h) => '#' + h).join(' '));
     this.clipes.push(clipe);
     this.gravarRelatorio();
     this.emitir({ tipo: 'clipe', clipe });
@@ -944,10 +1239,11 @@ class SessaoAoVivo {
       const junto = path.join(this.dir, base + '-orig.mkv');
       const original = path.join(this.pasta, base + '-original.mp4');
       try {
-        await media.rodar(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', lista,
-          '-map', '0:v:0', '-map', '0:a:0?', '-c', 'copy', '-f', 'matroska', junto]);
+        await media.rodar(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error',
+          '-fflags', '+genpts+discardcorrupt', '-f', 'concat', '-safe', '0', '-i', lista,
+          '-map', '0:v:0', '-map', '0:a:0?', '-c', 'copy', '-avoid_negative_ts', 'make_zero', '-f', 'matroska', junto]);
         await media.rodar(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', junto,
-          '-map', '0:v:0', '-map', '0:a:0?', '-c', 'copy', '-movflags', '+faststart', original]);
+          '-map', '0:v:0', '-map', '0:a:0?', '-c', 'copy', '-avoid_negative_ts', 'make_zero', '-movflags', '+faststart', original]);
       } finally {
         try { fs.unlinkSync(lista); } catch (_) {}
         try { fs.unlinkSync(junto); } catch (_) {}
@@ -981,14 +1277,102 @@ class SessaoAoVivo {
           .filter((p) => p.fim > offset && p.inicio < offset + clipe.duracao);
         const texto = palavras.map((p) => p.texto).join(' ').replace(/\s+/g, ' ').trim();
         clipe.texto = texto;
-        if (this.sugerirTitulo) {
+
+        const ctxCopy = { texto: this.titulo || '', canal: this.nomeCanal || this.canal || '', evitar: (this.titulosUsados = this.titulosUsados || new Set()) };
+        let aplicouIa = false;
+
+        if (this.usarIaPro && texto.length >= 12) {
+          try {
+            const pro = require('./pro');
+            const resIa = await pro.refinarClipeAoVivo(t, offset, clipe.duracao, clipe.fonte.duracao, {
+              canal: this.nomeCanal || this.canal || '',
+              contexto: this.titulo || 'Live ao vivo',
+              sessaoLiveId: this.id,
+            });
+            this.emitir({ tipo: 'pro-estado', usouTrial: resIa.usouTrial, trialsRestantes: resIa.trialsRestantes });
+            if (resIa.corte) {
+              const ci = resIa.corte;
+              if (clipe.titulo) this.titulosUsados.delete(String(clipe.titulo).toLowerCase());
+              clipe.titulo = ci.titulo || clipe.titulo;
+              this.titulosUsados.add(String(clipe.titulo).toLowerCase());
+              clipe.titulos = ci.titulosIa || [{ texto: clipe.titulo, estilo: 'ia' }];
+              clipe.hashtags = ci.hashtagsIa || clipe.hashtags;
+              clipe.gancho = ci.ganchoIa || null;
+              clipe.nota = ci.nota || clipe.nota;
+              clipe.motivos = ci.motivos || clipe.motivos;
+              clipe.geradoPorIa = true;
+              const seoBase = gerarSeoPlataformas({ texto: ci.texto || texto }, clipe.titulo, clipe.hashtags, ctxCopy);
+              clipe.seo = Object.assign({}, seoBase, ci.seoIa || {});
+              clipe.legendaPost = clipe.seo.tiktok || (clipe.titulo + '\n\n' + clipe.hashtags.map((h) => '#' + h).join(' '));
+              aplicouIa = true;
+
+              // Refina o arquivo de video nas frases exatas escolhidas pela IA + queima o gancho de 4s
+              if (this.formato !== 'original' && (clipe.gancho || Math.abs(ci.inicio - offset) >= 0.8 || Math.abs(ci.duracao - clipe.duracao) >= 1.2)) {
+                const assIa = 'aovivo-ia-' + this.id + '-' + clipe.numero + '.ass';
+                const caminhoAssIa = path.join(pastas.trabalho(), assIa);
+                try {
+                  legenda.gerarAss([], 0, caminhoAssIa, {
+                    incluirPalavras: false,
+                    gancho: clipe.gancho,
+                    textoFixo: this.textoFixo,
+                    alturaDivisao: legenda.alturaDaDivisao(this.formato, this.recorte),
+                  });
+                  const mp4Ia = clipe.arquivo + '.ia.mp4';
+                  await media.cortarClipe({
+                    video: original,
+                    inicio: ci.inicio,
+                    duracao: ci.duracao,
+                    formato: this.formato,
+                    recorte: this.recorte,
+                    arquivoAss: assIa,
+                    fontsdir: fontsdirRelativo(),
+                    cwdAss: pastas.trabalho(),
+                    qualidade: 'rapida',
+                    destino: mp4Ia,
+                  });
+                  if (fs.existsSync(mp4Ia) && fs.statSync(mp4Ia).size > 1024) {
+                    fs.renameSync(mp4Ia, clipe.arquivo);
+                    clipe.inicio = ci.inicio;
+                    clipe.duracao = ci.duracao;
+                    clipe.fim = Math.round((ci.inicio + ci.duracao) * 100) / 100;
+                    clipe.texto = ci.texto || texto;
+                    clipe.tamanhoMb = Math.round((fs.statSync(clipe.arquivo).size / 1048576) * 10) / 10;
+                  }
+                } catch (_) {}
+                finally { try { fs.unlinkSync(caminhoAssIa); } catch (_) {} }
+              }
+            }
+            if (resIa.usouTrial && Number(resIa.trialsRestantes) <= 0) {
+              this.usarIaPro = false;
+              this.emitir({
+                tipo: 'pro-esgotado',
+                msg: 'Seus 3 testes grátis do Diretor IA Pro chegaram a zero! Atualize o plano para continuar usando IA na live (os próximos cortes seguem no Motor Local).',
+              });
+              this.emitir(Object.assign({ tipo: 'estado' }, this.resumo()));
+            }
+          } catch (errIa) {
+            if (/testes grátis|acabaram|402|Atualize o plano/i.test(errIa.message || '')) {
+              this.usarIaPro = false;
+              this.emitir({
+                tipo: 'pro-esgotado',
+                msg: 'Seus 3 testes grátis do Diretor IA Pro acabaram! Atualize o plano Pro para usar a IA na live (seguindo no Motor Local).',
+              });
+              this.emitir(Object.assign({ tipo: 'estado' }, this.resumo()));
+            } else {
+              this.emitir({ tipo: 'aviso', msg: 'IA Pro indisponível neste clipe (' + errIa.message + '). Usando título local.' });
+            }
+          }
+        }
+
+        if (!aplicouIa && this.sugerirTitulo) {
           const cp = gerarCopy({ texto, inicio: offset, tags: [], palavras, motivos: clipe.motivos, origem: clipe.origem },
-            { texto: this.titulo || '', canal: this.nomeCanal || this.canal || '', evitar: (this.titulosUsados = this.titulosUsados || new Set()) }, sessoes.pegar());
+            ctxCopy, sessoes.pegar());
           if (clipe.titulo) this.titulosUsados.delete(String(clipe.titulo).toLowerCase());
           clipe.titulo = cp.titulo;
           this.titulosUsados.add(String(cp.titulo).toLowerCase());
           clipe.titulos = cp.titulos;
           clipe.hashtags = cp.hashtags;
+          clipe.seo = cp.seo;
           clipe.legendaPost = cp.legenda;
         }
         this.gravarRelatorio();
@@ -1053,6 +1437,7 @@ class SessaoAoVivo {
     if (['split', 'vertical', 'foco', 'blur', 'original'].includes(o.formato)) this.formato = o.formato;
     if (o.recorte) this.recorte = o.recorte;
     if (o.textoFixo !== undefined) this.textoFixo = o.textoFixo;
+    if (typeof o.usarIaPro === 'boolean') this.usarIaPro = o.usarIaPro;
     if (o.clipando === true && !this.clipando) {
       this.clipando = true;
       // o nivel de antes nao dispara clipe: o automatico comeca agora
@@ -1079,6 +1464,7 @@ class SessaoAoVivo {
     if (this.parado) return;
     this.parado = true;
     clearInterval(this.relogio);
+    clearTimeout(this.timerHls);
     if (this.fecharChat) this.fecharChat();
     if (this.proc) { try { this.proc.kill(); } catch (_) {} }
     if (this.procYt) { try { this.procYt.kill(); } catch (_) {} }

@@ -130,7 +130,7 @@ const EMOCAO_GTA = [
   /\bfuga\b/i, /\bassalto\b/i, /\broubo\b/i, /\bbanco\b/i, /\btiro(teio)?\b/i,
   /\bacidente\b/i, /\bjacar[eé]\b/i, /\bbug\b/i, /\bglitch\b/i, /\bmapa\b/i,
   /\blucia\b/i, /\bjason\b/i, /\bcarro\b/i, /\bmoto\b/i, /\bavi[aã]o\b/i, /\blancha\b/i,
-  /\bkkk+\b/i, /\bkkkkw*\b/i, /\bhahaw*\b/i, /\bmano do c[eé]u\b/i, /\bque isso\b/i,
+  /\bkkk+\b/i, /\bkkkk\w*\b/i, /\bhaha\w*\b/i, /\bmano do c[eé]u\b/i, /\bque isso\b/i,
 ];
 
 const LEXICO_DA_SESSAO = {
@@ -139,9 +139,19 @@ const LEXICO_DA_SESSAO = {
 };
 
 // Comecar com isso significa que o corte pega o assunto pela metade.
-const ABERTURA_RUIM = /^(ent[aã]o|mas|e|a[ií]|porque|por[eé]m|da[ií]|s[oó] que|tamb[eé]m|ou seja|isso|ele|ela|eles|elas|esse|essa)\b/i;
+const ABERTURA_RUIM = /^(ent[aã]o|mas|e|a[ií]|porque|por[eé]m|da[ií]|s[oó] que|tamb[eé]m|ou seja|isso|ele|ela|eles|elas|esse|essa|aquilo|aquele|aquela|ali|l[aá]|tipo assim|inclusive|ali[aá]s|enfim|tanto que|que nem|nisso|nessa|nesse)\b/i;
 
 const FILLERS = /\b(n[eé]|tipo|assim|hum+|ahn+|sabe|entendeu|beleza)\b/gi;
+
+// Lixo de live: leitura de sub, pix, donate, salve e recados de canal.
+// Trazem numeros ("10 reais", "12 meses") e perguntas ("tudo bem?") que antes
+// enganavam o algoritmo como se fossem ganchos virais.
+const LIXO_DE_LIVE = [
+  /\b(valeu|obrigad[oa]|brigad[aã]o|agrade[cç]o|tamo junto)\s+(pel[oa]s?\s+|a[ií]\s+)?(\d+\s*)?(sub|subs|inscrit\w*|bits|donate|doa[cç][aã]o|pix|reais|meses|presente|gift|membro|apoio|raid|host)\b/i,
+  /\b(\d+\s*meses\s+de\s+sub|prime\s+sub|sub\s+prime|mandou\s+\d+\s*(reais|bits|no\s+pix)|pix\s+de\s+\d+|resgatou\s+com\s+pontos|novo\s+sub|renov\w+\s+o\s+sub|obrigado\s+pela\s+raid)\b/i,
+  /\b(um\s+salve\s+pr[oa]|manda\s+um\s+salve|salve\s+a[ií]\s+pr[oa]|bem[- ]vind[oa]s?\s+[aà]\s+live|boa\s+(noite|tarde)\s+chat|bom\s+dia\s+chat)\b/i,
+  /\b(deixa\s+o\s+like|se\s+inscrev\w+\s+no\s+canal|ativa\s+o\s+sininho|usa\s+o\s+cupom|c[oó]digo\s+promocional|patrocinad\w+\s+por|link\s+(aqui\s+)?na\s+descri[cç][aã]o|j[aá]\s+volto\s+chat|vou\s+(no\s+banheiro|pegar\s+[aá]gua)|tela\s+de\s+espera|o\s+[aá]udio\s+t[aá]\s+bom|t[aá]\s+dando\s+pra\s+ouvir|testando\s+o\s+microfone)\b/i,
+];
 
 // ---------------------------------------------------------------- utilidades
 
@@ -195,10 +205,12 @@ function achatarPalavras(transcricao) {
   return palavras;
 }
 
-/** Quebra em frases por pontuacao final ou por pausa longa na fala. */
+/** Quebra em frases respeitando pontuacao e pausas reais, sem partir oracao ao meio. */
 function montarFrases(palavras) {
   const frases = [];
   let atual = [];
+  let pausaAnterior = 2;
+  let anteriorPontuada = true;
 
   for (let i = 0; i < palavras.length; i++) {
     const p = palavras[i];
@@ -206,18 +218,28 @@ function montarFrases(palavras) {
     atual.push(p);
 
     const terminaPontuacao = /[.!?…]["')\]]?$/.test(p.texto);
+    const terminaVirgula = /[,:;—–-]$/.test(p.texto);
     const pausa = prox ? prox.inicio - p.fim : Infinity;
-    const longaDemais = atual.length >= 28;
+    // Evita partir no meio da frase: so quebra sem ponto se houver pausa de
+    // respiracao ou virgula depois de 24+ palavras (teto de seguranca em 42).
+    const quebraSuave = atual.length >= 24 && (terminaVirgula || pausa >= 0.35);
+    const longaDemais = atual.length >= 42;
 
-    if (terminaPontuacao || pausa >= 0.7 || longaDemais || !prox) {
+    if (terminaPontuacao || pausa >= 0.72 || quebraSuave || longaDemais || !prox) {
+      const pausaDepois = pausa === Infinity ? 2 : pausa;
       frases.push({
         inicio: atual[0].inicio,
         fim: atual[atual.length - 1].fim,
         texto: normalizarTexto(atual.map((w) => w.texto).join(' ')),
         palavras: atual,
+        comecaCompleta: anteriorPontuada || pausaAnterior >= 0.65,
         terminaCompleta: terminaPontuacao,
-        pausaDepois: pausa === Infinity ? 2 : pausa,
+        terminaFirme: terminaPontuacao || pausaDepois >= 0.95,
+        pausaAntes: pausaAnterior,
+        pausaDepois: pausaDepois,
       });
+      pausaAnterior = pausaDepois;
+      anteriorPontuada = terminaPontuacao;
       atual = [];
     }
   }
@@ -338,8 +360,15 @@ function pontuar(janela, energia, perfil, sessao) {
     motivos.push({ fator: 'Comeca com silencio', pontos: -10 });
   }
 
-  // 0c. Buraco de silencio no meio derruba a retencao
-  if (maiorPausa > 2.2) {
+  // 0c. Buraco de silencio no meio derruba a retencao; buraco enorme (> 4.5s)
+  // quase sempre junta dois assuntos desconexos no mesmo corte.
+  if (maiorPausa > 7.5) {
+    nota -= 28;
+    motivos.push({ fator: 'Mistura dois momentos separados por silencio', pontos: -28 });
+  } else if (maiorPausa > 4.5) {
+    nota -= 18;
+    motivos.push({ fator: 'Silencio longo dividindo o assunto', pontos: -18 });
+  } else if (maiorPausa > 2.2) {
     nota -= 9;
     motivos.push({ fator: 'Tem pausa morta no meio', pontos: -9 });
   } else if (maiorPausa > 1.5) {
@@ -387,11 +416,14 @@ function pontuar(janela, energia, perfil, sessao) {
     motivos.push({ fator: 'Tem virada de raciocinio', pontos: p });
   }
 
-  // 4. Numero concreto
-  const numeros = (texto.match(/\b\d+([.,]\d+)?\b/g) || []).length;
-  const res = contar(texto, RESULTADO);
-  if (numeros > 0 || res > 0) {
-    const p = Math.min(10, numeros * 2 + res * 4);
+  const lixo = contar(texto, LIXO_DE_LIVE);
+
+  // 4. Numero / resultado concreto (so vale se nao for leitura de pix/sub e se
+  // tiver contexto real de resultado ou numero expressivo, nao "etapa 1" solto)
+  const numerosGrandes = (texto.match(/\b\d{3,}([.,]\d+)?\b/g) || []).length;
+  const res = lixo === 0 ? contar(texto, RESULTADO) : 0;
+  if (lixo === 0 && (res > 0 || numerosGrandes > 0)) {
+    const p = Math.min(10, numerosGrandes * 2 + res * 4);
     nota += p;
     motivos.push({ fator: 'Traz numero / resultado concreto', pontos: p });
   }
@@ -449,12 +481,29 @@ function pontuar(janela, energia, perfil, sessao) {
   }
 
   // 11. Fecha a ideia em vez de cortar no meio
-  if (janela.frases[janela.frases.length - 1].terminaCompleta) {
-    nota += 6;
-    motivos.push({ fator: 'Fecha a ideia por completo', pontos: 6 });
+  const ultimaFrase = janela.frases[janela.frases.length - 1];
+  if (ultimaFrase.terminaCompleta) {
+    nota += 7;
+    motivos.push({ fator: 'Fecha a ideia por completo', pontos: 7 });
+  } else if (ultimaFrase.terminaFirme) {
+    nota += 3;
+    motivos.push({ fator: 'Fecha em pausa natural', pontos: 3 });
   } else {
-    nota -= 5;
-    motivos.push({ fator: 'Termina com a frase pela metade', pontos: -5 });
+    nota -= 13;
+    motivos.push({ fator: 'Termina com a frase pela metade', pontos: -13 });
+  }
+
+  // Arco de energia (setup -> climax): corte viral cresce na metade final,
+  // em vez de comecar alto no fim de outro assunto e morrer no meio.
+  const meioT = janela.inicio + (janela.fim - janela.inicio) * 0.5;
+  const ePrimeiraMetade = energiaDaJanela(energia, janela.inicio, meioT);
+  const eSegundaMetade = energiaDaJanela(energia, meioT, janela.fim);
+  if (eSegundaMetade.pico > ePrimeiraMetade.media * 1.38 && eSegundaMetade.pico > 0.28) {
+    nota += 7;
+    motivos.push({ fator: 'Cresce ate o climax no final', pontos: 7 });
+  } else if ((janela.fim - janela.inicio) > 24 && eSegundaMetade.media < ePrimeiraMetade.media * 0.62) {
+    nota -= 10;
+    motivos.push({ fator: 'Perde a forca na metade final', pontos: -10 });
   }
 
   // 12. Duracao. Aqui a regra do algoritmo e contra-intuitiva: o que conta e a
@@ -487,6 +536,19 @@ function pontuar(janela, energia, perfil, sessao) {
   }
 
   // -- penalidades --
+
+  // Lixo de live (agradecimento de sub/donate/pix, salve, recado de canal)
+  if (lixo > 0) {
+    const pLixo = -Math.min(34, lixo * 18);
+    nota += pLixo;
+    motivos.push({ fator: 'Interacao de sub / donate / recado da live', pontos: pLixo });
+  }
+
+  // Comeca em frase quebrada no meio do folego
+  if (janela.frases[0].comecaCompleta === false) {
+    nota -= 16;
+    motivos.push({ fator: 'Comeca no meio de uma frase', pontos: -16 });
+  }
 
   // Abre no meio do assunto - quem chega no corte nao viu o que veio antes
   if (ABERTURA_RUIM.test(primeira)) {
@@ -562,6 +624,16 @@ function pontuar(janela, energia, perfil, sessao) {
       nota += p;
       motivos.push({ fator: 'Tem lance de jogo', pontos: p });
     }
+
+    // 5. Trava contra "corte sem sentido": se nao tem grito/pico de voz, nao
+    // tem risada, nao tem lance concreto nem historia contada com virada,
+    // palavras soltas ("nunca", "carro", "?") nao podem inflar a nota sozinhas.
+    const temHistoria = hist > 0 && con > 0 && totalPalavras >= 40 && ultimaFrase.terminaFirme;
+    const temReacao = RISADA_JOGO.test(texto) || alto >= 1 || e.variacao >= 0.16 || lance >= 2;
+    if (!temReacao && !temHistoria) {
+      nota -= 12;
+      motivos.push({ fator: 'Conversa solta sem acontecimento claro', pontos: -12 });
+    }
   }
 
   // Comprime a faixa alta em vez de cortar em 100: senao varios trechos bons
@@ -608,20 +680,33 @@ function bonusDeMomento(janela, momentos, perfil) {
 
   const principal = dentro.reduce((a, b) => (b.forca > a.forca ? b : a));
   const posicao = (principal.tempo - janela.inicio) / dur;
+  const sobraDepois = janela.fim - principal.tempo;
 
   // forca 1.9 a 3.0 vira 8 a 18 pontos
-  let base = Math.min(15, 5 + (principal.forca - 2.3) * 11);
+  let base = Math.min(16, 5 + (principal.forca - 2.2) * 11);
 
-  // posicao: o ponto doce e entre 25% e 65% do corte
-  if (posicao >= 0.25 && posicao <= 0.65) base *= 1.25;
-  else if (posicao < 0.12) base *= 0.55;
-  else if (posicao > 0.85) base *= 0.5;
+  // Formula viral: preparacao antes e o climax no terco final (55% a 88%),
+  // encerrando de 2.5s a 12s apos o pico (sem arrastar 30s de pos-lance morto).
+  let penalidadeSobra = 0;
+  if (posicao >= 0.55 && posicao <= 0.88 && sobraDepois >= 2.5 && sobraDepois <= 13) {
+    base *= 1.45;
+  } else if (posicao >= 0.38 && posicao < 0.55 && sobraDepois <= 17) {
+    base *= 1.05;
+  } else if (sobraDepois > 20) {
+    base *= 0.35;
+    penalidadeSobra = -10;
+  } else if (posicao < 0.12 || sobraDepois < 1.8) {
+    base *= 0.45;
+  }
 
-  ganho += base * peso;
+  ganho += base * peso + penalidadeSobra;
   extras.push({
     fator: principal.tipo === 'voz+cena' ? 'Tem o momento (voz e imagem)' : 'Tem pico de reacao',
     pontos: Math.round(base * peso),
   });
+  if (penalidadeSobra < 0) {
+    extras.push({ fator: 'Continua tempo demais depois do lance', pontos: penalidadeSobra });
+  }
 
   // Suspense antes da explosao: e o que segura o dedo ate a revelacao
   if (principal.temSuspense) {
@@ -776,21 +861,26 @@ function encontrarCortes(transcricao, energia, opcoes) {
     }
   }
 
-  // Janelas ancoradas nos picos. Numa abertura de carta, o corte certo nao
-  // comeca numa frase bonita: comeca no suspense e termina depois da reacao.
-  // Aqui a gente monta o corte em volta do acontecimento.
+  // Janelas ancoradas nos picos com arco viral: contexto antes (14s a 34s) e
+  // fecho curto logo depois da reacao (4s a 10s), terminando em frase firme.
   for (const m of momentos.slice(0, 40)) {
-    for (const antes of [6, 12, 20]) {
+    for (const antes of [12, 20, 28, 38]) {
       const alvoInicio = m.tempo - antes;
       let i = 0;
       for (let k = 0; k < frases.length; k++) {
         if (frases[k].inicio <= alvoInicio) i = k; else break;
       }
-      for (let fim = i; fim < frases.length; fim++) {
-        const dur = frases[fim].fim - frases[i].inicio;
-        if (dur > maxDur) break;
-        // o pico precisa caber dentro, com folga pra reacao depois dele
-        if (dur >= minDur && frases[fim].fim >= m.tempo + 4) { registrar(i, fim); break; }
+      // se a frase caiu quebrada no meio, tenta a vizinha que comeca limpa
+      if (!frases[i].comecaCompleta && i + 1 < frases.length && frases[i + 1].inicio < m.tempo - 5) i++;
+      for (const depois of [4.5, 8, 12]) {
+        for (let fim = i; fim < frases.length; fim++) {
+          const dur = frases[fim].fim - frases[i].inicio;
+          if (dur > maxDur) break;
+          if (dur >= minDur && frases[fim].fim >= m.tempo + depois && frases[fim].terminaFirme) {
+            registrar(i, fim);
+            break;
+          }
+        }
       }
     }
   }
@@ -808,14 +898,24 @@ function encontrarCortes(transcricao, energia, opcoes) {
   }
   candidatas.sort((a, b) => b.nota - a.nota);
 
+  // Piso de qualidade: melhor entregar 3 cortes realmente fortes do que
+  // completar 8 ou 12 vagas com conversa solta, leitura de sub ou frase cortada.
+  const ehSegundaLeva = !!(opcoes.evitar && opcoes.evitar.length);
+  const melhorNota = candidatas[0].nota;
+  const pisoNota = ehSegundaLeva ? 30 : Math.max(40, Math.min(52, melhorNota - 28));
+
   // Supressao de sobreposicao: dois cortes nao podem ser quase o mesmo trecho
   const escolhidos = [];
   for (const j of candidatas) {
+    // Garante ao menos 1 corte se o video tiver fala minimamente coerente (>= 24),
+    // mas do 2o em diante exige bater o piso de sentido/viralidade.
+    if (escolhidos.length >= 1 && j.nota < pisoNota) break;
+    if (escolhidos.length === 0 && ehSegundaLeva && j.nota < 26) break;
     const conflita = escolhidos.some((e) => {
       const sobrepoe = Math.min(e.fim, j.fim) - Math.max(e.inicio, j.inicio);
       if (sobrepoe <= 0) return false;
       const menor = Math.min(e.fim - e.inicio, j.fim - j.inicio);
-      return sobrepoe / menor > 0.3;
+      return sobrepoe / menor > 0.25;
     });
     if (!conflita) escolhidos.push(j);
     if (escolhidos.length >= quantidade) break;
@@ -824,21 +924,31 @@ function encontrarCortes(transcricao, energia, opcoes) {
   // Devolve na ordem em que aparecem no video
   escolhidos.sort((a, b) => a.inicio - b.inicio);
 
-  return escolhidos.map((j, idx) => ({
-    numero: idx + 1,
-    inicio: Math.round(j.inicio * 100) / 100,
-    fim: Math.round(j.fim * 100) / 100,
-    duracao: Math.round((j.fim - j.inicio) * 10) / 10,
-    inicioTexto: mmss(j.inicio),
-    fimTexto: mmss(j.fim),
-    nota: j.nota,
-    rotulo: rotulo(j.nota),
-    titulo: gerarTitulo(j),
-    tags: gerarTags(j),
-    motivos: j.motivos,
-    texto: j.texto,
-    palavras: j.frases.reduce((acc, f) => acc.concat(f.palavras), []),
-  }));
+  return escolhidos.map((j, idx) => {
+    const pals = j.frases.reduce((acc, f) => acc.concat(f.palavras), []);
+    // Cold-open para os algoritmos: nunca deixa silencio morto no segundo 0.0
+    const iniAjustado = pals.length && pals[0].inicio - j.inicio > 0.25
+      ? Math.max(0, pals[0].inicio - 0.12)
+      : j.inicio;
+    const fimAjustado = pals.length
+      ? Math.max(j.fim, pals[pals.length - 1].fim + 0.18)
+      : j.fim;
+    return {
+      numero: idx + 1,
+      inicio: Math.round(iniAjustado * 100) / 100,
+      fim: Math.round(fimAjustado * 100) / 100,
+      duracao: Math.round((fimAjustado - iniAjustado) * 10) / 10,
+      inicioTexto: mmss(iniAjustado),
+      fimTexto: mmss(fimAjustado),
+      nota: j.nota,
+      rotulo: rotulo(j.nota),
+      titulo: gerarTitulo(j),
+      tags: gerarTags(j),
+      motivos: j.motivos,
+      texto: j.texto,
+      palavras: pals,
+    };
+  });
 }
 
 /**

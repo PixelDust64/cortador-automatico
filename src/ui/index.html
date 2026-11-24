@@ -1020,6 +1020,57 @@
   }
   .upd-etapa.ativa { color: var(--texto); border-color: rgba(61,139,255,.45); background: rgba(61,139,255,.10); font-weight: 600; }
   .upd-etapa.pronta { color: var(--verde); border-color: rgba(134,211,164,.3); }
+
+  /* ---- modal de tutorial interativo (boas-vindas) ---- */
+  .tut-caixa { max-width: 660px; padding: 26px 28px 22px; }
+  .tut-passos-barra { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 14px 0 18px; }
+  .tut-passo-btn {
+    display: flex; align-items: center; gap: 7px; padding: 8px 10px; border-radius: 10px;
+    background: var(--superficie); border: 1px solid var(--linha); color: var(--texto3);
+    font-size: 12px; font-weight: 600; cursor: pointer; text-align: left; transition: .18s;
+  }
+  .tut-passo-btn:hover { border-color: var(--linha2); color: var(--texto2); }
+  .tut-passo-btn .n {
+    width: 20px; height: 20px; border-radius: 99px; display: grid; place-items: center; flex: none;
+    background: rgba(255,255,255,.06); font-size: 11px; font-weight: 700;
+  }
+  .tut-passo-btn.ativo {
+    border-color: rgba(61,139,255,.55); background: rgba(61,139,255,.12); color: var(--texto);
+  }
+  .tut-passo-btn.ativo .n { background: var(--marca); color: #061326; }
+  .tut-passo-btn.feito .n { background: rgba(134,211,164,.2); color: var(--verde); }
+  .tut-slide { display: none; animation: tutFade .22s ease; }
+  .tut-slide.ativo { display: block; }
+  @keyframes tutFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  .tut-heroi {
+    padding: 16px 18px; border-radius: 14px; margin-bottom: 14px;
+    background: linear-gradient(145deg, rgba(61,139,255,.12), rgba(255,255,255,.02));
+    border: 1px solid rgba(61,139,255,.25);
+  }
+  .tut-heroi h3 { font-size: 18px; font-weight: 700; margin: 0 0 6px; display: flex; align-items: center; gap: 9px; color: var(--texto); }
+  .tut-heroi h3 svg { color: var(--marca); }
+  .tut-heroi p { margin: 0; font-size: var(--t5); color: var(--texto2); line-height: 1.55; }
+  .tut-grade2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .tut-card {
+    padding: 13px 14px; border-radius: 12px; background: var(--superficie); border: 1px solid var(--linha);
+    font-size: var(--t6); color: var(--texto2); line-height: 1.5;
+  }
+  .tut-card b { display: flex; align-items: center; gap: 7px; color: var(--texto); font-size: var(--t5); margin-bottom: 4px; }
+  .tut-card.destaque-pro { border-color: rgba(226,194,122,.35); background: linear-gradient(145deg, rgba(226,194,122,.09), var(--superficie)); }
+  .tut-dica {
+    margin-top: 12px; padding: 10px 13px; border-radius: 10px;
+    background: rgba(134,211,164,.08); border: 1px solid rgba(134,211,164,.24);
+    font-size: 12.5px; color: var(--texto2); display: flex; align-items: center; gap: 9px;
+  }
+  .tut-dica svg { color: var(--verde); flex: none; }
+  .tut-rodape {
+    margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--linha);
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  }
+  @media (max-width: 640px) {
+    .tut-passos-barra { grid-template-columns: 1fr 1fr; }
+    .tut-grade2 { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body data-modo="fluxo">
@@ -1032,6 +1083,7 @@
     <button class="btn principal p" id="btnLinkTopo" type="submit">Ir</button>
   </form>
   <button class="btn p btn-pro-topo" id="btnTopoPro" type="button"><i data-lucide="sparkles" class="i"></i> <span id="txtTopoPro">Pro</span></button>
+  <button class="btn p" id="btnTopoTutorial" type="button" title="Abrir tutorial passo a passo"><i data-lucide="circle-help" class="i"></i> Como usar</button>
   <button class="btn p" id="btnProjetos"><i data-lucide="folder-kanban" class="i"></i> Projetos</button>
   <button class="btn p" id="btnAjustes"><i data-lucide="settings-2" class="i"></i> Ajustes</button>
 </div>
@@ -1838,6 +1890,118 @@
   </div>
 </div>
 
+<div class="dsp-fundo" id="modalTutorial" hidden role="dialog" aria-modal="true" aria-labelledby="tutTitulo" style="z-index:220">
+  <div class="dsp-caixa tut-caixa">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px">
+      <div>
+        <span class="pilula-pro">Guia Rápido · 1 minuto</span>
+        <h2 id="tutTitulo" style="margin-top:8px">Bem-vindo ao Cortador Automático!</h2>
+      </div>
+      <button class="btn p" id="btnFecharTutorial" type="button" aria-label="Fechar tutorial"><i data-lucide="x" class="i"></i></button>
+    </div>
+    <p style="margin:4px 0 0; color:var(--texto2); font-size:var(--t5)">Veja em 4 passos simples como transformar qualquer vídeo ou live em cortes verticais prontos pra viralizar:</p>
+
+    <div class="tut-passos-barra" id="tutBarraPassos">
+      <button type="button" class="tut-passo-btn ativo" data-tut-ir="0"><span class="n">1</span><span>Vídeo ou Live</span></button>
+      <button type="button" class="tut-passo-btn" data-tut-ir="1"><span class="n">2</span><span>Enquadrar 9:16</span></button>
+      <button type="button" class="tut-passo-btn" data-tut-ir="2"><span class="n">3</span><span>Grátis vs IA Pro</span></button>
+      <button type="button" class="tut-passo-btn" data-tut-ir="3"><span class="n">4</span><span>Editar e Postar</span></button>
+    </div>
+
+    <div class="tut-slide ativo" data-tut-slide="0">
+      <div class="tut-heroi">
+        <h3><i data-lucide="clapperboard" class="i"></i> Passo 1: Escolha de onde vêm seus cortes</h3>
+        <p>Logo no topo da tela você escolhe entre cortar um vídeo que já existe ou acompanhar uma transmissão que está acontecendo agora:</p>
+      </div>
+      <div class="tut-grade2">
+        <div class="tut-card">
+          <b><i data-lucide="film" class="i" style="color:var(--marca)"></i> Vídeo gravado (VOD ou PC)</b>
+          Cole o link do <b>YouTube, Twitch ou Kick</b> (você escolhe a resolução de 480p até 4K antes de baixar!) ou selecione um arquivo `.mp4`/`.mkv` salvo no seu computador.
+        </div>
+        <div class="tut-card">
+          <b><span class="ponto-vivo"></span> Ao vivo agora (Live)</b>
+          Cole o link do canal em live! O programa grava junto com você, corta sozinho quando o streamer grita ou o chat explode, ou corta na hora quando você aperta <b>CLIPAR</b> (tecla <kbd>C</kbd>).
+        </div>
+      </div>
+      <div class="tut-dica">
+        <i data-lucide="zap" class="i"></i>
+        <span><b>Atalho rápido:</b> você também pode colar qualquer link direto na barra lá no topo da janela — o programa descobre sozinho se é vídeo gravado ou live ao vivo!</span>
+      </div>
+    </div>
+
+    <div class="tut-slide" data-tut-slide="1">
+      <div class="tut-heroi">
+        <h3><i data-lucide="smartphone" class="i"></i> Passo 2: Enquadre Rosto + Jogo em pé (9:16)</h3>
+        <p>Transforme a tela deitada (16:9) no formato vertical perfeito para TikTok, Shorts e Reels com prévia ao vivo ao lado:</p>
+      </div>
+      <div class="tut-grade2">
+        <div class="tut-card">
+          <b><i data-lucide="scan-face" class="i" style="color:var(--marca)"></i> Rosto + Jogo automático</b>
+          Clique em <b>Detectar webcam sozinho</b> para achar a câmera do streamer automaticamente (ou arraste a <b>caixa azul</b> no rosto e a <b>caixa verde</b> no jogo).
+        </div>
+        <div class="tut-card">
+          <b><i data-lucide="layout-template" class="i" style="color:var(--verde)"></i> Outros formatos prontos</b>
+          Live sem webcam? Escolha <b>Tela cheia</b>, <b>Só uma área (Foco)</b> ou <b>Não mexer</b> (mantém deitado para editar depois).
+        </div>
+      </div>
+      <div class="tut-dica">
+        <i data-lucide="audio-lines" class="i"></i>
+        <span><b>Áudio 0ms Sync:</b> todos os cortes já saem com trava de quadros constantes para a boca do streamer nunca ficar atrasada em relação à voz.</span>
+      </div>
+    </div>
+
+    <div class="tut-slide" data-tut-slide="2">
+      <div class="tut-heroi">
+        <h3><i data-lucide="sparkles" class="i"></i> Passo 3: Motor Local Grátis ou Diretor IA Pro</h3>
+        <p>Você escolhe qual inteligência seleciona os melhores momentos da live ou do vídeo:</p>
+      </div>
+      <div class="tut-grade2">
+        <div class="tut-card">
+          <b><i data-lucide="cpu" class="i" style="color:var(--verde)"></i> Motor Local · 100% Grátis</b>
+          Roda <b>100% offline no seu PC</b>, sem conta e <b>sem limite de cortes para sempre</b>. Encontra os picos de emoção, voz, risadas e reação do chat.
+        </div>
+        <div class="tut-card destaque-pro">
+          <b><i data-lucide="sparkles" class="i" style="color:var(--amarelo)"></i> Diretor IA Pro · 3 Testes Grátis</b>
+          Lê a história inteira com IA (Gemini nativo incluso, ou sua chave Claude/ChatGPT) e cria gancho + títulos virais. Você ganha <b>3 cortes grátis</b>: use até 3 em vídeos, ou 2 em vídeos + <b>1 live de 15 min</b>!
+        </div>
+      </div>
+      <div class="tut-dica">
+        <i data-lucide="crown" class="i"></i>
+        <span>Quem ativa o <b>Plano Pro</b> (via Pix ou Cartão dentro do próprio app) usa o Diretor IA em vídeos e durante a live inteira sem limite de 15 minutos!</span>
+      </div>
+    </div>
+
+    <div class="tut-slide" data-tut-slide="3">
+      <div class="tut-heroi">
+        <h3><i data-lucide="rocket" class="i"></i> Passo 4: Revise, copie o SEO e poste primeiro!</h3>
+        <p>Assim que os cortes ficam prontos, tudo o que você precisa para postar e viralizar já aparece no card de cada clipe:</p>
+      </div>
+      <div class="tut-grade2">
+        <div class="tut-card">
+          <b><i data-lucide="hash" class="i" style="color:var(--marca)"></i> SEO por Rede em 1 Clique</b>
+          Cada corte traz botões dedicados para copiar título + legenda + hashtags otimizados pro algoritmo do <b>TikTok</b>, <b>YouTube Shorts</b> e <b>Instagram Reels</b>.
+        </div>
+        <div class="tut-card">
+          <b><i data-lucide="sliders-horizontal" class="i" style="color:var(--verde)"></i> Editor Rápido + Pasta no PC</b>
+          Quer puxar 2 segundos antes ou corrigir uma palavra da legenda amarela? Clique em <b>Editar</b> no card. Seus vídeos ficam salvos em <b>Vídeos &gt; Cortador Automatico</b>!
+        </div>
+      </div>
+      <div class="tut-dica">
+        <i data-lucide="circle-help" class="i"></i>
+        <span>Sempre que quiser rever este guia, é só clicar no botão <b>Como usar</b> lá no topo da tela.</span>
+      </div>
+    </div>
+
+    <div class="tut-rodape">
+      <button class="btn p" id="btnTutPular" type="button">Pular tutorial</button>
+      <div style="display:flex; gap:8px; align-items:center">
+        <button class="btn p" id="btnTutVoltar" type="button" hidden><i data-lucide="chevron-left" class="i"></i> Anterior</button>
+        <button class="btn principal" id="btnTutProximo" type="button">Próximo passo <i data-lucide="chevron-right" class="i"></i></button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="dsp-fundo" id="modalNovidades" hidden role="dialog" aria-modal="true" aria-labelledby="novTitulo">
   <div class="dsp-caixa nov-caixa">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px">
@@ -1976,6 +2140,7 @@
       <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap">
         <span style="font-size:var(--t5); color:var(--texto2)">Versão instalada: <b id="txtVersaoAtual" style="color:var(--texto)">...</b></span>
         <div style="display:flex; gap:6px; flex-wrap:wrap">
+          <button class="btn p" id="btnVerTutorialAjustes" type="button"><i data-lucide="circle-help" class="i"></i> Tutorial</button>
           <button class="btn p" id="btnVerNovidades" type="button"><i data-lucide="gift" class="i"></i> Novidades</button>
           <button class="btn p" id="btnChecarUpd" type="button"><i data-lucide="refresh-cw" class="i"></i> Procurar atualização</button>
         </div>
@@ -3141,7 +3306,11 @@
     document.querySelectorAll('#dspOpcoes [data-dsp]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
   });
   $('btnDspOk').addEventListener('click', async () => {
-    try { await salvarDesempenho(dspEscolha); $('dspFundo').hidden = true; } catch (e) { $('dspObs').textContent = e.message; }
+    try {
+      await salvarDesempenho(dspEscolha);
+      $('dspFundo').hidden = true;
+      if (typeof verificarBoasVindasInicial === 'function') verificarBoasVindasInicial();
+    } catch (e) { $('dspObs').textContent = e.message; }
   });
   $('dspAjustes').addEventListener('click', async (e) => {
     const b = e.target.closest('[data-dsp]'); if (!b) return;
@@ -5504,8 +5673,66 @@
     });
   }
 
-  // ---- modal de Novidades da Versao (aparece automaticamente 1x ao baixar/atualizar)
+  // ---- modal de Tutorial de Boas-Vindas (abre automaticamente na 1a vez que abre o app)
+  const CHAVE_TUTORIAL = 'cortador_tutorial_v1';
   const CHAVE_NOVIDADES = 'cortador_novidades_v2_0_8';
+  let passoTutorial = 0;
+  const TOTAL_PASSOS_TUT = 4;
+
+  function irPassoTutorial(idx) {
+    passoTutorial = Math.max(0, Math.min(TOTAL_PASSOS_TUT - 1, Number(idx) || 0));
+    document.querySelectorAll('#tutBarraPassos [data-tut-ir]').forEach((b, i) => {
+      b.classList.toggle('ativo', i === passoTutorial);
+      b.classList.toggle('feito', i < passoTutorial);
+    });
+    document.querySelectorAll('#modalTutorial [data-tut-slide]').forEach((s, i) => {
+      s.classList.toggle('ativo', i === passoTutorial);
+    });
+    $('btnTutVoltar').hidden = passoTutorial === 0;
+    const ultimo = passoTutorial === TOTAL_PASSOS_TUT - 1;
+    $('btnTutPular').style.visibility = ultimo ? 'hidden' : 'visible';
+    $('btnTutProximo').innerHTML = ultimo
+      ? '<i data-lucide="check" class="i"></i> Começar a cortar agora!'
+      : 'Próximo passo <i data-lucide="chevron-right" class="i"></i>';
+    icones($('modalTutorial'));
+  }
+
+  function abrirTutorial(inicio) {
+    irPassoTutorial(inicio != null ? inicio : 0);
+    $('modalTutorial').hidden = false;
+    icones($('modalTutorial'));
+  }
+
+  function fecharTutorial() {
+    $('modalTutorial').hidden = true;
+    try {
+      localStorage.setItem(CHAVE_TUTORIAL, '1');
+      localStorage.setItem(CHAVE_NOVIDADES, '1');
+    } catch (_) {}
+  }
+
+  $('tutBarraPassos').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-tut-ir]');
+    if (b) irPassoTutorial(Number(b.dataset.tutIr));
+  });
+  $('btnTutVoltar').addEventListener('click', () => irPassoTutorial(passoTutorial - 1));
+  $('btnTutProximo').addEventListener('click', () => {
+    if (passoTutorial < TOTAL_PASSOS_TUT - 1) irPassoTutorial(passoTutorial + 1);
+    else fecharTutorial();
+  });
+  $('btnTutPular').addEventListener('click', fecharTutorial);
+  $('btnFecharTutorial').addEventListener('click', fecharTutorial);
+  $('modalTutorial').addEventListener('click', (e) => { if (e.target === $('modalTutorial')) fecharTutorial(); });
+  if ($('btnTopoTutorial')) $('btnTopoTutorial').addEventListener('click', () => abrirTutorial(0));
+  if ($('btnVerTutorialAjustes')) $('btnVerTutorialAjustes').addEventListener('click', () => { abrir(false); abrirTutorial(0); });
+  document.addEventListener('keydown', (e) => {
+    if ($('modalTutorial').hidden) return;
+    if (e.key === 'Escape') fecharTutorial();
+    else if (e.key === 'ArrowRight' && passoTutorial < TOTAL_PASSOS_TUT - 1) irPassoTutorial(passoTutorial + 1);
+    else if (e.key === 'ArrowLeft' && passoTutorial > 0) irPassoTutorial(passoTutorial - 1);
+  });
+
+  // ---- modal de Novidades da Versao (aparece para quem ja conhecia o app e atualizou)
   function abrirNovidades() {
     $('modalNovidades').hidden = false;
     icones($('modalNovidades'));
@@ -5518,11 +5745,18 @@
   if ($('btnFecharNovidades')) $('btnFecharNovidades').addEventListener('click', fecharNovidades);
   if ($('btnEntendiNovidades')) $('btnEntendiNovidades').addEventListener('click', fecharNovidades);
   if ($('modalNovidades')) $('modalNovidades').addEventListener('click', (e) => { if (e.target === $('modalNovidades')) fecharNovidades(); });
-  setTimeout(() => {
+
+  function verificarBoasVindasInicial() {
     try {
-      if (!localStorage.getItem(CHAVE_NOVIDADES) && $('dspFundo').hidden) abrirNovidades();
+      if (!$('dspFundo').hidden || !$('modalAutoUpdate').hidden) return;
+      if (!localStorage.getItem(CHAVE_TUTORIAL)) {
+        abrirTutorial(0);
+      } else if (!localStorage.getItem(CHAVE_NOVIDADES)) {
+        abrirNovidades();
+      }
     } catch (_) {}
-  }, 900);
+  }
+  setTimeout(verificarBoasVindasInicial, 850);
 
   $('proPlanosLista').addEventListener('click', async (e) => {
     const b = e.target.closest('[data-comprar-plano]');

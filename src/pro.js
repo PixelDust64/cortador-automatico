@@ -179,11 +179,13 @@ async function obterEstadoBase(forcar) {
       expiraEm: d.expiraEm || null,
       usosMes: Number(d.usosMes || 0),
       limiteMes: Number(d.limiteMes || 80),
+      usosFeitos: Number(d.usosFeitos || 0),
       trialsRestantes: trialsRest,
       liveUsado: !!d.liveUsado,
       liveAtivo: !!d.liveAtivo,
       liveExpiraEm: d.liveExpiraEm || null,
       liveRestanteSeg: Number(d.liveRestanteSeg != null ? d.liveRestanteSeg : (d.liveUsado ? 0 : 900)),
+      conviteUpgrade: d.conviteUpgrade || null,
       chaveMascarada: d.ativo ? mascararChave(chave) : '',
       planos: Array.isArray(d.planos) && d.planos.length ? d.planos : PLANOS_PADRAO,
     };

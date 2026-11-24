@@ -1,16 +1,16 @@
 {
   "versao": "2.0.8",
-  "resumoVersao": "Correção da Kick (live e VOD), áudio sincronizado no YouTube ao vivo, seleção inteligente e modo Diretor IA Pro.",
+  "resumoVersao": "Atualização automática inteligente, Diretor IA Pro em vídeo e live, áudio sincronizado e tutorial interativo.",
   "precisaInstalador": false,
   "proApiUrl": "https://cortador-pro.gabrielhraa.workers.dev",
   "aviso": {
-    "id": "instagram-duvidas-v1",
+    "id": "convite-upgrade-pro-v1",
     "ativo": true,
-    "tipo": "info",
-    "titulo": "Alguma dúvida ou sugestão?",
-    "texto": "Siga @gabriel.workspace no Instagram para acompanhar as novidades e mandar qualquer dúvida por lá.",
-    "botaoTexto": "Seguir no Instagram",
-    "botaoUrl": "https://www.instagram.com/gabriel.workspace/",
+    "tipo": "aviso",
+    "titulo": "✨ Gostou do Diretor IA Pro? Libere vídeos + lives inteiras sem limite!",
+    "texto": "Ative o Passe Cortador Pro no Pix ou Cartão (ativa sozinho na hora na sua tela) e use a IA em toda a sua live sem trava de 15 minutos.",
+    "botaoTexto": "⚡ Fazer Upgrade Pro",
+    "botaoUrl": "#pro",
     "fixo": false
   }
 }

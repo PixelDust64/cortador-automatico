@@ -1819,6 +1819,11 @@
       <li><i data-lucide="plug" class="i"></i><span><b>Gemini nativo ou a sua IA:</b> já vem com o Google Gemini pronto, sem configurar nada. Se preferir, conecte sua própria chave do <b>Claude</b> ou do <b>ChatGPT</b>.</span></li>
     </ul>
 
+    <div id="proConviteBanner" class="pro-espera" hidden style="border-style:solid; border-color:rgba(226,194,122,.45); background:linear-gradient(145deg, rgba(226,194,122,.13), rgba(61,139,255,.06))">
+      <b style="color:var(--amarelo); font-size:var(--t4)" id="proConviteTitulo">✨ Convite Especial · Cortador Pro</b>
+      <div style="color:var(--texto2); margin-top:4px; line-height:1.5" id="proConviteTexto"></div>
+    </div>
+
     <div id="proPainelAtivo" class="pro-espera" hidden style="border-style:solid; border-color:rgba(134,211,164,.4); background:rgba(134,211,164,.07)">
       <b style="color:var(--verde); font-size:var(--t3)" id="proAtivoPlano">⚡ Cortador Pro Ativo</b>
       <div style="color:var(--texto2); margin-top:4px" id="proAtivoMeta"></div>
@@ -5408,8 +5413,10 @@
       }
 
       const av = r.aviso;
+      const ehConvitePro = av && av.botaoUrl === '#pro';
+      const jaAssinante = !!(estadoPro && estadoPro.ativo);
       const jaFechou = av && !av.fixo && lerDispensados().includes(av.id);
-      if (av && !jaFechou) {
+      if (av && av.ativo !== false && !jaFechou && !(ehConvitePro && jaAssinante)) {
         $('avisoRemoto').className = 'comunicado ' + (av.tipo || 'info');
         $('avisoRemotoTitulo').textContent = av.titulo || '';
         $('avisoRemotoTitulo').hidden = !av.titulo;
@@ -5418,6 +5425,15 @@
         if (av.botaoUrl && av.botaoTexto) {
           btn.href = av.botaoUrl;
           btn.textContent = av.botaoTexto;
+          if (ehConvitePro) {
+            btn.removeAttribute('target');
+            btn.className = 'btn principal p';
+            btn.onclick = (ev) => { ev.preventDefault(); abrirModalPro(null, estadoPro && estadoPro.conviteUpgrade); };
+          } else {
+            btn.setAttribute('target', '_blank');
+            btn.className = 'btn p';
+            btn.onclick = null;
+          }
           btn.hidden = false;
         } else {
           btn.hidden = true;
@@ -5578,6 +5594,18 @@
         pintarProvedor(est.provedor, est.temChavePropria);
         if ($('inputModeloIa') && !$('inputModeloIa').value) $('inputModeloIa').value = est.modeloProprio || '';
       }
+      if (est.ativo && estadoRemoto && estadoRemoto.aviso && estadoRemoto.aviso.botaoUrl === '#pro') {
+        $('avisoRemoto').hidden = true;
+      }
+      if ($('proConviteBanner')) {
+        if (!est.ativo && est.conviteUpgrade) {
+          $('proConviteTitulo').textContent = est.conviteUpgrade.titulo || '✨ Convite Especial · Cortador Pro';
+          $('proConviteTexto').textContent = est.conviteUpgrade.texto || '';
+          $('proConviteBanner').hidden = false;
+        } else {
+          $('proConviteBanner').hidden = true;
+        }
+      }
       $('proPainelAtivo').hidden = !est.ativo;
       $('proPlanosWrap').hidden = !!est.ativo;
       if (est.ativo) {
@@ -5605,7 +5633,21 @@
     try {
       estadoPro = await fetch('/api/pro/estado' + (forcar ? '?forcar=1' : '')).then((x) => x.json());
       pintarMotorPro();
+      tentarMostrarConviteUpgrade();
     } catch (_) {}
+  }
+
+  function tentarMostrarConviteUpgrade() {
+    if (!estadoPro || estadoPro.ativo || !estadoPro.conviteUpgrade) return;
+    const idConvite = 'pro_convite_visto_' + (estadoPro.conviteUpgrade.id || 'v1');
+    try {
+      if (localStorage.getItem(idConvite)) return;
+    } catch (_) { return; }
+    // Aguarda qualquer modal de 1a abertura terminar antes de exibir o convite
+    const algumAberto = !$('dspFundo').hidden || !$('modalTutorial').hidden || !$('modalNovidades').hidden || !$('modalAutoUpdate').hidden;
+    if (algumAberto || processandoAgora || avAtivo) return;
+    try { localStorage.setItem(idConvite, '1'); } catch (_) {}
+    abrirModalPro(null, estadoPro.conviteUpgrade);
   }
 
   function statusPro(msg, tipo) {
@@ -5613,8 +5655,16 @@
     $('proStatusMsg').className = 'pasta-status' + (tipo ? ' ' + tipo : '');
   }
 
-  function abrirModalPro(msgInicial) {
+  function abrirModalPro(msgInicial, conviteObj) {
     statusPro(msgInicial || '', msgInicial ? 'ruim' : '');
+    if ($('proConviteBanner')) {
+      const cv = conviteObj || (estadoPro && !estadoPro.ativo && estadoPro.conviteUpgrade);
+      if (cv && !msgInicial) {
+        $('proConviteTitulo').textContent = cv.titulo || '✨ Convite Especial · Cortador Pro';
+        $('proConviteTexto').textContent = cv.texto || '';
+        $('proConviteBanner').hidden = false;
+      }
+    }
     $('modalPro').hidden = false;
     carregarEstadoPro(true);
     icones($('modalPro'));
@@ -5714,6 +5764,7 @@
     try {
       localStorage.setItem(CHAVE_TUTORIAL, '1');
     } catch (_) {}
+    setTimeout(tentarMostrarConviteUpgrade, 350);
   }
 
   $('tutBarraPassos').addEventListener('click', (e) => {
@@ -5752,6 +5803,7 @@
   function fecharNovidades() {
     $('modalNovidades').hidden = true;
     try { localStorage.setItem(CHAVE_NOVIDADES, '1'); } catch (_) {}
+    setTimeout(tentarMostrarConviteUpgrade, 350);
   }
   if ($('btnVerNovidades')) $('btnVerNovidades').addEventListener('click', () => { abrir(false); abrirNovidades(); });
   if ($('btnNovAbrirTutorial')) $('btnNovAbrirTutorial').addEventListener('click', () => { fecharNovidades(); abrirTutorial(0); });

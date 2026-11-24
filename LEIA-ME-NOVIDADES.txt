@@ -51,5 +51,10 @@ O QUE FOI ATUALIZADO E MELHORADO NESTA VERSAO:
      programa verifica ao abrir, baixa em segundos com tela de progresso
      e reinicia atualizado - sem precisar baixar o instalador de novo.
 
+7. APAGAR PROJETOS DIRETO PELO PROGRAMA
+   - Agora voce pode excluir os projetos que nao precisa mais direto pela
+     lista de Projetos (botao de lixeira) ou dentro de um projeto aberto,
+     com confirmacao segura para liberar espaco no disco na hora.
+
 Duvidas e novidades: https://www.instagram.com/gabriel.workspace/
 ======================================================================

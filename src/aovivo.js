@@ -796,19 +796,54 @@ class SessaoAoVivo {
     passo();
   }
 
-  async reconectar() {
+  async reconectar(manual) {
     if (this.parado) return;
+    if (this.reconectando && !manual) return;
+    clearTimeout(this.timerReconexao);
+    this.timerReconexao = null;
+    clearTimeout(this.timerHls);
+    this.timerHls = null;
+    this.rodada++;
+    if (this.proc) { try { this.proc.kill(); } catch (_) {} this.proc = null; }
+    if (this.procYt) { try { this.procYt.kill(); } catch (_) {} this.procYt = null; }
+
+    this.reconectando = true;
+    this.status('reconectando', manual ? 'Reconectando à live agora...' : 'Conexão com a live caiu. Reconectando automaticamente...');
     try {
       const r = await resolverAoVivo(this.url);
+      if (this.parado) return;
       if (!r.aoVivo || !r.m3u8) {
-        this.status('encerrada', 'A live acabou. Os clipes feitos estão salvos.');
+        this.tentativasOffline = (this.tentativasOffline || 0) + 1;
+        if (!manual && this.tentativasOffline < 3) {
+          this.emitir({ tipo: 'aviso', msg: 'Live oscilou (' + this.tentativasOffline + '/3). Tentando reconectar em 8s...' });
+          this.reconectando = false;
+          this.timerReconexao = setTimeout(() => this.reconectar(false), 8000);
+          return;
+        }
+        this.reconectando = false;
+        this.status('encerrada', 'A live parece ter acabado. Os clipes feitos estão salvos (se voltar, clique em Reconectar).');
         return this.parar(true);
       }
+      this.tentativasOffline = 0;
+      this.ultimoPedacoEm = Date.now();
+      this.reconectando = false;
+      this.emitir({ tipo: 'aviso', msg: '✅ Conexão com a live restabelecida! Voltando a gravar.' });
       this.gravar(r.m3u8, r.audio);
+      if (this.lerChat && this.chatStatus !== 'conectado') {
+        if (this.fecharChat) { try { this.fecharChat(); } catch (_) {} this.fecharChat = null; }
+        this.ligarChat();
+      }
     } catch (e) {
-      this.emitir({ tipo: 'aviso', msg: 'Não consegui reconectar (' + e.message + '). Tentando de novo...' });
-      setTimeout(() => this.reconectar(), 8000);
+      this.reconectando = false;
+      if (this.parado) return;
+      this.emitir({ tipo: 'aviso', msg: 'Sem conexão para reconectar (' + e.message + '). Tentando de novo em 6s...' });
+      this.timerReconexao = setTimeout(() => this.reconectar(false), 6000);
     }
+  }
+
+  forcarReconexao() {
+    this.tentativasOffline = 0;
+    return this.reconectar(true);
   }
 
   /** Le os pedacos que o ffmpeg ja fechou (o csv so lista pedaco completo). */
@@ -890,12 +925,12 @@ class SessaoAoVivo {
     this.proximoOriginal();
     this.limparBuffer();
 
-    // Cao de guarda: o ffmpeg pode ficar "conectado" sem gravar nada (site
-    // segurando a conexao). 40s sem pedaco novo = derruba e tenta de novo,
-    // em vez de deixar a tela esperando a primeira imagem pra sempre.
-    if (this.proc && this.ultimoPedacoEm && Date.now() - this.ultimoPedacoEm > 40000) {
+    // Cao de guarda: detecta trava silenciosa tanto no FFmpeg quanto no HLS nativo.
+    // 35s sem nenhum pedaco novo durante gravacao = reconecta automaticamente.
+    if (this.estado === 'gravando' && !this.reconectando && this.ultimoPedacoEm && Date.now() - this.ultimoPedacoEm > 35000) {
       this.ultimoPedacoEm = Date.now();
-      try { this.proc.kill(); } catch (_) { }
+      this.emitir({ tipo: 'aviso', msg: 'Sinal da live congelou por 35s. Reconectando automaticamente...' });
+      this.reconectar(false);
     }
 
     const nivel = this.medirNivel();
@@ -1505,6 +1540,7 @@ class SessaoAoVivo {
     this.parado = true;
     clearInterval(this.relogio);
     clearTimeout(this.timerHls);
+    clearTimeout(this.timerReconexao);
     clearTimeout(this.timerExpiraIaLive);
     if (this.fecharChat) this.fecharChat();
     if (this.proc) { try { this.proc.kill(); } catch (_) { } }

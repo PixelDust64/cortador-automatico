@@ -1588,8 +1588,17 @@
         <div class="av-canal"><b id="avCanal">–</b><span id="avTitulo"></span></div>
         <div class="av-num"><span id="avTempo">0:00</span><small>gravando</small></div>
         <div class="av-num"><span id="avQtd">0</span><small>clipes</small></div>
+        <button class="btn p" id="btnAvReconectar" type="button" title="Reconectar à live caso a conexão caia"><i data-lucide="refresh-cw" class="i"></i> Reconectar</button>
         <button class="btn p" id="btnAvPasta"><i data-lucide="folder-open" class="i"></i> Pasta</button>
         <button class="btn p" id="btnAvParar"><i data-lucide="square" class="i"></i> Parar</button>
+      </div>
+
+      <div class="cartao" id="avBarraReconexao" hidden style="margin-bottom:14px; padding:12px 16px; border-color:rgba(255,112,112,.45); background:rgba(255,90,106,.10); display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap">
+        <div style="display:flex; align-items:center; gap:9px; font-size:var(--t5); color:var(--texto)">
+          <i data-lucide="wifi-off" class="i" style="color:var(--vermelho)"></i>
+          <span id="avReconexaoTxt">Conexão com a live perdida. Tentando reconectar automaticamente...</span>
+        </div>
+        <button class="btn principal p" id="btnAvReconectarAgora" type="button"><i data-lucide="refresh-cw" class="i"></i> Reconectar agora</button>
       </div>
 
       <div class="cartao" id="avBarraPro" style="margin-bottom:14px; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap">
@@ -3757,6 +3766,14 @@
         abrirModalPro(d.msg || 'Seus 3 testes grátis acabaram! Atualize o plano para usar o Diretor IA Pro.');
       } else if (d.tipo === 'aviso') logAv(d.msg);
     };
+    av.fonte.onerror = () => {
+      if (!avAtivo || av.parado) return;
+      if ($('avBarraReconexao')) {
+        $('avReconexaoTxt').textContent = 'Conexão com o painel oscilou. Clique em Reconectar agora se não voltar em instantes.';
+        $('avBarraReconexao').hidden = false;
+        icones($('avBarraReconexao'));
+      }
+    };
   }
 
   function tirarVazio() { const v = $('avVazio'); if (v) v.remove(); }
@@ -3788,9 +3805,21 @@
     if (d.pasta) av.pasta = d.pasta;
     if (d.quantidade != null) $('avQtd').textContent = d.quantidade;
     const parado = d.estado === 'parado' || d.estado === 'encerrada';
+    const reconectando = d.estado === 'reconectando';
     $('avStatus').classList.toggle('parado', parado);
     $('avEstado').textContent = parado ? (d.estado === 'encerrada' ? 'LIVE ACABOU' : 'PARADO')
       : d.estado === 'gravando' ? 'AO VIVO' : 'RECONECTANDO';
+    if ($('avBarraReconexao')) {
+      if (reconectando || d.estado === 'encerrada') {
+        $('avReconexaoTxt').textContent = reconectando
+          ? 'Conexão com a live perdida. Reconectando automaticamente (ou clique ao lado para forçar agora)...'
+          : 'A conexão com a live foi encerrada. Se o canal voltou ao ar, clique em Reconectar agora!';
+        $('avBarraReconexao').hidden = false;
+        icones($('avBarraReconexao'));
+      } else if (d.estado === 'gravando') {
+        $('avBarraReconexao').hidden = true;
+      }
+    }
     $('btnClipar').disabled = parado;
     $('avLimiar').style.left = (AV_LIMIAR[d.sensibilidade] || 60) + '%';
     $('avAutoTxt').textContent = d.auto ? AV_SENS_TXT[d.sensibilidade] || 'ligado' : 'desligado';
@@ -3930,6 +3959,35 @@
     e.preventDefault();
     cliparAgora();
   });
+
+  async function reconectarLiveAgora() {
+    const b1 = $('btnAvReconectar');
+    const b2 = $('btnAvReconectarAgora');
+    if (b1) b1.disabled = true;
+    if (b2) b2.disabled = true;
+    logAv('🔄 Reconectando à live...', true);
+    try {
+      const r = await postJson('/api/aovivo/reconectar');
+      if (r.erro) throw new Error(r.erro);
+      av.parado = false;
+      $('btnAvParar').innerHTML = '<i data-lucide="square" class="i"></i> Parar';
+      icones($('btnAvParar'));
+      if (r.resumo) pintarEstado(r.resumo);
+      conectarEventos();
+      clearInterval(av.relogio); av.relogio = setInterval(tiqueAv, 1000);
+      clearInterval(av.quadro); av.quadro = setInterval(atualizarQuadro, 6000);
+      setTimeout(atualizarQuadro, 2500);
+      if ($('avBarraReconexao')) $('avBarraReconexao').hidden = true;
+      logAv('✅ Pedido de reconexão enviado! Retomando a gravação da live.', true);
+    } catch (err) {
+      logAv('⚠️ ' + (err.message || 'Não consegui reconectar agora. Tente novamente em instantes.'), true);
+    } finally {
+      if (b1) b1.disabled = false;
+      if (b2) b2.disabled = false;
+    }
+  }
+  if ($('btnAvReconectar')) $('btnAvReconectar').addEventListener('click', reconectarLiveAgora);
+  if ($('btnAvReconectarAgora')) $('btnAvReconectarAgora').addEventListener('click', reconectarLiveAgora);
 
   $('btnAvParar').addEventListener('click', async () => {
     if (av.parado) return voltarAoComeco();

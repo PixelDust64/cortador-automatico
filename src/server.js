@@ -551,6 +551,52 @@ const servidor = http.createServer(async (req, res) => {
       return json(res, 200, { ok: true });
     }
 
+    if (rota === '/api/aovivo/reconectar' && req.method === 'POST') {
+      if (!aoVivoAtual) return json(res, 400, { erro: 'Nenhuma live conectada anteriormente.' });
+      if (!aoVivoAtual.parado) {
+        aoVivoAtual.forcarReconexao();
+        return json(res, 200, { ok: true, novaSessao: false, resumo: aoVivoAtual.resumo() });
+      }
+      // A live anterior ja tinha encerrado/caido: cria nova sessao no mesmo canal com os mesmos ajustes
+      const ant = aoVivoAtual;
+      let expiraIaLive = null;
+      let usarIa = !!ant.usarIaPro;
+      if (usarIa) {
+        try {
+          const pro = require('./pro');
+          const estPro = await pro.obterEstado(true);
+          if (!estPro.podeUsarLive) usarIa = false;
+          else if (!estPro.ativo) {
+            const rLive = await pro.iniciarTrialLive();
+            expiraIaLive = rLive.liveExpiraEm || null;
+          }
+        } catch (_) { usarIa = false; }
+      }
+      const s = new aovivo.SessaoAoVivo({
+        url: ant.url,
+        formato: ant.formato,
+        recorte: ant.recorte,
+        duracao: ant.duracao,
+        auto: ant.auto,
+        sensibilidade: ant.sensibilidade,
+        idioma: ant.idioma,
+        lerChat: ant.lerChat,
+        textoFixo: ant.textoFixo,
+        usarIaPro: usarIa,
+        preparar: false,
+      }, emitirAoVivo);
+      if (expiraIaLive) s.definirExpiraIaLive(expiraIaLive);
+      aoVivoAtual = s;
+      try {
+        await s.iniciar();
+        return json(res, 200, { ok: true, novaSessao: true, resumo: s.resumo() });
+      } catch (e) {
+        s.parar(true);
+        aoVivoAtual = ant;
+        return json(res, 400, { erro: e.message || 'Não consegui reconectar à live agora.' });
+      }
+    }
+
     if (rota === '/api/aovivo/clipar' && req.method === 'POST') {
       const corpo = await lerCorpo(req);
       if (!aoVivoAtual || aoVivoAtual.parado) return json(res, 400, { erro: 'Nenhuma live sendo gravada.' });

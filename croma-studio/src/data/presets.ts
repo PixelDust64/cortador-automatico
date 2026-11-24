@@ -194,7 +194,6 @@ export const RESOLUTION_PRESETS: ResolutionPreset[] = [
 ];
 
 export const ARTWORK_FONTS: { name: string; label: string; category: string }[] = [
-  { name: 'BF_Modernista', label: 'BF Modernista (Portátil)', category: 'Display Local' },
   { name: 'Plus Jakarta Sans', label: 'Plus Jakarta Sans', category: 'Geométrica' },
   { name: 'Outfit', label: 'Outfit', category: 'Moderna' },
   { name: 'Anton', label: 'Anton', category: 'Impacto YouTube' },

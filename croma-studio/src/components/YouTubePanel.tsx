@@ -12,7 +12,7 @@ import {
   Shuffle,
   Trash2,
 } from 'lucide-react';
-import { ChangeEvent, useRef } from 'react';
+import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { ARTWORK_FONTS, CURATED_PALETTES, INITIAL_BACKGROUND_PHOTO, THUMBNAIL_PRESETS } from '../data/presets';
 import {
   BackgroundPhotoConfig,
@@ -115,6 +115,20 @@ export function YouTubePanel({
   onRandomizeGradient,
 }: YouTubePanelProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [pcFonts, setPcFonts] = useState<string[]>([]);
+
+  useEffect(() => {
+    let ativo = true;
+    fetch('/api/fontes-sistema')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!ativo || !d || !Array.isArray(d.fontes)) return;
+        const padrao = new Set(ARTWORK_FONTS.map((f) => f.name.toLowerCase()));
+        setPcFonts(d.fontes.filter((n: string) => !padrao.has(String(n).toLowerCase())));
+      })
+      .catch(() => {});
+    return () => { ativo = false; };
+  }, []);
   const selectedLayer =
     textLayers.find((l) => l.id === selectedTextId) ?? textLayers[0] ?? null;
   const activeThumbPreset =
@@ -400,11 +414,22 @@ export function YouTubePanel({
                 }
                 className="w-full h-9 px-3 rounded-lg bg-[#1A1C23] border border-[#2A2E39] text-[13px] text-zinc-100 focus:outline-none focus:border-zinc-400 cursor-pointer"
               >
-                {ARTWORK_FONTS.map((f) => (
-                  <option key={f.name} value={f.name}>
-                    {f.label} — {f.category}
-                  </option>
-                ))}
+                <optgroup label="Fontes do Croma Studio">
+                  {ARTWORK_FONTS.map((f) => (
+                    <option key={f.name} value={f.name}>
+                      {f.label} — {f.category}
+                    </option>
+                  ))}
+                </optgroup>
+                {pcFonts.length > 0 && (
+                  <optgroup label="Fontes instaladas no seu PC">
+                    {pcFonts.map((name) => (
+                      <option key={`pc-${name}`} value={name}>
+                        {name}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
             </label>
 
@@ -1077,11 +1102,22 @@ export function YouTubePanel({
                     }
                     className="w-full h-9 px-3 rounded-lg bg-[#1A1C23] border border-[#2A2E39] text-[13px] text-zinc-100 focus:outline-none focus:border-zinc-400 cursor-pointer"
                   >
-                    {ARTWORK_FONTS.map((f) => (
-                      <option key={f.name} value={f.name}>
-                        {f.label} — {f.category}
-                      </option>
-                    ))}
+                    <optgroup label="Fontes do Croma Studio">
+                      {ARTWORK_FONTS.map((f) => (
+                        <option key={f.name} value={f.name}>
+                          {f.label} — {f.category}
+                        </option>
+                      ))}
+                    </optgroup>
+                    {pcFonts.length > 0 && (
+                      <optgroup label="Fontes instaladas no seu PC">
+                        {pcFonts.map((name) => (
+                          <option key={`pc-${name}`} value={name}>
+                            {name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
                 </label>
 

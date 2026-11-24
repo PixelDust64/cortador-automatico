@@ -47,7 +47,7 @@ O **Splitter Studio** funciona tanto integrado ao topo do **Mega Cortes HD** qua
 7. **Gravador de Microfone:** gravação direta no navegador com visualizador em tempo real e exportação em MP3/WAV.
 8. **Modo Karaoke:** toca a base instrumental (vinda do Removedor ou da biblioteca) enquanto grava sua voz em sincronia e mixa tudo com efeito reverb/eco leve opcional.
 
-> **Requisitos variáveis de GPU/CPU:** para manter o instalador do Mega Cortes HD leve (`~765 MB`), o PyTorch/Demucs não vai pré-empacotado para todas as placas. Ao clicar em **Instalar IA** no Splitter Studio, `py/splitter_audio.py` consulta a série da GPU (`nvidia-smi`), baixa o build exato compatível com a arquitetura (ou o pacote leve de CPU se não houver NVIDIA compatível) e mantém fallback automático para CPU.
+> **IA adaptativa por GPU (`py/splitter_audio.py`):** detecta automaticamente a Compute Capability da GPU NVIDIA e seleciona o índice do PyTorch compatível (Pascal 6.x / Turing / Ampere / Ada → `cu126`; Blackwell 10.x/12.x → `cu128` ou superior) ou instala o PyTorch sem CUDA para CPU, com fallback automático para CPU em caso de falha na detecção ou execução CUDA — mantendo o instalador leve (`~765 MB`).
 
 ## Croma Studio — Thumbnails, banners, favoritos e vinhetas
 

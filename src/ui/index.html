@@ -1612,8 +1612,9 @@ body[data-modo="splitter"] .fila-aba { display: none !important; }
         <label class="rot">Fonte da legenda</label>
         <div class="trio" style="grid-template-columns:1fr 1fr" id="fonteLegenda">
           <button data-fonte="Arial Black" aria-pressed="true">Arial Black</button>
-          <button data-fonte="BF_Modernista" aria-pressed="false">BF Modernista</button>
+          <button data-fonte="__pc__" aria-pressed="false">Fonte do PC</button>
         </div>
+        <select id="fontePcSelect" hidden style="width:100%; margin-top:8px; padding:7px 9px; border-radius:8px; background:var(--superficie2); border:1px solid var(--linha2); color:var(--texto); font:inherit; font-size:var(--t5)"></select>
       </div>
     </div>
 
@@ -2555,7 +2556,39 @@ body[data-modo="splitter"] .fila-aba { display: none !important; }
   grupo('#duracoes', 'data-dur', (v) => { cfg.duracao = v; });
   grupo('#ordem', 'data-ordem', (v) => { cfg.ordem = v; });
   grupo('#tamLegenda', 'data-tam', (v) => { cfg.tamLegenda = Number(v); });
-  grupo('#fonteLegenda', 'data-fonte', (v) => { cfg.fonteLegenda = v; });
+  let fontesSistemaCache = ['Arial Black', 'Impact', 'Segoe UI', 'Verdana'];
+  function preencherSelectFontesPc() {
+    const sel = $('fontePcSelect');
+    if (!sel) return;
+    const atual = (cfg.fonteLegenda && cfg.fonteLegenda !== 'Arial Black' && fontesSistemaCache.includes(cfg.fonteLegenda))
+      ? cfg.fonteLegenda
+      : (fontesSistemaCache.includes('Impact') ? 'Impact' : fontesSistemaCache[0] || 'Arial');
+    sel.innerHTML = fontesSistemaCache.map((f) =>
+      '<option value="' + esc(f) + '"' + (f === atual ? ' selected' : '') + '>' + esc(f) + '</option>'
+    ).join('');
+  }
+  fetch('/api/fontes-sistema').then((r) => r.json()).then((d) => {
+    if (Array.isArray(d.fontes) && d.fontes.length) {
+      fontesSistemaCache = d.fontes;
+      preencherSelectFontesPc();
+    }
+  }).catch(() => {});
+
+  grupo('#fonteLegenda', 'data-fonte', (v) => {
+    const sel = $('fontePcSelect');
+    if (v === '__pc__') {
+      preencherSelectFontesPc();
+      sel.hidden = false;
+      cfg.fonteLegenda = sel.value || 'Arial Black';
+    } else {
+      sel.hidden = true;
+      cfg.fonteLegenda = v;
+    }
+  });
+  $('fontePcSelect').addEventListener('change', () => {
+    cfg.fonteLegenda = $('fontePcSelect').value || 'Arial Black';
+    guardar();
+  });
   // o programa e feito pra cortes brasileiros: a fala e sempre transcrita em portugues
   cfg.idioma = 'pt';
   grupo('#velocidade', 'data-vel', (v) => {
@@ -2567,12 +2600,17 @@ body[data-modo="splitter"] .fila-aba { display: none !important; }
 
   // reaplica o que estava lembrado
   [['#quantidades', 'data-qtd', cfg.quantidade], ['#duracoes', 'data-dur', cfg.duracao],
-   ['#ordem', 'data-ordem', cfg.ordem], ['#tamLegenda', 'data-tam', cfg.tamLegenda], ['#fonteLegenda', 'data-fonte', cfg.fonteLegenda],
+   ['#ordem', 'data-ordem', cfg.ordem], ['#tamLegenda', 'data-tam', cfg.tamLegenda],
+   ['#fonteLegenda', 'data-fonte', (cfg.fonteLegenda && cfg.fonteLegenda !== 'Arial Black') ? '__pc__' : 'Arial Black'],
    ['#velocidade', 'data-vel', cfg.velocidade], ['#posGancho', 'data-pos', cfg.posGancho]].forEach(function (t) {
     document.querySelectorAll(t[0] + ' [' + t[1] + ']').forEach((b) => {
       b.setAttribute('aria-pressed', String(b.getAttribute(t[1]) == t[2]));
     });
   });
+  if (cfg.fonteLegenda && cfg.fonteLegenda !== 'Arial Black') {
+    preencherSelectFontesPc();
+    $('fontePcSelect').hidden = false;
+  }
 
   $('textoGancho').checked = cfg.gancho;
   $('legendar').checked = cfg.legenda;
@@ -4530,8 +4568,9 @@ body[data-modo="splitter"] .fila-aba { display: none !important; }
         '<div class="vin-linha">' +
           '<label class="vin-campo"><span>Texto na vinheta (opcional)</span><input type="text" maxlength="60" placeholder="Sem texto extra" data-vcampo="texto" value="' + esc(v.texto || '') + '"></label>' +
           '<label class="vin-campo"><span>Fonte</span><select data-vcampo="fonte">' +
-            '<option value="Arial Black"' + ((v.fonte || 'Arial Black') === 'Arial Black' ? ' selected' : '') + '>Arial Black</option>' +
-            '<option value="BF_Modernista"' + (v.fonte === 'BF_Modernista' ? ' selected' : '') + '>BF Modernista</option>' +
+            ['Arial Black'].concat(fontesSistemaCache.filter((f) => f !== 'Arial Black')).map((f) =>
+              '<option value="' + esc(f) + '"' + ((v.fonte || 'Arial Black') === f ? ' selected' : '') + '>' + esc(f) + '</option>'
+            ).join('') +
           '</select></label>' +
         '</div>' +
       '</div>';

@@ -617,6 +617,52 @@ function novoTrabalho() {
   return id;
 }
 
+let cacheFontesSistema = null;
+function listarFontesSistema() {
+  if (cacheFontesSistema) return Promise.resolve(cacheFontesSistema);
+  const padrao = ['Arial', 'Arial Black', 'Calibri', 'Cambria', 'Comic Sans MS', 'Consolas', 'Courier New', 'Georgia', 'Impact', 'Segoe UI', 'Tahoma', 'Times New Roman', 'Trebuchet MS', 'Verdana'];
+  if (process.platform !== 'win32') {
+    return new Promise((resolve) => {
+      execFile('fc-list', [':', 'family'], { windowsHide: true, maxBuffer: 4 * 1024 * 1024 }, (err, out) => {
+        if (err || !out) { cacheFontesSistema = padrao; return resolve(padrao); }
+        const set = new Set();
+        for (const linha of String(out).split(/\r?\n/)) {
+          for (const parte of linha.split(',')) {
+            const nome = parte.trim();
+            if (nome && !nome.startsWith('.')) set.add(nome);
+          }
+        }
+        cacheFontesSistema = Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+        resolve(cacheFontesSistema.length ? cacheFontesSistema : padrao);
+      });
+    });
+  }
+  const chaves = [
+    'HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Fonts',
+    'HKCU\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Fonts',
+  ];
+  const lerChave = (chave) => new Promise((resolve) => {
+    execFile('reg', ['query', chave], { windowsHide: true, maxBuffer: 4 * 1024 * 1024 }, (_err, out) => resolve(String(out || '')));
+  });
+  return Promise.all(chaves.map(lerChave)).then((saidas) => {
+    const set = new Set();
+    for (const texto of saidas) {
+      for (const linha of texto.split(/\r?\n/)) {
+        const m = /^\s+(.+?)\s+REG_SZ\s+(.+)$/i.exec(linha);
+        if (!m) continue;
+        const nome = m[1]
+          .replace(/\s*\((TrueType|OpenType|All res)\)\s*$/i, '')
+          .replace(/\s+(Regular|Bold|Italic|Oblique|Light|Medium|SemiBold|ExtraBold|Black|Thin|Condensed|Narrow)(\s+(Bold|Italic|Oblique))*$/i, '')
+          .trim();
+        if (nome && !nome.startsWith('@') && nome.length <= 60) set.add(nome);
+      }
+    }
+    const lista = Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    cacheFontesSistema = lista.length ? lista : padrao;
+    return cacheFontesSistema;
+  }).catch(() => padrao);
+}
+
 function emitir(id, evento) {
   const t = trabalhos.get(id);
   if (!t) return;
@@ -734,6 +780,11 @@ const servidor = http.createServer(async (req, res) => {
     if (rota === '/api/escolher-audio' && req.method === 'POST') {
       if (process.platform !== 'win32') return json(res, 200, { caminho: null });
       return json(res, 200, await escolherAudioNativo());
+    }
+
+    // Lista fontes instaladas no PC (Windows/Linux/macOS) para uso em legendas, vinhetas e Croma Studio.
+    if (rota === '/api/fontes-sistema' && req.method === 'GET') {
+      return json(res, 200, { fontes: await listarFontesSistema() });
     }
 
     // ---------------------------------------------------------- Croma Studio favoritos (10 gradientes + 10 thumbs)

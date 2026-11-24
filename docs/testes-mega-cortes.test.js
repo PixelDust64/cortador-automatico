@@ -173,15 +173,12 @@ test('mega/identidade: nome proprio Mega Cortes HD, nova banner e creditos ao cr
   const ui = fs.readFileSync(path.join(RAIZ, 'src', 'ui', 'index.html'), 'utf8');
   assert.match(ui, /<title>Mega Cortes HD<\/title>/);
   assert.match(ui, /id="fonteLegenda"/);
-  assert.match(ui, /data-fonte="BF_Modernista"/);
+  assert.match(ui, /id="fontePcSelect"/);
 });
 
-test('mega/fontes: BF_Modernista-Regular.ttf portatil em src/fontes e no Croma Studio', () => {
-  assert.ok(fs.existsSync(path.join(RAIZ, 'src', 'fontes', 'BF_Modernista-Regular.ttf')), 'fonte portatil em src/fontes');
-  const pipeline = require(path.join(RAIZ, 'src', 'pipeline'));
-  assert.equal(pipeline.fontsdirRelativo(), 'fontes');
-  const cromaAssets = fs.readdirSync(path.join(RAIZ, 'src', 'ui', 'croma', 'assets'));
-  assert.ok(cromaAssets.some((f) => /BF_Modernista.*\.ttf$/i.test(f)), 'fonte empacotada no bundle do Croma Studio');
+test('mega/fontes: seletor de fontes instaladas no PC disponivel via /api/fontes-sistema', () => {
+  const srv = fs.readFileSync(path.join(RAIZ, 'src', 'server.js'), 'utf8');
+  assert.match(srv, /\/api\/fontes-sistema/);
 });
 
 test('mega/vinhetas: inserirVinhetas() insere 2 vinhetas (apos 3s e no fim) mantendo sincronia A/V', async (t) => {

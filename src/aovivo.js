@@ -19,7 +19,7 @@
  * render dividindo o mesmo processador atrasariam as duas.
  */
 
-try { require('dns').setDefaultResultOrder('ipv4first'); } catch (_) {}
+try { require('dns').setDefaultResultOrder('ipv4first'); } catch (_) { }
 
 const { spawn } = require('child_process');
 const fs = require('fs');
@@ -194,7 +194,7 @@ async function resolverAoVivoUma(url, extras, semForcarIpv4) {
     ].concat(extras || [], [url]), { windowsHide: true });
     let saida = '';
     let erro = '';
-    const relogio = setTimeout(() => { try { p.kill(); } catch (_) {} }, 60000);
+    const relogio = setTimeout(() => { try { p.kill(); } catch (_) { } }, 60000);
     p.stdout.setEncoding('utf8');
     p.stdout.on('data', (d) => { saida += d.toString(); });
     p.stderr.setEncoding('utf8');
@@ -282,7 +282,7 @@ function chatTwitch(canal, aoMsg, aoStatus) {
     ws.onmessage = (e) => {
       for (const l of String(e.data).split('\r\n')) {
         if (!l) continue;
-        if (l.startsWith('PING')) { try { ws.send('PONG :tmi.twitch.tv'); } catch (_) {} continue; }
+        if (l.startsWith('PING')) { try { ws.send('PONG :tmi.twitch.tv'); } catch (_) { } continue; }
         const i = l.indexOf(' PRIVMSG #');
         if (i < 0) continue;
         const j = l.indexOf(' :', i);
@@ -290,10 +290,10 @@ function chatTwitch(canal, aoMsg, aoStatus) {
       }
     };
     ws.onclose = () => { if (!fechado) { aoStatus('reconectando'); setTimeout(conectar, 3000); } };
-    ws.onerror = () => {};
+    ws.onerror = () => { };
   };
   conectar();
-  return () => { fechado = true; try { ws && ws.close(); } catch (_) {} };
+  return () => { fechado = true; try { ws && ws.close(); } catch (_) { } };
 }
 
 /**
@@ -329,13 +329,13 @@ function chatKick(slug, salaInicial, aoMsg, aoStatus) {
         aoStatus('conectado');
       } else if (j.event === 'pusher:error') {
         chaveIdx++;
-        try { ws.close(); } catch (_) {}
+        try { ws.close(); } catch (_) { }
       } else if (/ChatMessageEvent/.test(j.event || '')) {
         let d = j.data;
         try { d = typeof d === 'string' ? JSON.parse(d) : d; } catch (_) { d = {}; }
         aoMsg((d && d.content) || '');
       } else if (j.event === 'pusher:ping') {
-        try { ws.send(JSON.stringify({ event: 'pusher:pong', data: {} })); } catch (_) {}
+        try { ws.send(JSON.stringify({ event: 'pusher:pong', data: {} })); } catch (_) { }
       }
     };
     ws.onclose = () => {
@@ -344,7 +344,7 @@ function chatKick(slug, salaInicial, aoMsg, aoStatus) {
       aoStatus('reconectando');
       setTimeout(conectar, 3000);
     };
-    ws.onerror = () => {};
+    ws.onerror = () => { };
   };
 
   if (sala) {
@@ -355,7 +355,7 @@ function chatKick(slug, salaInicial, aoMsg, aoStatus) {
       .catch(() => aoStatus('sem chat'));
   }
 
-  return () => { fechado = true; try { ws && ws.close(); } catch (_) {} };
+  return () => { fechado = true; try { ws && ws.close(); } catch (_) { } };
 }
 
 // ---------------------------------------------------------------- a sessao
@@ -513,7 +513,7 @@ class SessaoAoVivo {
       yt = spawn(bin, ['--no-warnings', '--force-ipv4', '--no-part', '--hls-use-mpegts', '-f', FORMATO_UNICO, '-o', '-', this.url], { windowsHide: true });
       yt.stderr.setEncoding('utf8');
       yt.stderr.on('data', (d) => { this.erroYt = (String(this.erroYt || '') + d.toString()).slice(-600); });
-      yt.on('error', () => {});
+      yt.on('error', () => { });
       this.procYt = yt;
       entrada = ['-i', 'pipe:0'];
       audio = null;
@@ -521,25 +521,25 @@ class SessaoAoVivo {
     const args = [
       '-hide_banner', '-loglevel', 'error',
     ].concat(this.viaYtDlp ? [] : ['-reconnect', '1', '-reconnect_delay_max', '5'])
-    .concat(audio ? ['-copyts', '-start_at_zero'] : [])
-    .concat(entrada).concat(audio ? [
-      '-reconnect', '1', '-reconnect_delay_max', '5',
-      '-i', audio, '-map', '0:v:0', '-map', '1:a:0',
-    ] : ['-map', '0:v:0', '-map', '0:a:0?']).concat([
-      '-c', 'copy',
-      '-f', 'segment', '-segment_time', String(DUR_PEDACO), '-reset_timestamps', '1',
-      '-segment_start_number', String(this.proxNumero),
-      '-segment_list', csv, '-segment_list_type', 'csv',
-      path.join(this.dir, 'p%07d.ts'),
-    ]);
+      .concat(audio ? ['-copyts', '-start_at_zero'] : [])
+      .concat(entrada).concat(audio ? [
+        '-reconnect', '1', '-reconnect_delay_max', '5',
+        '-i', audio, '-map', '0:v:0', '-map', '1:a:0',
+      ] : ['-map', '0:v:0', '-map', '0:a:0?']).concat([
+        '-c', 'copy',
+        '-f', 'segment', '-segment_time', String(DUR_PEDACO), '-reset_timestamps', '1',
+        '-segment_start_number', String(this.proxNumero),
+        '-segment_list', csv, '-segment_list_type', 'csv',
+        path.join(this.dir, 'p%07d.ts'),
+      ]);
     this.proc = spawn(ffmpeg, args, { windowsHide: true });
-    if (yt) { yt.stdout.pipe(this.proc.stdin); this.proc.stdin.on('error', () => {}); }
+    if (yt) { yt.stdout.pipe(this.proc.stdin); this.proc.stdin.on('error', () => { }); }
     let erro = '';
     this.proc.stderr.setEncoding('utf8');
     this.proc.stderr.on('data', (d) => { erro = (erro + d.toString()).slice(-800); });
     this.proc.on('close', () => {
       this.proc = null;
-      if (yt) { try { yt.kill(); } catch (_) {} this.procYt = null; }
+      if (yt) { try { yt.kill(); } catch (_) { } this.procYt = null; }
       this.lerLista(); // o ultimo pedaco
       if (this.parado) return;
 
@@ -766,10 +766,10 @@ class SessaoAoVivo {
             fs.writeFileSync(tmpA, ba);
             await media.rodar(ffmpeg, [
               '-y', '-hide_banner', '-loglevel', 'error',
-              '-copyts',
+              '-fflags', '+genpts+discardcorrupt',
               '-i', tmpV, '-i', tmpA,
               '-map', '0:v:0', '-map', '1:a:0',
-              '-c', 'copy', '-mpegts_copyts', '1',
+              '-c', 'copy', '-avoid_negative_ts', 'make_zero',
               '-f', 'mpegts', tmpOut,
             ]);
             if (fs.existsSync(tmpOut) && fs.statSync(tmpOut).size > 512) {
@@ -777,9 +777,9 @@ class SessaoAoVivo {
               this.adicionarPedaco(nome, arquivo, par.v.dur);
             }
           } finally {
-            try { fs.unlinkSync(tmpV); } catch (_) {}
-            try { fs.unlinkSync(tmpA); } catch (_) {}
-            try { if (fs.existsSync(tmpOut)) fs.unlinkSync(tmpOut); } catch (_) {}
+            try { fs.unlinkSync(tmpV); } catch (_) { }
+            try { fs.unlinkSync(tmpA); } catch (_) { }
+            try { if (fs.existsSync(tmpOut)) fs.unlinkSync(tmpOut); } catch (_) { }
           }
         }
         falhas = 0;
@@ -895,14 +895,14 @@ class SessaoAoVivo {
     // em vez de deixar a tela esperando a primeira imagem pra sempre.
     if (this.proc && this.ultimoPedacoEm && Date.now() - this.ultimoPedacoEm > 40000) {
       this.ultimoPedacoEm = Date.now();
-      try { this.proc.kill(); } catch (_) {}
+      try { this.proc.kill(); } catch (_) { }
     }
 
     const nivel = this.medirNivel();
     if (nivel) {
       this.emitir(Object.assign({ tipo: 'nivel' }, nivel, { gravado: Math.round(this.total) }));
       if (this.clipando && this.auto && !this.pendente && nivel.nivel >= LIMIAR[this.sensibilidade] &&
-          this.agora() - this.ultimoGatilho > Math.max(26, this.duracao * 0.8)) {
+        this.agora() - this.ultimoGatilho > Math.max(26, this.duracao * 0.8)) {
         this.disparar(nivel);
       }
     }
@@ -1058,7 +1058,7 @@ class SessaoAoVivo {
     const limite = this.total - this.bufferMin * 60;
     while (this.pedacos.length && this.pedacos[0].t0 + this.pedacos[0].dur < limite && !this.pedacos[0].travas) {
       const p = this.pedacos.shift();
-      try { fs.unlinkSync(p.arquivo); } catch (_) {}
+      try { fs.unlinkSync(p.arquivo); } catch (_) { }
     }
   }
 
@@ -1120,7 +1120,7 @@ class SessaoAoVivo {
     await media.rodar(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error',
       '-fflags', '+genpts+discardcorrupt', '-f', 'concat', '-safe', '0', '-i', lista,
       '-map', '0:v:0', '-map', '0:a:0?', '-c', 'copy', '-avoid_negative_ts', 'make_zero', '-f', 'matroska', junto]);
-    try { fs.unlinkSync(lista); } catch (_) {}
+    try { fs.unlinkSync(lista); } catch (_) { }
 
     let args;
     try {
@@ -1143,12 +1143,12 @@ class SessaoAoVivo {
       await media.rodar(ffmpeg, args, { cwd: pastas.trabalho() });
 
     } finally {
-      try { fs.unlinkSync(junto); } catch (_) {}
-      if (ass) { try { fs.unlinkSync(path.join(pastas.trabalho(), ass)); } catch (_) {} }
+      try { fs.unlinkSync(junto); } catch (_) { }
+      if (ass) { try { fs.unlinkSync(path.join(pastas.trabalho(), ass)); } catch (_) { } }
     }
 
     const jpg = path.join(this.pasta, nomeBase + '.jpg');
-    try { await media.gerarMiniatura(mp4, Math.min(dur / 2, 8), jpg, this.formato !== 'original'); } catch (_) {}
+    try { await media.gerarMiniatura(mp4, Math.min(dur / 2, 8), jpg, this.formato !== 'original'); } catch (_) { }
 
     const nota = pedido.nota != null ? pedido.nota : 70;
     const clipe = {
@@ -1246,8 +1246,8 @@ class SessaoAoVivo {
         await media.rodar(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error', '-i', junto,
           '-map', '0:v:0', '-map', '0:a:0?', '-c', 'copy', '-avoid_negative_ts', 'make_zero', '-movflags', '+faststart', original]);
       } finally {
-        try { fs.unlinkSync(lista); } catch (_) {}
-        try { fs.unlinkSync(junto); } catch (_) {}
+        try { fs.unlinkSync(lista); } catch (_) { }
+        try { fs.unlinkSync(junto); } catch (_) { }
       }
 
       // O original comeca no primeiro pedaco (que sempre abre num quadro-chave):
@@ -1357,8 +1357,8 @@ class SessaoAoVivo {
                     clipe.texto = ci.texto || texto;
                     clipe.tamanhoMb = Math.round((fs.statSync(clipe.arquivo).size / 1048576) * 10) / 10;
                   }
-                } catch (_) {}
-                finally { try { fs.unlinkSync(caminhoAssIa); } catch (_) {} }
+                } catch (_) { }
+                finally { try { fs.unlinkSync(caminhoAssIa); } catch (_) { } }
               }
             }
             if (resIa.usouTrial && !resIa.liveAtivo && Number(resIa.trialsRestantes) <= 0) {
@@ -1402,7 +1402,7 @@ class SessaoAoVivo {
         // trecho sem fala (so jogo, so musica) nao e erro: so fica sem legenda
         if (!/fala nenhuma/i.test(e.message)) this.emitir({ tipo: 'aviso', msg: 'Não consegui ouvir a fala do clipe ' + clipe.numero + ' (' + e.message + ').' });
       } finally {
-        try { fs.unlinkSync(wav); } catch (_) {}
+        try { fs.unlinkSync(wav); } catch (_) { }
       }
     } catch (e) {
       this.emitir({ tipo: 'aviso', msg: 'O clipe ' + clipe.numero + ' está pronto, mas não deu pra preparar a edição dele (' + e.message + ').' });
@@ -1426,7 +1426,7 @@ class SessaoAoVivo {
       formato: this.formato,
       clipes: this.clipes,
     };
-    try { fs.writeFileSync(path.join(this.pasta, 'relatorio.json'), JSON.stringify(r, null, 2), 'utf8'); } catch (_) {}
+    try { fs.writeFileSync(path.join(this.pasta, 'relatorio.json'), JSON.stringify(r, null, 2), 'utf8'); } catch (_) { }
     // o que o editor precisa pra refazer um clipe: cada clipe traz o proprio
     // original e enquadramento (campo fonte), entao aqui fica so o geral
     const sessao = {
@@ -1439,7 +1439,7 @@ class SessaoAoVivo {
       },
       clipes: this.clipes,
     };
-    try { fs.writeFileSync(path.join(this.pasta, 'sessao.json'), JSON.stringify(sessao, null, 2), 'utf8'); } catch (_) {}
+    try { fs.writeFileSync(path.join(this.pasta, 'sessao.json'), JSON.stringify(sessao, null, 2), 'utf8'); } catch (_) { }
   }
 
   /** Um clipe refeito no editor passa a valer na lista da live (e no disco). */
@@ -1507,8 +1507,8 @@ class SessaoAoVivo {
     clearTimeout(this.timerHls);
     clearTimeout(this.timerExpiraIaLive);
     if (this.fecharChat) this.fecharChat();
-    if (this.proc) { try { this.proc.kill(); } catch (_) {} }
-    if (this.procYt) { try { this.procYt.kill(); } catch (_) {} }
+    if (this.proc) { try { this.proc.kill(); } catch (_) { } }
+    if (this.procYt) { try { this.procYt.kill(); } catch (_) { } }
     // o que ainda esta na fila termina; depois o buffer (temporario) e apagado
     const limpar = () => {
       // termina os clipes na fila e os originais (pra editar) antes de apagar o buffer
@@ -1516,14 +1516,14 @@ class SessaoAoVivo {
         this.proximoOriginal();
         return setTimeout(limpar, 2000);
       }
-      for (const p of this.pedacos) { try { fs.unlinkSync(p.arquivo); } catch (_) {} }
+      for (const p of this.pedacos) { try { fs.unlinkSync(p.arquivo); } catch (_) { } }
       try {
         for (const n of fs.readdirSync(this.dir)) fs.unlinkSync(path.join(this.dir, n));
         fs.rmdirSync(this.dir);
-      } catch (_) {}
+      } catch (_) { }
       // conectou e cancelou sem clipar: a pasta do projeto ficou vazia.
       // rmdir so apaga pasta VAZIA - se tiver qualquer clipe, ela fica.
-      if (!this.clipes.length && this.pasta) { try { fs.rmdirSync(this.pasta); } catch (_) {} }
+      if (!this.clipes.length && this.pasta) { try { fs.rmdirSync(this.pasta); } catch (_) { } }
     };
     setTimeout(limpar, 1500);
     if (!jaEncerrada) this.status('parado', 'Parou de gravar. Os clipes feitos estão salvos.');
@@ -1545,7 +1545,7 @@ function limparSobras() {
         if (/\.(ts|mkv|csv|txt)$/i.test(n)) fs.unlinkSync(path.join(dir, n));
       }
       fs.rmdirSync(dir);
-    } catch (_) {}
+    } catch (_) { }
   }
 }
 

@@ -514,14 +514,27 @@ const servidor = http.createServer(async (req, res) => {
       if (aoVivoAtual && !aoVivoAtual.parado) {
         return json(res, 409, { erro: 'Já tem uma live sendo gravada. Pare ela antes de começar outra.' });
       }
+      let expiraIaLive = null;
       if (corpo.usarIaPro) {
         const pro = require('./pro');
         const estPro = await pro.obterEstado(true);
-        if (!estPro.podeUsar) {
-          return json(res, 402, { erro: 'Seus 3 testes grátis do Diretor IA Pro acabaram! Atualize o plano para usar a IA na live.', precisaUpgrade: true });
+        if (!estPro.podeUsarLive) {
+          const msg = estPro.liveUsado && estPro.trialsRestantes > 0
+            ? 'Seu teste grátis de 15 minutos na Live já foi usado! Você ainda tem ' + estPro.trialsRestantes + ' teste(s) grátis para Vídeos — ou atualize para o Plano Pro para usar na live sem limite.'
+            : 'Seus 3 testes grátis do Diretor IA Pro acabaram! Atualize o plano para usar a IA na live.';
+          return json(res, 402, { erro: msg, precisaUpgrade: true });
+        }
+        if (!corpo.preparar && !estPro.ativo) {
+          try {
+            const rLive = await pro.iniciarTrialLive();
+            expiraIaLive = rLive.liveExpiraEm || null;
+          } catch (e) {
+            return json(res, 402, { erro: e.message || 'Atualize o plano para usar a IA na live.', precisaUpgrade: true });
+          }
         }
       }
       const s = new aovivo.SessaoAoVivo(corpo, emitirAoVivo);
+      if (expiraIaLive) s.definirExpiraIaLive(expiraIaLive);
       aoVivoAtual = s;
       try {
         await s.iniciar();
@@ -547,15 +560,44 @@ const servidor = http.createServer(async (req, res) => {
 
     if (rota === '/api/aovivo/ajustar' && req.method === 'POST') {
       const corpo = await lerCorpo(req);
+      let expiraIaLive = null;
+      let estadoLiveTrial = null;
       if (corpo.usarIaPro) {
         const pro = require('./pro');
         const estPro = await pro.obterEstado(true);
-        if (!estPro.podeUsar) {
-          return json(res, 402, { erro: 'Seus 3 testes grátis do Diretor IA Pro acabaram! Atualize o plano para usar a IA na live.', precisaUpgrade: true });
+        if (!estPro.podeUsarLive) {
+          const msg = estPro.liveUsado && estPro.trialsRestantes > 0
+            ? 'Seu teste grátis de 15 minutos na Live já foi usado! Você ainda tem ' + estPro.trialsRestantes + ' teste(s) grátis para Vídeos — ou atualize para o Plano Pro para usar na live sem limite.'
+            : 'Seus 3 testes grátis do Diretor IA Pro acabaram! Atualize o plano para usar a IA na live.';
+          return json(res, 402, { erro: msg, precisaUpgrade: true });
+        }
+        const vaiCliparAgora = !!(corpo.clipando || (aoVivoAtual && aoVivoAtual.clipando));
+        if (vaiCliparAgora && !estPro.ativo) {
+          try {
+            estadoLiveTrial = await pro.iniciarTrialLive();
+            expiraIaLive = estadoLiveTrial.liveExpiraEm || null;
+          } catch (e) {
+            return json(res, 402, { erro: e.message || 'Atualize o plano para usar a IA na live.', precisaUpgrade: true });
+          }
         }
       }
-      if (aoVivoAtual && !aoVivoAtual.parado) aoVivoAtual.ajustar(corpo);
-      return json(res, 200, { ok: true });
+      if (aoVivoAtual && !aoVivoAtual.parado) {
+        if (expiraIaLive) aoVivoAtual.definirExpiraIaLive(expiraIaLive);
+        else if (corpo.usarIaPro === false) aoVivoAtual.definirExpiraIaLive(null);
+        aoVivoAtual.ajustar(corpo);
+        if (estadoLiveTrial) {
+          aoVivoAtual.emitir({
+            tipo: 'pro-estado',
+            usouTrial: !!estadoLiveTrial.iniciouAgora,
+            iniciouLiveTrial: !!estadoLiveTrial.iniciouAgora,
+            trialsRestantes: estadoLiveTrial.trialsRestantes,
+            liveUsado: estadoLiveTrial.liveUsado,
+            liveAtivo: estadoLiveTrial.liveAtivo,
+            liveExpiraEm: estadoLiveTrial.liveExpiraEm,
+          });
+        }
+      }
+      return json(res, 200, { ok: true, liveExpiraEm: expiraIaLive });
     }
 
     if (rota === '/api/aovivo/estado') {

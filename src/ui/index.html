@@ -1461,10 +1461,10 @@
           <button type="button" class="motor-op pro" data-motor="ia" aria-pressed="false">
             <div class="motor-topo">
               <b><i data-lucide="sparkles" class="i" style="color:var(--amarelo)"></i> Diretor IA Pro na Live</b>
-              <span class="pilula-pro" id="seloMotorIaLive">3 testes grátis</span>
+              <span class="pilula-pro" id="seloMotorIaLive">1 live grátis · 15 min</span>
             </div>
             <p>A IA ouve cada clipe da live, refina o começo/fim exato da fala, queima o gancho de 4s e cria o SEO de cada rede.</p>
-            <p style="font-size:11px; color:var(--texto3)" id="motorIaLiveSub">Quem tem plano Pro usa em toda a live sem preocupação!</p>
+            <p style="font-size:11px; color:var(--texto3)" id="motorIaLiveSub">Usa 1 dos 3 testes grátis (válido por 15 min na live) · Assinante Pro usa sem limite!</p>
           </button>
         </div>
       </div>
@@ -1849,7 +1849,7 @@
     </div>
     <p style="margin:6px 0 0; color:var(--texto2)">Confira tudo o que entrou nesta versão para deixar seus cortes mais rápidos, sincronizados e prontos pros algoritmos:</p>
     <ul class="nov-lista">
-      <li><i data-lucide="sparkles" class="i"></i><div><b>Diretor IA Pro em Vídeo e em Live (+ 3 testes grátis)</b>Mais precisão contextual com Google Gemini nativo incluso ou conectando sua própria chave do Claude / ChatGPT. Quem tem o plano Pro usa em vídeos e lives tranquilamente!</div></li>
+      <li><i data-lucide="sparkles" class="i"></i><div><b>Diretor IA Pro em Vídeo e em Live (3 testes grátis inclusos)</b>Use seus 3 testes grátis em vídeos (ou 2 em vídeos + 1 sessão de 15 minutos na Live). Traz Google Gemini nativo incluso ou suporte à sua chave do Claude / ChatGPT. Quem tem o Plano Pro usa em vídeos e lives inteiras sem limite!</div></li>
       <li><i data-lucide="audio-lines" class="i"></i><div><b>Sincronia Zero-Atraso de Áudio (YouTube, Kick e Twitch)</b>Novo motor CFR + compensação ativa de amostras e timestamps de broadcast na live do YouTube, Twitch e Kick para a voz nunca atrasar.</div></li>
       <li><i data-lucide="monitor-play" class="i"></i><div><b>Pré-visualização Imersiva e Escolha de Resolução</b>Veja capa, canal e duração antes de baixar, escolha a resolução ideal (720p, 1080p, 1440p, 4K) e acompanhe velocidade e tempo restante em qualquer tipo de internet (IPv4/IPv6).</div></li>
       <li><i data-lucide="flame" class="i"></i><div><b>Detector de Live Calibrado + Filtro Viral e SEO por Rede</b>Calibragem à prova de compressor/limiter do OBS (gera muito mais cortes reais na live), abertura cold-open sem silêncio e botões prontos de SEO para <b>TikTok, Shorts e Reels</b>.</div></li>
@@ -3320,8 +3320,11 @@
     let url = $('avUrl').value.trim();
     if (!url) { $('avUrl').focus(); return erro('Cole o link do canal que está ao vivo.'); }
     if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
-    if (cfg.motor === 'ia' && estadoPro && estadoPro.configurado && !estadoPro.podeUsar) {
-      return abrirModalPro('Seus 3 testes grátis acabaram! Atualize o plano Pro abaixo para usar o Diretor IA na live (ou mude para o Motor Local grátis).');
+    if (cfg.motor === 'ia' && estadoPro && estadoPro.configurado && !estadoPro.podeUsarLive) {
+      const msg = estadoPro.liveUsado && estadoPro.trialsRestantes > 0
+        ? 'Seu teste grátis de 15 minutos na Live já foi usado! Você ainda tem ' + estadoPro.trialsRestantes + ' teste(s) grátis para Vídeos — ou atualize o plano abaixo para usar IA na live sem limite.'
+        : 'Seus 3 testes grátis acabaram! Atualize o plano Pro abaixo para usar o Diretor IA na live (ou mude para o Motor Local grátis).';
+      return abrirModalPro(msg);
     }
     semErro();
     const b = $('btnAvComecar');
@@ -3515,14 +3518,23 @@
       } else if (d.tipo === 'clipe' || d.tipo === 'clipe-atualizado') {
         mostrarClipeAoVivo(d.clipe, d.tipo === 'clipe' && !d.antigo);
       } else if (d.tipo === 'pro-estado') {
-        if (estadoPro && typeof d.trialsRestantes === 'number') {
-          estadoPro.trialsRestantes = Math.max(0, d.trialsRestantes);
-          estadoPro.podeUsar = !!(estadoPro.ativo || estadoPro.trialsRestantes > 0);
+        if (estadoPro) {
+          if (typeof d.trialsRestantes === 'number') estadoPro.trialsRestantes = Math.max(0, d.trialsRestantes);
+          if (typeof d.liveUsado === 'boolean') estadoPro.liveUsado = d.liveUsado;
+          if (typeof d.liveAtivo === 'boolean') estadoPro.liveAtivo = d.liveAtivo;
+          if (d.liveExpiraEm !== undefined) estadoPro.liveExpiraEm = d.liveExpiraEm;
+          estadoPro.podeUsarVideo = !!(estadoPro.ativo || estadoPro.trialsRestantes > 0);
+          estadoPro.podeUsarLive = !!(estadoPro.ativo || estadoPro.liveAtivo || (!estadoPro.liveUsado && estadoPro.trialsRestantes > 0));
+          estadoPro.podeUsar = !!(estadoPro.podeUsarVideo || estadoPro.podeUsarLive);
           pintarMotorPro();
         } else {
           carregarEstadoPro(true);
         }
-        if (d.usouTrial) logAv('✨ Diretor IA Pro usado! Restam ' + d.trialsRestantes + ' teste(s) grátis.', true);
+        if (d.iniciouLiveTrial) {
+          logAv('✨ Teste grátis de 15 minutos do Diretor IA Pro iniciado nesta live! Restam ' + d.trialsRestantes + ' teste(s) grátis para vídeos.', true);
+        } else if (d.usouTrial && !d.liveAtivo) {
+          logAv('✨ Diretor IA Pro usado! Restam ' + d.trialsRestantes + ' teste(s) grátis.', true);
+        }
       } else if (d.tipo === 'pro-esgotado') {
         cfg.motor = 'local';
         guardar();
@@ -3573,6 +3585,13 @@
     if (d.chat && d.chat !== 'conectado') {
       $('avChat').textContent = { conectando: 'conectando...', reconectando: 'reconectando...', 'sem chat': 'não disponível', desligado: 'desligado' }[d.chat] || d.chat;
     }
+    if (d.iaLiveExpiraEm !== undefined && estadoPro && !estadoPro.ativo) {
+      estadoPro.liveExpiraEm = d.iaLiveExpiraEm;
+      estadoPro.liveAtivo = !!(d.iaLiveExpiraEm && new Date(d.iaLiveExpiraEm).getTime() > Date.now());
+      if (d.iaLiveExpiraEm) estadoPro.liveUsado = true;
+      estadoPro.podeUsarLive = !!(estadoPro.liveAtivo || (!estadoPro.liveUsado && estadoPro.trialsRestantes > 0));
+      pintarMotorPro();
+    }
     if (d.msg) logAv(d.msg);
     if (parado && !av.parado) {
       av.parado = true;
@@ -3620,6 +3639,7 @@
   };
   function tiqueAv() {
     if (av.desde && !av.parado) $('avTempo').textContent = hmsAv((Date.now() - av.desde) / 1000);
+    if (estadoPro && estadoPro.liveExpiraEm && !estadoPro.ativo) pintarMotorPro();
   }
 
   function atualizarQuadro() {
@@ -3762,8 +3782,8 @@
         abrirModalPro('O servidor do Diretor IA Pro está em ativação. Enquanto isso, você pode usar o Motor Local grátis!');
         return;
       }
-      if (!estadoPro.podeUsar) {
-        abrirModalPro('Seus testes grátis acabaram! Desbloqueie o Cortador Pro em segundos no Pix ou Cartão para continuar usando a IA.');
+      if (!estadoPro.podeUsarVideo) {
+        abrirModalPro('Seus 3 testes grátis para vídeos acabaram! Desbloqueie o Cortador Pro em segundos no Pix ou Cartão para continuar usando a IA.');
         return;
       }
     }
@@ -5278,12 +5298,35 @@
   let estadoPro = null;
   let timerPedidoPro = null;
 
+  function formatarRestanteLive(est) {
+    if (!est || !est.liveExpiraEm) return null;
+    const seg = Math.max(0, Math.ceil((new Date(est.liveExpiraEm).getTime() - Date.now()) / 1000));
+    if (seg <= 0) return null;
+    const m = Math.floor(seg / 60), s = String(seg % 60).padStart(2, '0');
+    return m + ':' + s;
+  }
+
   function pintarMotorPro() {
     const motorAtual = cfg.motor || 'local';
-    document.querySelectorAll('#seletorMotor [data-motor], #seletorMotorLive [data-motor]').forEach((b) => {
-      b.setAttribute('aria-pressed', String(b.dataset.motor === motorAtual));
-    });
     const est = estadoPro;
+    const restLiveTxt = formatarRestanteLive(est);
+    const liveEmAndamento = !!(est && !est.ativo && restLiveTxt);
+    if (est && !est.ativo && est.liveExpiraEm && !restLiveTxt) {
+      est.liveAtivo = false;
+      est.podeUsarLive = false;
+    }
+    const podeVideo = !est || !est.configurado || !!est.ativo || (est.podeUsarVideo != null ? est.podeUsarVideo : est.trialsRestantes > 0);
+    const podeLive = !est || !est.configurado || !!est.ativo || liveEmAndamento || (est.podeUsarLive != null ? est.podeUsarLive : (!est.liveUsado && est.trialsRestantes > 0));
+
+    document.querySelectorAll('#seletorMotor [data-motor]').forEach((b) => {
+      const m = b.dataset.motor;
+      b.setAttribute('aria-pressed', String(m === (motorAtual === 'ia' && !podeVideo ? 'local' : motorAtual)));
+    });
+    document.querySelectorAll('#seletorMotorLive [data-motor]').forEach((b) => {
+      const m = b.dataset.motor;
+      b.setAttribute('aria-pressed', String(m === (motorAtual === 'ia' && !podeLive ? 'local' : motorAtual)));
+    });
+
     const btnTopo = $('btnTopoPro');
     const txtTopo = $('txtTopoPro');
     const selo = $('seloMotorIa');
@@ -5296,41 +5339,63 @@
       selo.textContent = 'Pro ativo';
       selo.className = 'pilula-pro ativo';
       if (seloLive) { seloLive.textContent = 'Pro ativo'; seloLive.className = 'pilula-pro ativo'; }
-      if (subLive) subLive.textContent = 'Plano Pro ativo · use na live inteira tranquilamente!';
-    } else if (est && est.configurado && est.trialsRestantes > 0) {
+      if (subLive) subLive.textContent = 'Plano Pro ativo · use na live inteira sem limite de tempo!';
+    } else if (est && est.configurado) {
       btnTopo.classList.remove('ativo');
-      const txtTrial = est.trialsRestantes + (est.trialsRestantes === 1 ? ' teste grátis' : ' testes grátis');
-      txtTopo.textContent = 'Pro · ' + est.trialsRestantes + ' grátis';
-      selo.textContent = txtTrial;
-      selo.className = 'pilula-pro';
-      if (seloLive) { seloLive.textContent = txtTrial; seloLive.className = 'pilula-pro'; }
-      if (subLive) subLive.textContent = 'Restam ' + txtTrial + ' · reduz a cada uso até zerar (assinante Pro usa livre na live!)';
+      // Selo do modo Video
+      if (est.trialsRestantes > 0) {
+        const txtTrial = est.trialsRestantes + (est.trialsRestantes === 1 ? ' teste grátis' : ' testes grátis');
+        selo.textContent = txtTrial;
+        selo.className = 'pilula-pro';
+      } else {
+        selo.textContent = '0 grátis · Atualize o plano';
+        selo.className = 'pilula-pro';
+      }
+      // Selo do modo Live (ate 1 sessao de 15 min consumindo 1 dos 3 testes)
+      if (liveEmAndamento) {
+        if (seloLive) { seloLive.textContent = '⏱️ ' + restLiveTxt + ' restantes'; seloLive.className = 'pilula-pro ativo'; }
+        if (subLive) subLive.textContent = 'Teste grátis na live em andamento (' + restLiveTxt + ' de 15 min) · Plano Pro é ilimitado!';
+      } else if (!est.liveUsado && est.trialsRestantes > 0) {
+        if (seloLive) { seloLive.textContent = '1 live grátis · 15 min'; seloLive.className = 'pilula-pro'; }
+        if (subLive) subLive.textContent = 'Usa 1 dos seus ' + est.trialsRestantes + ' teste(s) grátis (vale por 15 min na live) · Assinante Pro usa sem limite!';
+      } else {
+        if (seloLive) { seloLive.textContent = '0 live grátis · Seja Pro'; seloLive.className = 'pilula-pro'; }
+        if (subLive) {
+          subLive.textContent = est.liveUsado && est.trialsRestantes > 0
+            ? 'Os 15 min grátis na live já foram usados (restam ' + est.trialsRestantes + ' para vídeos) · Atualize pro Plano Pro!'
+            : 'Seus 3 testes grátis chegaram a zero · Atualize o plano Pro para usar na live!';
+        }
+      }
+      // Botao do topo
+      if (liveEmAndamento) txtTopo.textContent = 'Pro · Live ' + restLiveTxt;
+      else if (est.trialsRestantes > 0) txtTopo.textContent = 'Pro · ' + est.trialsRestantes + ' grátis';
+      else txtTopo.textContent = 'Seja Pro';
     } else {
       btnTopo.classList.remove('ativo');
       txtTopo.textContent = 'Seja Pro';
-      const txtZero = est && !est.configurado ? 'Em breve' : '0 grátis · Atualize o plano';
-      selo.textContent = txtZero;
-      selo.className = 'pilula-pro';
-      if (seloLive) { seloLive.textContent = txtZero; seloLive.className = 'pilula-pro'; }
-      if (subLive) subLive.textContent = 'Seus 3 testes grátis chegaram a zero · Atualize o plano Pro para usar na live!';
+      selo.textContent = 'Em breve';
+      if (seloLive) seloLive.textContent = 'Em breve';
     }
 
     // Barra de motor dentro do painel ao vivo
     if ($('avStatusMotorTxt')) {
-      const usandoIa = motorAtual === 'ia' && (!est || est.podeUsar);
+      const usandoIa = motorAtual === 'ia' && podeLive;
       if (usandoIa) {
-        $('avStatusMotorTxt').innerHTML = '<b>⚡ Diretor IA Pro ativo nesta live</b>' +
-          (est && est.ativo ? ' · Plano Pro liberado' : (est ? ' · ' + est.trialsRestantes + ' teste(s) grátis restante(s)' : ''));
+        const metaLive = est && est.ativo
+          ? ' · Plano Pro liberado (sem limite de tempo)'
+          : (liveEmAndamento ? ' · ⏱️ Teste grátis: <b>' + restLiveTxt + '</b> restantes (de 15 min)' : ' · 15 min de teste grátis ao começar');
+        $('avStatusMotorTxt').innerHTML = '<b>⚡ Diretor IA Pro ativo nesta live</b>' + metaLive;
         $('btnAlternarIaLive').textContent = 'Voltar pro Motor Local';
+        $('btnAlternarIaLive').hidden = false;
         $('btnUpgradeLive').hidden = !!(est && est.ativo);
       } else {
-        const zerou = est && est.configurado && !est.podeUsar;
-        $('avStatusMotorTxt').innerHTML = zerou
-          ? '<b>Motor Local ativo</b> · Seus 3 testes grátis acabaram (atualize o plano para usar IA na live)'
+        const zerouLive = est && est.configurado && !podeLive;
+        $('avStatusMotorTxt').innerHTML = zerouLive
+          ? '<b>Motor Local ativo</b> · Teste de 15 min na live encerrado (atualize o plano Pro para usar IA na live)'
           : '<b>Motor Local ativo nesta live</b> · Grátis e ilimitado';
         $('btnAlternarIaLive').textContent = 'Ativar Diretor IA Pro';
-        $('btnAlternarIaLive').hidden = !!zerou;
-        $('btnUpgradeLive').hidden = !zerou;
+        $('btnAlternarIaLive').hidden = !!zerouLive;
+        $('btnUpgradeLive').hidden = !zerouLive;
       }
     }
 
@@ -5391,13 +5456,25 @@
   $('btnFecharPro').addEventListener('click', fecharModalPro);
   $('modalPro').addEventListener('click', (e) => { if (e.target === $('modalPro')) fecharModalPro(); });
 
-  function escolherMotorIaOuLocal(novoMotor) {
-    if (novoMotor === 'ia' && estadoPro && estadoPro.configurado && !estadoPro.podeUsar) {
-      cfg.motor = 'local';
-      guardar();
-      pintarMotorPro();
-      abrirModalPro('Seus 3 testes grátis acabaram! Atualize seu plano Pro abaixo para usar o Diretor IA na live e em vídeos.');
-      return;
+  function escolherMotorIaOuLocal(novoMotor, contexto) {
+    if (novoMotor === 'ia' && estadoPro && estadoPro.configurado) {
+      if (contexto === 'live' && !estadoPro.ativo && !estadoPro.podeUsarLive) {
+        cfg.motor = 'local';
+        guardar();
+        pintarMotorPro();
+        const msg = estadoPro.liveUsado && estadoPro.trialsRestantes > 0
+          ? 'Seu teste grátis de 15 minutos na Live já foi usado! Você ainda tem ' + estadoPro.trialsRestantes + ' teste(s) grátis para Vídeos — ou atualize o plano Pro abaixo para usar na live sem limite.'
+          : 'Seus 3 testes grátis acabaram! Atualize seu plano Pro abaixo para usar o Diretor IA na live e em vídeos.';
+        abrirModalPro(msg);
+        return;
+      }
+      if (contexto !== 'live' && !estadoPro.ativo && !estadoPro.podeUsarVideo) {
+        cfg.motor = 'local';
+        guardar();
+        pintarMotorPro();
+        abrirModalPro('Seus 3 testes grátis para vídeos acabaram! Atualize seu plano Pro abaixo para continuar usando o Diretor IA.');
+        return;
+      }
     }
     cfg.motor = novoMotor;
     guardar();
@@ -5408,17 +5485,17 @@
 
   $('seletorMotor').addEventListener('click', (e) => {
     const b = e.target.closest('[data-motor]');
-    if (b) escolherMotorIaOuLocal(b.dataset.motor);
+    if (b) escolherMotorIaOuLocal(b.dataset.motor, 'video');
   });
   if ($('seletorMotorLive')) {
     $('seletorMotorLive').addEventListener('click', (e) => {
       const b = e.target.closest('[data-motor]');
-      if (b) escolherMotorIaOuLocal(b.dataset.motor);
+      if (b) escolherMotorIaOuLocal(b.dataset.motor, 'live');
     });
   }
   if ($('btnAlternarIaLive')) {
     $('btnAlternarIaLive').addEventListener('click', () => {
-      escolherMotorIaOuLocal(cfg.motor === 'ia' ? 'local' : 'ia');
+      escolherMotorIaOuLocal(cfg.motor === 'ia' ? 'local' : 'ia', 'live');
     });
   }
   if ($('btnUpgradeLive')) {

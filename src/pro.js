@@ -166,15 +166,24 @@ async function obterEstadoBase(forcar) {
   try {
     const qs = '?machine=' + encodeURIComponent(machine) + (chave ? '&chave=' + encodeURIComponent(chave) : '');
     const d = await chamarWorker('/v1/status' + qs, 'GET', null, 10000);
+    const trialsRest = Math.max(0, Number(d.trialsRestantes != null ? d.trialsRestantes : 3));
+    const podeVideo = !!(d.ativo || (d.podeUsarVideo != null ? d.podeUsarVideo : trialsRest > 0));
+    const podeLive = !!(d.ativo || (d.podeUsarLive != null ? d.podeUsarLive : (d.liveAtivo || (!d.liveUsado && trialsRest > 0))));
     const est = {
       configurado: true,
       ativo: !!d.ativo,
-      podeUsar: !!(d.ativo || (Number(d.trialsRestantes) > 0)),
+      podeUsar: !!(podeVideo || podeLive),
+      podeUsarVideo: podeVideo,
+      podeUsarLive: podeLive,
       plano: d.plano || null,
       expiraEm: d.expiraEm || null,
       usosMes: Number(d.usosMes || 0),
       limiteMes: Number(d.limiteMes || 80),
-      trialsRestantes: Math.max(0, Number(d.trialsRestantes != null ? d.trialsRestantes : 3)),
+      trialsRestantes: trialsRest,
+      liveUsado: !!d.liveUsado,
+      liveAtivo: !!d.liveAtivo,
+      liveExpiraEm: d.liveExpiraEm || null,
+      liveRestanteSeg: Number(d.liveRestanteSeg != null ? d.liveRestanteSeg : (d.liveUsado ? 0 : 900)),
       chaveMascarada: d.ativo ? mascararChave(chave) : '',
       planos: Array.isArray(d.planos) && d.planos.length ? d.planos : PLANOS_PADRAO,
     };
@@ -187,11 +196,26 @@ async function obterEstadoBase(forcar) {
       offline: true,
       ativo: !!chave,
       podeUsar: !!chave,
+      podeUsarVideo: !!chave,
+      podeUsarLive: !!chave,
       trialsRestantes: 0,
+      liveUsado: false,
+      liveAtivo: false,
+      liveExpiraEm: null,
+      liveRestanteSeg: 0,
       chaveMascarada: mascararChave(chave),
       planos: PLANOS_PADRAO,
     };
   }
+}
+
+async function iniciarTrialLive() {
+  const d = await chamarWorker('/v1/live-trial', 'POST', {
+    chave: chaveSalva(),
+    machine: machineId(),
+  }, 12000);
+  cacheEstado = null;
+  return d;
 }
 
 async function ativarChave(bruta) {
@@ -356,7 +380,13 @@ async function analisarComIa(transcricao, picos, duracaoVideo, opcoes) {
   return {
     cortes,
     usouTrial: !!resposta.usouTrial,
+    usouTrialVideo: !!resposta.usouTrialVideo,
+    usouTrialLive: !!resposta.usouTrialLive,
     trialsRestantes: resposta.trialsRestantes,
+    liveUsado: !!resposta.liveUsado,
+    liveAtivo: !!resposta.liveAtivo,
+    liveExpiraEm: resposta.liveExpiraEm || null,
+    liveRestanteSeg: resposta.liveRestanteSeg,
   };
 }
 
@@ -381,12 +411,18 @@ async function refinarClipeAoVivo(transcricao, offsetPadrao, duracaoPadrao, dura
   return {
     corte: melhor,
     usouTrial: !!res.usouTrial,
+    usouTrialLive: !!res.usouTrialLive,
     trialsRestantes: res.trialsRestantes,
+    liveUsado: !!res.liveUsado,
+    liveAtivo: !!res.liveAtivo,
+    liveExpiraEm: res.liveExpiraEm || null,
+    liveRestanteSeg: res.liveRestanteSeg,
   };
 }
 
 module.exports = {
   obterEstado,
+  iniciarTrialLive,
   ativarChave,
   sairDaChave,
   criarCheckout,

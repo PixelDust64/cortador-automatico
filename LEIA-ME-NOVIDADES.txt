@@ -11,8 +11,9 @@ O QUE FOI ATUALIZADO E MELHORADO NESTA VERSAO:
      titulos magneticos + gancho de 4 segundos na tela.
    - Google Gemini nativo ja incluso, com opcao de conectar sua propria
      chave de API do Claude (Anthropic) ou ChatGPT (OpenAI).
-   - 3 testes gratis liberados por computador (contagem regressiva em
-     tempo real ate zero). Assinantes Pro usam em videos e lives!
+   - 3 testes gratis liberados por computador: use os 3 em videos, ou 2
+     em videos + 1 sessao de ate 15 minutos na Live! Assinantes do Plano
+     Pro usam em videos e lives inteiras sem limite de tempo.
    - Motor Local continua 100% gratuito, offline e ilimitado.
 
 2. SINCRONIA ZERO-ATRASO DE AUDIO (YOUTUBE, KICK E TWITCH)

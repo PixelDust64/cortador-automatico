@@ -469,6 +469,7 @@ class SessaoAoVivo {
       quantidade: this.clipes.length,
       clipando: this.clipando,
       usarIaPro: !!this.usarIaPro,
+      iaLiveExpiraEm: this.iaLiveExpiraEm || null,
       textoFixo: this.textoFixo,
       // o pedaco mais novo: e dele que sai a imagem pra marcar webcam e foco
       ultimoPedaco: this.ultimoPedaco(),
@@ -1281,6 +1282,16 @@ class SessaoAoVivo {
         const ctxCopy = { texto: this.titulo || '', canal: this.nomeCanal || this.canal || '', evitar: (this.titulosUsados = this.titulosUsados || new Set()) };
         let aplicouIa = false;
 
+        if (this.usarIaPro && this.iaLiveExpiraEm && Date.now() >= new Date(this.iaLiveExpiraEm).getTime()) {
+          this.definirExpiraIaLive(null);
+          this.usarIaPro = false;
+          this.emitir({
+            tipo: 'pro-esgotado',
+            msg: 'Seus 15 minutos grátis do Diretor IA Pro na Live acabaram! Atualize para o Plano Pro para continuar usando IA na live (os próximos cortes seguem no Motor Local).',
+          });
+          this.emitir(Object.assign({ tipo: 'estado' }, this.resumo()));
+        }
+
         if (this.usarIaPro && texto.length >= 12) {
           try {
             const pro = require('./pro');
@@ -1289,7 +1300,15 @@ class SessaoAoVivo {
               contexto: this.titulo || 'Live ao vivo',
               sessaoLiveId: this.id,
             });
-            this.emitir({ tipo: 'pro-estado', usouTrial: resIa.usouTrial, trialsRestantes: resIa.trialsRestantes });
+            if (resIa.liveExpiraEm) this.definirExpiraIaLive(resIa.liveExpiraEm);
+            this.emitir({
+              tipo: 'pro-estado',
+              usouTrial: resIa.usouTrial,
+              trialsRestantes: resIa.trialsRestantes,
+              liveUsado: resIa.liveUsado,
+              liveAtivo: resIa.liveAtivo,
+              liveExpiraEm: resIa.liveExpiraEm || this.iaLiveExpiraEm || null,
+            });
             if (resIa.corte) {
               const ci = resIa.corte;
               if (clipe.titulo) this.titulosUsados.delete(String(clipe.titulo).toLowerCase());
@@ -1342,20 +1361,22 @@ class SessaoAoVivo {
                 finally { try { fs.unlinkSync(caminhoAssIa); } catch (_) {} }
               }
             }
-            if (resIa.usouTrial && Number(resIa.trialsRestantes) <= 0) {
+            if (resIa.usouTrial && !resIa.liveAtivo && Number(resIa.trialsRestantes) <= 0) {
+              this.definirExpiraIaLive(null);
               this.usarIaPro = false;
               this.emitir({
                 tipo: 'pro-esgotado',
-                msg: 'Seus 3 testes grátis do Diretor IA Pro chegaram a zero! Atualize o plano para continuar usando IA na live (os próximos cortes seguem no Motor Local).',
+                msg: 'Seu teste grátis do Diretor IA Pro na Live terminou! Atualize o plano para continuar usando IA na live (os próximos cortes seguem no Motor Local).',
               });
               this.emitir(Object.assign({ tipo: 'estado' }, this.resumo()));
             }
           } catch (errIa) {
-            if (/testes grátis|acabaram|402|Atualize o plano/i.test(errIa.message || '')) {
+            if (/teste|grátis|acabaram|usado|402|Atualize o plano|Plano Pro/i.test(errIa.message || '')) {
+              this.definirExpiraIaLive(null);
               this.usarIaPro = false;
               this.emitir({
                 tipo: 'pro-esgotado',
-                msg: 'Seus 3 testes grátis do Diretor IA Pro acabaram! Atualize o plano Pro para usar a IA na live (seguindo no Motor Local).',
+                msg: errIa.message || 'Seu teste grátis do Diretor IA Pro na Live acabou! Atualize o plano Pro para usar a IA na live (seguindo no Motor Local).',
               });
               this.emitir(Object.assign({ tipo: 'estado' }, this.resumo()));
             } else {
@@ -1430,6 +1451,25 @@ class SessaoAoVivo {
     this.emitir({ tipo: 'clipe-atualizado', clipe: this.clipes[i] });
   }
 
+  definirExpiraIaLive(expiraIso) {
+    clearTimeout(this.timerExpiraIaLive);
+    this.timerExpiraIaLive = null;
+    this.iaLiveExpiraEm = expiraIso || null;
+    if (!expiraIso || this.parado) return;
+    const ms = new Date(expiraIso).getTime() - Date.now();
+    if (!isFinite(ms)) return;
+    this.timerExpiraIaLive = setTimeout(() => {
+      if (this.parado || !this.usarIaPro) return;
+      this.iaLiveExpiraEm = null;
+      this.usarIaPro = false;
+      this.emitir({
+        tipo: 'pro-esgotado',
+        msg: 'Seus 15 minutos grátis do Diretor IA Pro na Live acabaram! Atualize para o Plano Pro para continuar usando IA na live (a gravação segue normalmente no Motor Local).',
+      });
+      this.emitir(Object.assign({ tipo: 'estado' }, this.resumo()));
+    }, Math.max(500, ms));
+  }
+
   ajustar(o) {
     if (o.auto != null) this.auto = !!o.auto;
     if (LIMIAR[o.sensibilidade]) this.sensibilidade = o.sensibilidade;
@@ -1465,6 +1505,7 @@ class SessaoAoVivo {
     this.parado = true;
     clearInterval(this.relogio);
     clearTimeout(this.timerHls);
+    clearTimeout(this.timerExpiraIaLive);
     if (this.fecharChat) this.fecharChat();
     if (this.proc) { try { this.proc.kill(); } catch (_) {} }
     if (this.procYt) { try { this.procYt.kill(); } catch (_) {} }

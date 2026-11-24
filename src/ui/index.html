@@ -1072,115 +1072,105 @@
     .tut-grade2 { grid-template-columns: 1fr; }
   }
 
-  /* ---- oferta unica de alta conversao (24,90 -> 20,00) + boas-vindas VIP Pro ---- */
+  /* ---- oferta unica minimalista (estilo Linear/Apple, mesma identidade do app) ---- */
   .of-caixa {
-    max-width: 690px; padding: 0; overflow: hidden; text-align: left; position: relative;
-    border: 1px solid rgba(245,196,81,.48);
+    max-width: 580px; padding: 30px 30px 24px; text-align: left; position: relative; overflow: hidden;
+    border: 1px solid rgba(255,255,255,.11);
+    border-radius: 22px;
     background:
-      radial-gradient(ellipse 80% 45% at 50% -10%, rgba(245,196,81,.22), transparent 65%),
-      radial-gradient(ellipse 65% 50% at 100% 100%, rgba(61,139,255,.16), transparent 65%),
-      #0c0f16;
-    box-shadow: 0 36px 90px -20px rgba(0,0,0,.92), 0 0 0 1px rgba(245,196,81,.18), 0 0 60px -15px rgba(245,196,81,.28);
+      radial-gradient(ellipse 85% 50% at 50% -15%, rgba(61,139,255,.18), transparent 68%),
+      #0b0d12;
+    box-shadow: 0 36px 90px -24px rgba(0,0,0,.92), inset 0 1px 0 rgba(255,255,255,.08);
   }
-  .of-topo-urgencia {
-    display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
-    padding: 10px 22px;
-    background: linear-gradient(90deg, rgba(245,196,81,.20), rgba(245,196,81,.06) 60%, rgba(61,139,255,.12));
-    border-bottom: 1px solid rgba(245,196,81,.24);
-    font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #ffd978;
+  .of-topo-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+  .of-selo {
+    display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px; border-radius: 99px;
+    background: rgba(61,139,255,.12); border: 1px solid rgba(127,178,255,.26);
+    color: #9ec5ff; font-size: 12px; font-weight: 500; letter-spacing: -.01em;
   }
-  .of-topo-urgencia .urg-esq { display: inline-flex; align-items: center; gap: 8px; }
-  .of-topo-urgencia .urg-tag {
-    padding: 3px 9px; border-radius: 99px; background: rgba(255,77,94,.18);
-    border: 1px solid rgba(255,77,94,.45); color: #ff8e99; font-size: 10.5px; letter-spacing: .04em;
+  .of-selo svg { width: 13px; height: 13px; color: #7fb2ff; }
+  .of-x {
+    width: 32px; height: 32px; border-radius: 99px; border: 1px solid rgba(255,255,255,.10);
+    background: rgba(255,255,255,.04); color: var(--texto3); cursor: pointer; display: grid; place-items: center;
+    transition: background .15s, color .15s;
   }
-  .of-corpo { padding: 24px 26px 22px; }
+  .of-x:hover { background: rgba(255,255,255,.09); color: var(--texto); }
   .of-titulo {
-    font-size: clamp(22px, 3vw, 28px); line-height: 1.16; font-weight: 800; letter-spacing: -.03em; margin: 0 0 8px;
-    background: linear-gradient(180deg, #fff 35%, #ffe6a3); -webkit-background-clip: text; background-clip: text; color: transparent;
+    font-size: 26px; line-height: 1.18; font-weight: 600; letter-spacing: -.035em; margin: 0 0 8px;
+    color: #f6f8fc; text-align: left;
   }
-  .of-sub { margin: 0 0 18px; color: var(--texto2); font-size: 14px; line-height: 1.5; }
-  .of-comp { display: grid; grid-template-columns: .9fr 1.25fr; gap: 12px; margin-bottom: 18px; }
-  .of-col {
-    padding: 14px 16px; border-radius: 14px; background: rgba(255,255,255,.025);
-    border: 1px solid var(--linha); font-size: 12.5px; color: var(--texto3); display: grid; gap: 8px; align-content: start;
+  .of-sub { margin: 0 0 22px; color: var(--texto2); font-size: 14.5px; font-weight: 400; line-height: 1.55; text-align: left; }
+  .of-grade { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .of-feat {
+    padding: 13px 14px; border-radius: 13px; background: rgba(255,255,255,.028);
+    border: 1px solid rgba(255,255,255,.07); display: flex; align-items: flex-start; gap: 10px;
   }
-  .of-col b.col-tit { font-size: 13px; color: var(--texto2); display: flex; align-items: center; gap: 7px; margin-bottom: 2px; }
-  .of-col.pro {
-    background: linear-gradient(155deg, rgba(245,196,81,.12), rgba(61,139,255,.08));
-    border-color: rgba(245,196,81,.45); color: var(--texto);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+  .of-feat-ic {
+    width: 28px; height: 28px; border-radius: 8px; flex: none; display: grid; place-items: center;
+    background: rgba(61,139,255,.12); color: #7fb2ff; margin-top: 1px;
   }
-  .of-col.pro b.col-tit { color: #ffd978; font-size: 14px; }
-  .of-item { display: flex; align-items: flex-start; gap: 8px; line-height: 1.4; }
-  .of-item svg { width: 15px; height: 15px; flex: none; margin-top: 2px; }
-  .of-col.pro .of-item svg { color: #ffd978; }
+  .of-feat-ic svg { width: 15px; height: 15px; }
+  .of-feat strong { display: block; font-size: 13px; font-weight: 600; color: var(--texto); margin-bottom: 2px; letter-spacing: -.01em; }
+  .of-feat span { display: block; font-size: 12px; font-weight: 400; color: var(--texto3); line-height: 1.45; }
   .of-preco-box {
-    display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
-    padding: 15px 18px; border-radius: 14px; margin-bottom: 16px;
-    background: rgba(0,0,0,.38); border: 1px solid rgba(245,196,81,.35);
+    display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    padding: 16px 18px; border-radius: 14px; margin-bottom: 16px;
+    background: rgba(255,255,255,.032); border: 1px solid rgba(255,255,255,.09);
   }
-  .of-preco-dir { display: flex; align-items: baseline; gap: 10px; }
-  .of-preco-antes { font-size: 15px; color: var(--texto3); text-decoration: line-through; }
-  .of-preco-agora { font-size: 32px; font-weight: 800; letter-spacing: -.03em; color: #ffd978; line-height: 1; }
-  .of-eco {
-    display: inline-block; margin-top: 4px; padding: 2px 9px; border-radius: 99px;
-    background: rgba(134,211,164,.16); border: 1px solid rgba(134,211,164,.4);
-    color: var(--verde); font-size: 11px; font-weight: 700;
+  .of-preco-esq strong { display: block; font-size: 14.5px; font-weight: 600; color: var(--texto); letter-spacing: -.01em; }
+  .of-preco-esq span { display: block; font-size: 12.5px; color: var(--texto3); margin-top: 2px; }
+  .of-preco-dir { display: flex; align-items: baseline; gap: 9px; }
+  .of-preco-antes { font-size: 14px; font-weight: 400; color: var(--texto3); text-decoration: line-through; }
+  .of-preco-agora { font-size: 28px; font-weight: 600; letter-spacing: -.035em; color: #fff; line-height: 1; }
+  .of-cta-btn {
+    width: 100%; justify-content: center; padding: 13px 20px; border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.18); cursor: pointer;
+    background: linear-gradient(180deg, #5da0ff 0%, #2f7bf6 100%); color: #051126;
+    font-size: 14.5px; font-weight: 650; letter-spacing: -.01em;
+    box-shadow: 0 12px 30px -10px rgba(61,139,255,.55), inset 0 1px 0 rgba(255,255,255,.45);
+    display: inline-flex; align-items: center; gap: 8px; transition: filter .18s, transform .15s;
   }
-  .btn-ouro-cta {
-    width: 100%; justify-content: center; padding: 15px 20px; border-radius: 13px; border: 0; cursor: pointer;
-    background: linear-gradient(180deg, #ffe08a 0%, #f0b23c 100%); color: #1b1200;
-    font-size: 15.5px; font-weight: 800; letter-spacing: -.01em;
-    box-shadow: 0 14px 36px -8px rgba(240,178,60,.55), inset 0 1px 0 rgba(255,255,255,.65);
-    display: inline-flex; align-items: center; gap: 9px; transition: transform .18s, filter .18s;
+  .of-cta-btn:hover { filter: brightness(1.07); }
+  .of-cta-btn:active { transform: scale(.985); }
+  .of-cta-btn:disabled { opacity: .6; cursor: wait; }
+  .of-rodape {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    margin-top: 12px; font-size: 12px; color: var(--texto3);
   }
-  .btn-ouro-cta:hover { filter: brightness(1.06); transform: translateY(-1px); }
-  .btn-ouro-cta:active { transform: scale(.98); }
-  .btn-ouro-cta:disabled { opacity: .65; cursor: wait; }
-  .of-garantias {
-    display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;
-    margin: 11px 0 6px; font-size: 11.5px; color: var(--texto3);
-  }
-  .of-garantias span { display: inline-flex; align-items: center; gap: 5px; }
   .of-fechar-link {
-    display: block; width: 100%; text-align: center; background: none; border: 0; padding: 6px;
-    color: var(--texto3); font-size: 12px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
+    background: none; border: 0; padding: 4px 0; color: var(--texto3); font-size: 12.5px; font-weight: 500;
+    cursor: pointer; transition: color .15s;
   }
-  .of-fechar-link:hover { color: var(--texto2); }
+  .of-fechar-link:hover { color: var(--texto); }
 
   /* ---- modal VIP de agradecimento especial ao assinar ---- */
   .vip-caixa {
-    max-width: 560px; padding: 30px 28px 24px; text-align: center; position: relative; overflow: hidden;
-    border: 1px solid rgba(245,196,81,.55);
+    max-width: 540px; padding: 30px 28px 24px; text-align: center; position: relative; overflow: hidden;
+    border: 1px solid rgba(127,178,255,.28); border-radius: 22px;
     background:
-      radial-gradient(ellipse 75% 50% at 50% -5%, rgba(245,196,81,.26), transparent 65%),
-      radial-gradient(ellipse 60% 45% at 50% 110%, rgba(61,139,255,.18), transparent 65%),
-      #0b0e15;
-    box-shadow: 0 40px 95px -20px rgba(0,0,0,.95), 0 0 70px -15px rgba(245,196,81,.32);
+      radial-gradient(ellipse 80% 50% at 50% -12%, rgba(61,139,255,.22), transparent 68%),
+      #0b0d12;
+    box-shadow: 0 36px 90px -24px rgba(0,0,0,.92), inset 0 1px 0 rgba(255,255,255,.08);
   }
   .vip-coroa {
-    width: 66px; height: 66px; margin: 0 auto 14px; border-radius: 20px; display: grid; place-items: center;
-    background: linear-gradient(145deg, #ffe28f, #e59e26); color: #1b1200;
-    box-shadow: 0 14px 36px -6px rgba(240,178,60,.65), inset 0 1px 0 rgba(255,255,255,.7);
-    animation: vipPulso 2.4s ease-in-out infinite;
+    width: 56px; height: 56px; margin: 0 auto 14px; border-radius: 16px; display: grid; place-items: center;
+    background: rgba(61,139,255,.15); border: 1px solid rgba(127,178,255,.32); color: #8ec0ff;
   }
-  .vip-coroa svg { width: 32px; height: 32px; }
-  @keyframes vipPulso { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  .vip-coroa svg { width: 26px; height: 26px; }
   .vip-carta {
-    margin: 14px 0 16px; padding: 16px 18px; border-radius: 14px; text-align: left;
-    background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.10);
-    font-size: 13.5px; color: var(--texto2); line-height: 1.62;
+    margin: 16px 0; padding: 16px 18px; border-radius: 14px; text-align: left;
+    background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08);
+    font-size: 13.5px; color: var(--texto2); line-height: 1.65; font-weight: 400;
   }
-  .vip-carta b { color: var(--texto); }
-  .vip-assinatura { margin-top: 10px; font-size: 12.5px; color: #ffd978; font-weight: 700; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .vip-carta strong { color: var(--texto); font-weight: 600; }
+  .vip-assinatura { margin-top: 12px; font-size: 12.5px; color: #9ec5ff; font-weight: 500; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
   .vip-chave-box {
     display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
     padding: 12px 14px; border-radius: 12px; margin-bottom: 16px;
-    background: rgba(0,0,0,.38); border: 1px dashed rgba(127,178,255,.45);
+    background: rgba(0,0,0,.35); border: 1px dashed rgba(127,178,255,.35);
   }
-  .vip-chave-box code { font: 700 16px Consolas, monospace; color: #8ec0ff; letter-spacing: 1px; }
-  @media (max-width: 640px) { .of-comp { grid-template-columns: 1fr; } }
+  .vip-chave-box code { font: 600 15px Consolas, monospace; color: #8ec0ff; letter-spacing: .8px; }
+  @media (max-width: 600px) { .of-grade { grid-template-columns: 1fr; } .of-caixa { padding: 22px 20px 18px; } }
 </style>
 </head>
 <body data-modo="fluxo">
@@ -2026,90 +2016,97 @@
 
 <div class="dsp-fundo" id="modalOferta20" hidden role="dialog" aria-modal="true" aria-labelledby="oferta20Titulo" style="z-index:240">
   <div class="dsp-caixa of-caixa">
-    <div class="of-topo-urgencia">
-      <span class="urg-esq"><span class="ponto-vivo"></span> Oferta Única de Lançamento · Cortador Pro</span>
-      <span class="urg-tag">Válida somente nesta tela</span>
+    <div class="of-topo-row">
+      <span class="of-selo"><i data-lucide="sparkles" class="i"></i> Condição especial · válida somente nesta tela</span>
+      <button class="of-x" id="btnFecharOferta20X" type="button" aria-label="Fechar"><i data-lucide="x" class="i"></i></button>
     </div>
-    <div class="of-corpo">
-      <h2 class="of-titulo" id="oferta20Titulo">Transforme suas lives e vídeos em cortes virais no piloto automático.</h2>
-      <p class="of-sub">
-        Desbloqueie agora o <b>Diretor IA Pro</b> com desconto exclusivo ao abrir o app. <b>Se você fechar esta janela, o valor volta para R$ 24,90.</b>
-      </p>
 
-      <div class="of-comp">
-        <div class="of-col">
-          <b class="col-tit"><i data-lucide="cpu" class="i"></i> Motor Local (Grátis)</b>
-          <div class="of-item"><i data-lucide="check" class="i"></i><span>Corta por picos de volume e chat</span></div>
-          <div class="of-item"><i data-lucide="minus" class="i"></i><span>Não lê o contexto da história</span></div>
-          <div class="of-item"><i data-lucide="minus" class="i"></i><span>Apenas 15 min de teste IA na live</span></div>
-          <div class="of-item"><i data-lucide="minus" class="i"></i><span>Títulos e ganchos simples</span></div>
-        </div>
-        <div class="of-col pro">
-          <b class="col-tit"><i data-lucide="sparkles" class="i"></i> Diretor IA Pro · Completo</b>
-          <div class="of-item"><i data-lucide="circle-check" class="i"></i><span><b>Lê a conversa inteira com IA</b> e acerta o início e o fim exatos de cada história</span></div>
-          <div class="of-item"><i data-lucide="circle-check" class="i"></i><span><b>Lives inteiras sem limite de 15 min</b> + até <b>80 vídeos/mês</b> com IA</span></div>
-          <div class="of-item"><i data-lucide="circle-check" class="i"></i><span><b>Gancho de 4s queimado na tela</b> + títulos magnéticos e SEO pronto (TikTok, Shorts e Reels)</span></div>
-          <div class="of-item"><i data-lucide="circle-check" class="i"></i><span><b>Você descreve o momento</b> e a IA encontra sozinha · Gemini nativo + suporte a Claude/ChatGPT</span></div>
-        </div>
-      </div>
+    <h2 class="of-titulo" id="oferta20Titulo">Desbloqueie o Diretor IA Pro.</h2>
+    <p class="of-sub">
+      Cortes com leitura completa da conversa, lives inteiras sem limite de tempo e títulos prontos. Ao fechar esta mensagem, o valor volta para R$&nbsp;24,90.
+    </p>
 
-      <div class="of-preco-box">
+    <div class="of-grade">
+      <div class="of-feat">
+        <span class="of-feat-ic"><i data-lucide="brain" class="i"></i></span>
         <div>
-          <b style="font-size:15px; color:var(--texto); display:block">Passe 30 dias · Diretor IA Pro</b>
-          <span style="font-size:12.5px; color:var(--texto2)">Menos de <b>R$ 0,67 por dia</b> · sem cobrança recorrente escondida</span>
-          <div><span class="of-eco">ECONOMIZE R$ 4,90 SOMENTE NESTA TELA</span></div>
-        </div>
-        <div class="of-preco-dir">
-          <span class="of-preco-antes">R$ 24,90</span>
-          <span class="of-preco-agora">R$ 20,00</span>
+          <strong>Contexto real da história</strong>
+          <span>Acerta o início e o fim exatos sem cortar frases pela metade.</span>
         </div>
       </div>
-
-      <button class="btn-ouro-cta" id="btnGarantirOferta20" type="button">
-        <i data-lucide="zap" class="i"></i> QUERO O DIRETOR IA PRO POR R$ 20,00 (PIX OU CARTÃO)
-      </button>
-
-      <div class="of-garantias">
-        <span><i data-lucide="shield-check" class="i"></i> Pagamento seguro InfinitePay</span>
-        <span><i data-lucide="sparkles" class="i"></i> Ativa sozinho na tela em segundos</span>
-        <span><i data-lucide="check" class="i"></i> Sem assinatura automática</span>
+      <div class="of-feat">
+        <span class="of-feat-ic"><i data-lucide="radio" class="i"></i></span>
+        <div>
+          <strong>Lives inteiras sem trava</strong>
+          <span>Sem limite de 15 min ao vivo + até 80 vídeos por mês.</span>
+        </div>
       </div>
-
-      <button class="of-fechar-link" id="btnFecharOferta20" type="button">
-        Agora não — prefiro fechar e perder o desconto (voltar para R$ 24,90)
-      </button>
-      <div class="pasta-status" id="oferta20Status" style="margin-top:8px; text-align:center"></div>
+      <div class="of-feat">
+        <span class="of-feat-ic"><i data-lucide="hash" class="i"></i></span>
+        <div>
+          <strong>Gancho e SEO por rede</strong>
+          <span>Gancho de 4s na tela + legendas para TikTok, Shorts e Reels.</span>
+        </div>
+      </div>
+      <div class="of-feat">
+        <span class="of-feat-ic"><i data-lucide="search" class="i"></i></span>
+        <div>
+          <strong>Busca pelo que você pedir</strong>
+          <span>Descreva o momento e a IA encontra. Gemini incluso ou sua API.</span>
+        </div>
+      </div>
     </div>
+
+    <div class="of-preco-box">
+      <div class="of-preco-esq">
+        <strong>Passe 30 dias · Diretor IA Pro</strong>
+        <span>Pix ou cartão · sem renovação automática</span>
+      </div>
+      <div class="of-preco-dir">
+        <span class="of-preco-antes">R$ 24,90</span>
+        <span class="of-preco-agora">R$ 20,00</span>
+      </div>
+    </div>
+
+    <button class="of-cta-btn" id="btnGarantirOferta20" type="button">
+      <i data-lucide="zap" class="i"></i> Desbloquear Pro por R$ 20,00
+    </button>
+
+    <div class="of-rodape">
+      <span>Ativação automática na tela via InfinitePay</span>
+      <button class="of-fechar-link" id="btnFecharOferta20" type="button">Agora não</button>
+    </div>
+    <div class="pasta-status" id="oferta20Status" style="margin-top:8px; text-align:center"></div>
   </div>
 </div>
 
 <div class="dsp-fundo" id="modalBoasVindasPro" hidden role="dialog" aria-modal="true" aria-labelledby="vipTitulo" style="z-index:255">
   <div class="dsp-caixa vip-caixa">
-    <div class="vip-coroa"><i data-lucide="crown" class="i"></i></div>
-    <span class="pilula-pro ativo" style="background:rgba(245,196,81,.18); border-color:rgba(245,196,81,.5); color:#ffd978">MEMBRO OFICIAL · CORTADOR PRO ATIVADO</span>
-    <h2 id="vipTitulo" style="margin:12px 0 4px; font-size:24px; line-height:1.2">Muito obrigado por fazer parte do Cortador Pro! 🎉</h2>
-    <p id="vipSub" style="margin:0; font-size:13.5px; color:var(--verde); font-weight:600">Seu Diretor IA Pro já está 100% liberado neste computador.</p>
+    <div class="vip-coroa"><i data-lucide="sparkles" class="i"></i></div>
+    <span class="of-selo" style="margin-bottom:10px">Cortador Pro ativado</span>
+    <h2 id="vipTitulo" style="margin:4px 0 4px; font-size:23px; font-weight:600; letter-spacing:-.03em; color:#f6f8fc">Obrigado por apoiar o Cortador Automático!</h2>
+    <p id="vipSub" style="margin:0; font-size:13.5px; color:var(--texto2)">Seu Diretor IA Pro já está liberado neste computador.</p>
 
     <div class="vip-carta">
-      De coração, <b>muito obrigado por acreditar no nosso trabalho!</b><br><br>
-      Você não só acabou de liberar o poder máximo do <b>Diretor IA Pro</b> (lives inteiras sem limite de tempo, cortes cirúrgicos com contexto real, ganchos de retenção e SEO por rede) — você está impulsionando um projeto brasileiro feito com carinho para ajudar clipadores e criadores a crescerem muito mais rápido.<br><br>
-      Qualquer ideia de função nova ou feedback, manda uma mensagem lá no Instagram <b>@gabriel.workspace</b> dizendo que você é membro Pro!
+      De coração, <strong>muito obrigado por acreditar no nosso trabalho.</strong><br><br>
+      Você acabou de liberar o <strong>Diretor IA Pro</strong> completo — lives inteiras sem limite de tempo, cortes com contexto real, ganchos de retenção e SEO por rede — e está ajudando um projeto independente brasileiro a continuar evoluindo toda semana.<br><br>
+      Se tiver qualquer sugestão ou ideia de recurso novo, me manda uma mensagem no Instagram <strong>@gabriel.workspace</strong>.
       <div class="vip-assinatura">
-        <span>— Gabriel Workspace · Criador do Cortador Automático</span>
-        <span id="vipValidade" style="color:var(--texto3); font-weight:600"></span>
+        <span>— Gabriel Workspace</span>
+        <span id="vipValidade" style="color:var(--texto3)"></span>
       </div>
     </div>
 
     <div class="vip-chave-box" id="vipChaveWrap" hidden>
       <div style="text-align:left">
-        <div style="font-size:11px; color:var(--texto3); text-transform:uppercase; letter-spacing:.08em">Sua chave VIP de ativação</div>
+        <div style="font-size:11px; color:var(--texto3); letter-spacing:.04em">Sua chave de ativação</div>
         <code id="vipChaveTxt"></code>
       </div>
-      <button class="btn p" id="btnVipCopiarChave" type="button"><i data-lucide="copy" class="i"></i> Copiar chave</button>
+      <button class="btn p" id="btnVipCopiarChave" type="button"><i data-lucide="copy" class="i"></i> Copiar</button>
     </div>
 
-    <button class="btn-ouro-cta" id="btnVipComecar" type="button">
-      <i data-lucide="rocket" class="i"></i> Começar a cortar com o Diretor IA Pro agora!
+    <button class="of-cta-btn" id="btnVipComecar" type="button">
+      Começar a cortar com o Diretor IA Pro
     </button>
   </div>
 </div>
@@ -6024,7 +6021,11 @@
   }
 
   // ---- promocao relampago unica ao abrir (de R$ 24,90 por R$ 20,00 - valida somente nesta mensagem)
-  const CHAVE_OFERTA_20 = 'cortador_oferta_24_por_20_v2';
+  const CHAVE_OFERTA_20 = 'cortador_oferta_24_por_20_v3';
+  function fecharOferta20() {
+    try { localStorage.setItem(CHAVE_OFERTA_20, '1'); } catch (_) {}
+    $('modalOferta20').hidden = true;
+  }
   function tentarMostrarOferta20() {
     if (!estadoPro || !estadoPro.configurado) return;
     // Se ja e assinante Pro e ainda nao viu a carta VIP de agradecimento, mostra 1x!
@@ -6046,12 +6047,8 @@
     icones($('modalOferta20'));
   }
 
-  if ($('btnFecharOferta20')) {
-    $('btnFecharOferta20').addEventListener('click', () => {
-      try { localStorage.setItem(CHAVE_OFERTA_20, '1'); } catch (_) {}
-      $('modalOferta20').hidden = true;
-    });
-  }
+  if ($('btnFecharOferta20')) $('btnFecharOferta20').addEventListener('click', fecharOferta20);
+  if ($('btnFecharOferta20X')) $('btnFecharOferta20X').addEventListener('click', fecharOferta20);
   if ($('btnGarantirOferta20')) {
     $('btnGarantirOferta20').addEventListener('click', async () => {
       const b = $('btnGarantirOferta20');
@@ -6405,6 +6402,13 @@
     await carregarEstadoPro(true);
     statusPro('Chave desconectada.', '');
   });
+
+  const _qsPreview = new URLSearchParams(location.search);
+  if (_qsPreview.get('oferta') === '1') {
+    setTimeout(() => { $('oferta20Status').textContent = ''; $('modalOferta20').hidden = false; icones($('modalOferta20')); }, 350);
+  } else if (_qsPreview.get('vip') === '1') {
+    setTimeout(() => abrirBoasVindasVipPro('CORT-DEMO-1234-5678'), 350);
+  }
 
   pintarMotorPro();
   carregarEstadoPro(false);

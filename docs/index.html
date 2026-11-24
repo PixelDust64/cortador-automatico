@@ -86,32 +86,33 @@
   /* ---------------------------------------------------------- topo */
   .topo { position: sticky; top: 14px; z-index: 40; padding: 0 18px; margin-top: 14px; }
   .topo-caixa {
-    max-width: 1180px; margin: 0 auto; position: relative;
+    max-width: 1220px; margin: 0 auto; position: relative;
     background: rgba(10, 12, 16, .82);
     backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4);
     border: 1px solid rgba(255, 255, 255, .12);
     border-radius: 99px;
-    padding: 10px 14px 10px 18px;
+    padding: 9px 12px 9px 16px;
     box-shadow: 0 22px 54px -18px rgba(0, 0, 0, .85), inset 0 1px 0 rgba(255, 255, 255, .1);
     transition: border-radius .25s var(--suave), border-color .25s var(--suave), background .25s var(--suave);
   }
   .topo-caixa:hover { border-color: rgba(255, 255, 255, .18); }
-  .topo-linha { display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 50px; }
-  .logo { display: flex; align-items: center; gap: 12px; white-space: nowrap; flex-shrink: 0; }
+  .topo-linha { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; }
+  .logo { display: flex; align-items: center; gap: 11px; white-space: nowrap; flex-shrink: 0; }
   .logo img { width: 36px; height: 36px; border-radius: 10px; box-shadow: 0 0 22px -4px var(--marca-brilho); transition: transform .25s var(--suave); }
   .logo:hover img { transform: scale(1.05); }
-  .logo .nome { display: flex; flex-direction: column; line-height: 1.2; font-size: 13px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
-  .logo .por { display: flex; align-items: center; gap: 7px; font-size: 10.5px; font-weight: 600; letter-spacing: .1em; color: var(--texto3); margin-top: 2px; }
+  .logo .nome { display: flex; flex-direction: column; line-height: 1.2; font-size: 12.5px; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+  .logo .por { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 600; letter-spacing: .08em; color: var(--texto3); margin-top: 2px; }
   .logo .logo-v { font-size: 10px; font-weight: 750; letter-spacing: .03em; padding: 1px 7px; border-radius: 99px; background: var(--marca-fundo); border: 1px solid rgba(127, 178, 255, .28); color: var(--marca-claro); text-transform: lowercase; }
   .menu {
-    display: flex; align-items: center; gap: 4px;
-    padding: 5px; border-radius: 99px;
+    display: flex; align-items: center; gap: 2px;
+    padding: 4px; border-radius: 99px;
     background: rgba(255, 255, 255, .035);
     border: 1px solid rgba(255, 255, 255, .07);
+    flex-shrink: 1; min-width: 0;
   }
   .menu a {
-    white-space: nowrap; padding: 8px 18px; border-radius: 99px;
-    font-size: 14px; font-weight: 650; color: var(--texto2);
+    white-space: nowrap; padding: 7px 13px; border-radius: 99px;
+    font-size: 13.5px; font-weight: 650; color: var(--texto2);
     transition: color .2s, background .2s, box-shadow .2s;
   }
   .menu a:hover { color: var(--texto); background: rgba(255, 255, 255, .06); }
@@ -120,8 +121,8 @@
     background: var(--marca-fundo);
     box-shadow: inset 0 0 0 1px rgba(127, 178, 255, .28);
   }
-  .acoes-topo { display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
-  .acoes-topo .btn.p { padding: 9px 17px; font-size: 14px; }
+  .acoes-topo { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+  .acoes-topo .btn.p { padding: 8px 14px; font-size: 13.5px; }
   .btn-menu-mob {
     display: none; width: 40px; height: 40px; border-radius: 50%;
     border: 1px solid var(--linha2); background: rgba(255, 255, 255, .06);
@@ -144,9 +145,10 @@
   .menu-mob a svg { width: 15px; height: 15px; color: var(--texto3); }
   .topo-caixa.aberto { border-radius: 26px; }
   .topo-caixa.aberto .menu-mob { display: flex; }
-  @media (max-width: 960px) { .menu { display: none; } .acoes-topo { margin-left: auto; } .btn-menu-mob { display: grid; } }
+  @media (max-width: 1240px) { .acoes-topo .so-largo { display: none; } .acoes-topo .abrir-apoio { padding: 8px 11px; } }
+  @media (max-width: 1140px) { .menu { display: none; } .acoes-topo { margin-left: auto; } .btn-menu-mob { display: grid; } }
   @media (max-width: 600px) { .topo { padding: 0 10px; top: 8px; } .estrelas-topo, .logo .por { display: none !important; } .so-largo { display: none; } .acoes-topo .btn.p { padding: 8px 14px; } }
-  @media (max-width: 420px) { .logo .nome { display: none !important; } }
+  @media (max-width: 520px) { .logo .nome { display: none !important; } }
 
   /* ---------------------------------------------------------- botoes */
   .btn {

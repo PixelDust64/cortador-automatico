@@ -110,7 +110,7 @@ Os instaladores desta versão independente são publicados em [Releases deste re
 
 O programa não envia dados para terceiros, exceto quando você solicita baixar um vídeo/live pelo link, ler o chat público da live (opcional), atualizar o `yt-dlp` ou instalar o motor de IA do Splitter Studio sob demanda. Todos os vídeos, transcrições, artes e cortes ficam apenas no seu computador.
 
-> **Aviso de segurança (uso local / monousuário):** esta aplicação foi projetada para uso **monousuário** e **não possui medidas avançadas de segurança** (como controle de acesso multiusuário, isolamento de permissões ou proteção contra exposição pública), devido ao seu foco exclusivo em execução com recursos locais. Aconselha-se utilizar o programa **apenas na própria máquina (`127.0.0.1`) ou em uma rede local privada confiável**, evitando expor a porta diretamente para a internet pública.
+> **Aviso de segurança (uso local / monousuário):** esta aplicação foi projetada para uso **monousuário** e **não possui medidas avançadas de segurança** (como controle de acesso multiusuário, isolamento de permissões ou proteção contra exposição pública), devido ao seu foco exclusivo em execução com recursos locais. Aconselha-se utilizar o programa **apenas na própria máquina ou em uma rede local privada confiável**, evitando expor a porta diretamente para a internet pública.
 
 ## Créditos e Licença
 

@@ -22,7 +22,7 @@ Corta vídeo e live da **Kick, Twitch e YouTube** em clipes verticais (**9:16**)
 
 Tudo roda localmente no seu PC: nenhuma conta, chave de API ou mensalidade. A internet só é usada para baixar o vídeo (`yt-dlp`), ler o chat público da live (opcional) ou instalar o motor de IA do Splitter Studio sob demanda.
 
-Guia de uso detalhado: [LEIA-ME.txt](LEIA-ME.txt).
+Guia de uso detalhado: [LEIA-ME.txt](LEIA-ME.txt) · Documentação da API HTTP (uso headless / agentes): [docs/API.md](docs/API.md).
 
 ## Diferenciais desta versão (Mega Cortes HD)
 

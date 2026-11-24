@@ -17,16 +17,17 @@ const { achatarPalavras, montarFrases, mmss, rotulo } = require('./score');
 const PLANOS_PADRAO = [
   {
     id: 'mensal',
-    nome: 'Passe 30 dias',
-    preco: 'R$ 24,90',
-    detalhe: 'Pix ou cartão · até 80 vídeos/mês com IA Pro · sem renovação forçada',
+    nome: 'Oferta Exclusiva · Passe 30 dias',
+    precoAntes: 'R$ 24,90',
+    preco: 'R$ 19,99',
+    detalhe: 'Exclusivo pra quem já baixou · até 80 vídeos/mês + lives inteiras sem limite · ativa na hora no Pix ou Cartão',
     destaque: true,
   },
   {
     id: 'trimestral',
-    nome: 'Passe 90 dias',
+    nome: 'Passe 90 dias · Cortador Pro',
     preco: 'R$ 59,90',
-    detalhe: 'Economize 20% · 3 meses completos de Diretor IA Pro (R$ 19,96/mês)',
+    detalhe: '3 meses completos de Diretor IA Pro · até 100 vídeos/mês + lives ilimitadas',
     destaque: false,
   },
 ];

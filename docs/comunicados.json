@@ -1,17 +1,16 @@
 {
   "versao": "2.0.8",
-  "resumoVersao": "Atualização automática inteligente, Diretor IA Pro em vídeo e live, áudio sincronizado e tutorial interativo.",
+  "resumoVersao": "Oferta exclusiva Diretor IA Pro por R$ 19,99/mês + correção de vídeo fluido nas lives do YouTube.",
   "precisaInstalador": false,
   "proApiUrl": "https://cortador-pro.gabrielhraa.workers.dev",
   "aviso": {
-    "id": "convite-upgrade-pro-v1",
+    "id": "oferta-exclusiva-1999-v1",
     "ativo": true,
     "tipo": "aviso",
-    "titulo": "✨ Gostou do Diretor IA Pro? Libere vídeos + lives inteiras sem limite!",
-    "texto": "Ative o Passe Cortador Pro no Pix ou Cartão (ativa sozinho na hora na sua tela) e use a IA em toda a sua live sem trava de 15 minutos.",
-    "botaoTexto": "⚡ Fazer Upgrade Pro",
+    "titulo": "🔥 Oferta Exclusiva pra quem já baixou: Diretor IA Pro por R$ 19,99/mês!",
+    "texto": "De R$ 24,90 por apenas R$ 19,99/mês: libere o Diretor IA Pro para vídeos e lives inteiras sem limite de tempo (ativa na hora no Pix ou Cartão).",
+    "botaoTexto": "⚡ Garantir por R$ 19,99",
     "botaoUrl": "#pro",
-    "soQuemTestouPro": true,
     "fixo": false
   }
 }

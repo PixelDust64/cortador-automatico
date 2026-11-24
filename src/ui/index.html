@@ -1760,6 +1760,16 @@
       </div>
     </div>
 
+    <div class="cartao" id="cardSugestaoProResultado" hidden style="margin-bottom:16px; border-color:rgba(226,194,122,.4); background:linear-gradient(145deg, rgba(226,194,122,.10), rgba(61,139,255,.06)); display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap">
+      <div style="flex:1; min-width:240px">
+        <b id="sugProResTitulo" style="color:var(--amarelo); font-size:var(--t4); display:block; margin-bottom:4px">✨ Leve seus cortes pro próximo nível com o Diretor IA Pro</b>
+        <span id="sugProResTexto" style="font-size:var(--t5); color:var(--texto2); line-height:1.5"></span>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap">
+        <button class="btn principal p" id="btnSugProUpgrade" type="button"><i data-lucide="zap" class="i"></i> Fazer Upgrade Pro</button>
+      </div>
+    </div>
+
     <div class="aviso-ia" role="note"><i data-lucide="sparkles" class="i"></i><span><b>A IA pode cometer falhas.</b> Confira o corte, a legenda e o título antes de postar. Tudo dá pra corrigir no editor.</span></div>
 
     <div class="clipes" id="listaClipes"></div>
@@ -3898,9 +3908,15 @@
 
   $('btnAvParar').addEventListener('click', async () => {
     if (av.parado) return voltarAoComeco();
+    const qtdClipesFeitos = Number($('avQtd').textContent) || 0;
+    const usouTrialLiveNestaSessao = !!(cfg.motor === 'ia' || (estadoPro && estadoPro.liveUsado));
     $('btnAvParar').disabled = true;
     try { await postJson('/api/aovivo/parar'); } catch (_) {}
     $('btnAvParar').disabled = false;
+    await carregarEstadoPro(true);
+    if (qtdClipesFeitos > 0 && usouTrialLiveNestaSessao && estadoPro && !estadoPro.ativo) {
+      setTimeout(() => sugerirUpgradeAposUso('live'), 800);
+    }
   });
   $('btnAvPasta').addEventListener('click', () => { if (av.pasta) postJson('/api/abrir', { caminho: av.pasta }); });
   $('btnAvAjustar').addEventListener('click', async () => {
@@ -4031,10 +4047,15 @@
         if (/Diretor IA Pro/i.test(d.msg || '')) carregarEstadoPro(true);
       },
       'clipe-pronto': (d) => $('clipesParciais').appendChild(cartao(d.clipe, true)),
-      fim: (d) => {
+      fim: async (d) => {
+        const usouIaNesteJob = cfg.motor === 'ia' && !(trechoFluxo && trechoFluxo.modo === 'exato');
         processandoAgora = false;
-        carregarEstadoPro(true);
-        abrirProjeto(d.pasta, { recem: true, recado: d.recado, clipes: d.clipes });
+        await carregarEstadoPro(true);
+        await abrirProjeto(d.pasta, { recem: true, recado: d.recado, clipes: d.clipes });
+        atualizarCardSugestaoResultado(d.clipes);
+        if (usouIaNesteJob) {
+          setTimeout(() => sugerirUpgradeAposUso('video'), 1100);
+        }
       },
       erro: (m) => { voltar(); erro(m); },
     });
@@ -4318,6 +4339,7 @@
     const motivo = motivoSemEdicao();
     if (motivo) partes.push(motivo);
     $('resSub').textContent = partes.join(' · ');
+    if (typeof atualizarCardSugestaoResultado === 'function') atualizarCardSugestaoResultado(p.clipes);
   }
 
   $('btnRelatorio').addEventListener('click', () => {
@@ -5398,6 +5420,43 @@
     }
   }
 
+  function aplicarAvisoRemoto() {
+    if (!estadoRemoto) return;
+    const av = estadoRemoto.aviso;
+    const ehConvitePro = av && av.botaoUrl === '#pro';
+    const jaAssinante = !!(estadoPro && estadoPro.ativo);
+    const jaTestouPro = !!(estadoPro && (estadoPro.usosFeitos > 0 || estadoPro.liveUsado || estadoPro.trialsRestantes < 3));
+    const bloqueadoPorFiltroPro = !!(av && av.soQuemTestouPro && !jaTestouPro);
+    const jaFechou = av && !av.fixo && lerDispensados().includes(av.id);
+    if (av && av.ativo !== false && !jaFechou && !(ehConvitePro && jaAssinante) && !bloqueadoPorFiltroPro) {
+      $('avisoRemoto').className = 'comunicado ' + (av.tipo || 'info');
+      $('avisoRemotoTitulo').textContent = av.titulo || '';
+      $('avisoRemotoTitulo').hidden = !av.titulo;
+      $('avisoRemotoTexto').textContent = av.texto || '';
+      const btn = $('avisoRemotoBtn');
+      if (av.botaoUrl && av.botaoTexto) {
+        btn.href = av.botaoUrl;
+        btn.textContent = av.botaoTexto;
+        if (ehConvitePro) {
+          btn.removeAttribute('target');
+          btn.className = 'btn principal p';
+          btn.onclick = (ev) => { ev.preventDefault(); abrirModalPro(null, estadoPro && estadoPro.conviteUpgrade); };
+        } else {
+          btn.setAttribute('target', '_blank');
+          btn.className = 'btn p';
+          btn.onclick = null;
+        }
+        btn.hidden = false;
+      } else {
+        btn.hidden = true;
+      }
+      $('btnFecharAvisoRemoto').hidden = !!av.fixo;
+      $('avisoRemoto').hidden = false;
+    } else {
+      $('avisoRemoto').hidden = true;
+    }
+  }
+
   async function checarComunicados(forcar) {
     try {
       const r = await fetch('/api/comunicados' + (forcar ? '?forcar=1' : '')).then((x) => x.json());
@@ -5412,37 +5471,7 @@
         $('barraAtualizar').hidden = true;
       }
 
-      const av = r.aviso;
-      const ehConvitePro = av && av.botaoUrl === '#pro';
-      const jaAssinante = !!(estadoPro && estadoPro.ativo);
-      const jaFechou = av && !av.fixo && lerDispensados().includes(av.id);
-      if (av && av.ativo !== false && !jaFechou && !(ehConvitePro && jaAssinante)) {
-        $('avisoRemoto').className = 'comunicado ' + (av.tipo || 'info');
-        $('avisoRemotoTitulo').textContent = av.titulo || '';
-        $('avisoRemotoTitulo').hidden = !av.titulo;
-        $('avisoRemotoTexto').textContent = av.texto || '';
-        const btn = $('avisoRemotoBtn');
-        if (av.botaoUrl && av.botaoTexto) {
-          btn.href = av.botaoUrl;
-          btn.textContent = av.botaoTexto;
-          if (ehConvitePro) {
-            btn.removeAttribute('target');
-            btn.className = 'btn principal p';
-            btn.onclick = (ev) => { ev.preventDefault(); abrirModalPro(null, estadoPro && estadoPro.conviteUpgrade); };
-          } else {
-            btn.setAttribute('target', '_blank');
-            btn.className = 'btn p';
-            btn.onclick = null;
-          }
-          btn.hidden = false;
-        } else {
-          btn.hidden = true;
-        }
-        $('btnFecharAvisoRemoto').hidden = !!av.fixo;
-        $('avisoRemoto').hidden = false;
-      } else {
-        $('avisoRemoto').hidden = true;
-      }
+      aplicarAvisoRemoto();
       return r;
     } catch (_) {
       return null;
@@ -5594,9 +5623,7 @@
         pintarProvedor(est.provedor, est.temChavePropria);
         if ($('inputModeloIa') && !$('inputModeloIa').value) $('inputModeloIa').value = est.modeloProprio || '';
       }
-      if (est.ativo && estadoRemoto && estadoRemoto.aviso && estadoRemoto.aviso.botaoUrl === '#pro') {
-        $('avisoRemoto').hidden = true;
-      }
+      aplicarAvisoRemoto();
       if ($('proConviteBanner')) {
         if (!est.ativo && est.conviteUpgrade) {
           $('proConviteTitulo').textContent = est.conviteUpgrade.titulo || '✨ Convite Especial · Cortador Pro';
@@ -5635,6 +5662,52 @@
       pintarMotorPro();
       tentarMostrarConviteUpgrade();
     } catch (_) {}
+  }
+
+  function atualizarCardSugestaoResultado(clipesLista) {
+    const card = $('cardSugestaoProResultado');
+    if (!card) return;
+    const lista = Array.isArray(clipesLista) ? clipesLista : ((projetoAtual && projetoAtual.clipes) || []);
+    const foiComIa = lista.some((c) => c && c.geradoPorIa);
+    // Mostra SOMENTE quando a pessoa usou os testes gratis do Diretor IA Pro (nunca incomoda no Motor Local)
+    if (!foiComIa || (estadoPro && estadoPro.ativo)) {
+      card.hidden = true;
+      return;
+    }
+    const rest = estadoPro ? Number(estadoPro.trialsRestantes || 0) : 0;
+    $('sugProResTitulo').textContent = '✨ Gostou da precisão do Diretor IA Pro nestes cortes?';
+    $('sugProResTexto').textContent = rest > 0
+      ? 'Resta(m) ' + rest + ' teste(s) grátis neste PC. Desbloqueie o Passe Pro no Pix ou Cartão para cortar até 80 vídeos/mês + lives inteiras sem limite de 15 minutos!'
+      : 'Você concluiu seus 3 testes grátis! Desbloqueie o Passe Pro agora no Pix ou Cartão (ativa sozinho na tela) para continuar usando sem parar.';
+    card.hidden = false;
+    icones(card);
+  }
+
+  function sugerirUpgradeAposUso(modoOrigem) {
+    if (!estadoPro || estadoPro.ativo) return;
+    const rest = Number(estadoPro.trialsRestantes || 0);
+    let titulo = '✨ Gostou dos cortes feitos pelo Diretor IA Pro?';
+    let texto = '';
+    if (modoOrigem === 'live') {
+      titulo = '⚡ Curtiu usar oteste grátis do Diretor IA Pro na Live?'.replace('oteste', 'o teste');
+      texto = 'No Passe Pro você usa o Diretor IA durante a live inteira (sem limite de 15 minutos) + até 80 vídeos por mês, com ativação automática na hora via Pix ou Cartão!';
+    } else if (rest <= 0) {
+      titulo = '🚀 Seus cortes ficaram prontos — e esse foi seu último teste grátis!';
+      texto = 'Gostou do resultado do Diretor IA Pro? Desbloqueie o Passe Pro agora no Pix ou Cartão (ativa sozinho aqui na tela) para continuar cortando vídeos e lives sem limites!';
+    } else {
+      titulo = '✨ Gostou dos cortes feitos pelo Diretor IA Pro?';
+      texto = 'Resta(m) ' + rest + ' teste(s) grátis neste PC! Já pode garantir o Passe Pro completo abaixo para cortar até 80 vídeos/mês e lives inteiras sem limite de 15 min.';
+    }
+    abrirModalPro(null, { titulo, texto });
+  }
+
+  if ($('btnSugProUpgrade')) {
+    $('btnSugProUpgrade').addEventListener('click', () => {
+      abrirModalPro(null, {
+        titulo: $('sugProResTitulo').textContent,
+        texto: $('sugProResTexto').textContent,
+      });
+    });
   }
 
   function tentarMostrarConviteUpgrade() {

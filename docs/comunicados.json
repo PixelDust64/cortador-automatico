@@ -11,6 +11,7 @@
     "texto": "Ative o Passe Cortador Pro no Pix ou Cartão (ativa sozinho na hora na sua tela) e use a IA em toda a sua live sem trava de 15 minutos.",
     "botaoTexto": "⚡ Fazer Upgrade Pro",
     "botaoUrl": "#pro",
+    "soQuemTestouPro": true,
     "fixo": false
   }
 }

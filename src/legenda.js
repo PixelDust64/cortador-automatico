@@ -193,7 +193,7 @@ function gerarAss(palavras, offset, destino, opcoes) {
     // letra maior, menos letra por linha: 26 cabe no tamanho 62
     const porLinha = Math.max(14, Math.round((26 * 62) / (opcoes.tamanhoGancho || (opcoes.posicaoGancho === 'meio' ? 74 : 62))));
     const texto = quebrarGancho(escapar(semEmoji).toUpperCase(), porLinha);
-    linhas.push('Dialogue: 1,' + tempoAss(0) + ',' + tempoAss(duracao) + ',Gancho,,0,0,0,,{\\fad(180,320)}' + texto);
+    linhas.push('Dialogue: 4,' + tempoAss(0) + ',' + tempoAss(duracao) + ',Gancho,,0,0,0,,{\\fad(180,320)}' + texto);
   }
 
   // cartao com o nome do streamer, centralizado na linha entre a webcam e o jogo
@@ -284,8 +284,18 @@ function alturaDaDivisao(formato, recorte) {
   return Math.round(1920 * fracao / 2) * 2;
 }
 
+/** Posicao vertical ideal do gancho de 4s pra nunca bater no selo de Nome na linha do split. */
+function margemGanchoIdeal(formato, recorte, textoFixo) {
+  if (formato === 'split') {
+    const div = alturaDaDivisao(formato, recorte) || 576;
+    const temNome = !!(semEmojis(textoFixo && textoFixo.nome));
+    return Math.min(1260, div + (temNome ? 74 : 36));
+  }
+  return 155;
+}
+
 module.exports = {
-  gerarAss, gerarSrt, alturaDaDivisao, FONTES_LEGENDA, resolverFonte, semEmojis,
+  gerarAss, gerarSrt, alturaDaDivisao, margemGanchoIdeal, FONTES_LEGENDA, resolverFonte, semEmojis,
   // texto fixo ou cartao com o nome: os dois precisam do .ass
   temTextoFixo: (t) => !!(semEmojis(t && t.texto) || semEmojis(t && t.nome)),
 };

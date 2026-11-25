@@ -138,10 +138,7 @@ function servirArquivo(req, res, arquivo) {
     return fs.createReadStream(arquivo, { start: ini, end: fim }).pipe(res);
   }
 
-  const cabecalhos = { 'Content-Type': tipo, 'Content-Length': st.size, 'Accept-Ranges': 'bytes' };
-  // A janela nunca pode vir do cache: senao uma correcao no HTML nao chega
-  // ate o usuario sem ele limpar o navegador na mao.
-  if (/\.(html|js|css)$/i.test(arquivo)) cabecalhos['Cache-Control'] = 'no-store, must-revalidate';
+  const cabecalhos = { 'Content-Type': tipo, 'Content-Length': st.size, 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-store, must-revalidate' };
 
   res.writeHead(200, cabecalhos);
   fs.createReadStream(arquivo).pipe(res);
@@ -776,6 +773,21 @@ const servidor = http.createServer(async (req, res) => {
       const corpo = await lerCorpo(req);
       const { interpretar } = require('./intencao');
       return json(res, 200, interpretar(corpo.descricao || ''));
+    }
+
+    // Gera um gancho automatico de 4s pro trecho atual dentro do Editor
+    if (rota === '/api/gancho-auto' && req.method === 'POST') {
+      const corpo = await lerCorpo(req);
+      const { gerarGanchoDeTela } = require('./copy');
+      const { semEmojis } = require('./legenda');
+      const variante = Number(corpo.variante) || 0;
+      const texto = String(corpo.texto || '').trim();
+      const gancho = semEmojis(gerarGanchoDeTela({
+        texto,
+        inicio: (Number(corpo.inicio) || 0) + variante * 17.3,
+        contextoJogo: corpo.contexto ? { texto: String(corpo.contexto), canal: String(corpo.canal || '') } : null,
+      })) || 'OLHA O QUE ACONTECEU NESSE CORTE';
+      return json(res, 200, { gancho });
     }
 
     // Duracao e resolucao - a janela usa pra montar o slider de tempo.

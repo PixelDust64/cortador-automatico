@@ -1105,6 +1105,21 @@
   .consumo-item b { display: block; font-size: 12.5px; color: #eef3fb; margin-bottom: 3px; }
   .consumo-item span { display: block; font-size: 11.5px; color: var(--texto3); line-height: 1.45; }
 
+  .ed-over-wrap {
+    position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column;
+    justify-content: space-between; align-items: center; padding: 14px 16px 38px; z-index: 4;
+  }
+  .ed-over-gancho {
+    background: rgba(0,0,0,.82); color: #fff; padding: 6px 13px; border-radius: 7px;
+    font-size: 16px; line-height: 1.2; text-align: center; max-width: 88%;
+    letter-spacing: .01em; box-shadow: 0 6px 20px rgba(0,0,0,.55);
+  }
+  .ed-over-legenda {
+    margin-top: auto; color: #fff; font-size: 20px; line-height: 1.2; text-align: center; max-width: 90%;
+    text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 3px 8px rgba(0,0,0,.85);
+  }
+  .ed-over-legenda em { font-style: normal; color: #ffe600; }
+
   .seo-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--linha); align-items: center; }
   .seo-bar > span { font-size: 11px; color: var(--texto3); font-weight: 600; margin-right: 2px; }
   .btn-seo {
@@ -2675,6 +2690,10 @@
       <div>
         <div class="ed-palco">
           <video id="edVideo" preload="metadata" playsinline controls></video>
+          <div class="ed-over-wrap" id="edOverWrap" hidden>
+            <div class="ed-over-gancho" id="edOverGancho" hidden></div>
+            <div class="ed-over-legenda" id="edOverLegenda" hidden></div>
+          </div>
           <div class="ed-semvideo" id="edSemVideo" hidden>
             Esse vídeo não toca aqui dentro (o formato dele não abre no navegador).<br>
             Dá pra ajustar do mesmo jeito pelas imagens da linha do tempo e pelas palavras.
@@ -2731,24 +2750,32 @@
 
       <div class="ed-lado">
         <div class="cartao" data-so="clipe">
-          <label class="rot" for="edGancho"><i data-lucide="type" class="i"></i> Texto que aparece na tela</label>
-          <textarea id="edGancho" maxlength="90" placeholder="Sem texto na tela"></textarea>
-          <div class="dica" style="margin-top:5px">Aparece nos primeiros 4 segundos. Deixe vazio pra tirar.</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px">
+            <label class="rot" style="margin:0"><i data-lucide="sparkles" class="i"></i> 1. Gancho (primeiros 4s)</label>
+            <button class="btn p" id="btnEdGanchoAuto" type="button" title="Gerar frase de impacto automática a partir da fala"><i data-lucide="wand-sparkles" class="i"></i> Gerar automático</button>
+          </div>
+          <label class="marcar" style="margin-bottom:8px">
+            <input type="checkbox" id="edUsarGancho" checked>
+            <div><b>Mostrar gancho nos 4 primeiros segundos</b><span>Frase de retenção queimada no topo ao abrir o corte.</span></div>
+          </label>
+          <div id="edGanchoWrap">
+            <textarea id="edGancho" maxlength="90" placeholder="Ex: POR QUE ESSE CORTE VIRALIZOU?"></textarea>
+          </div>
         </div>
 
         <div class="cartao" data-so="clipe">
+          <label class="rot"><i data-lucide="captions" class="i"></i> 2. Legendas e Fonte</label>
           <label class="marcar">
-            <input type="checkbox" id="edLegendar">
-            <div><b>Legenda palavra por palavra</b><span>Embaixo do vídeo, com a palavra que está sendo dita em amarelo.</span></div>
+            <input type="checkbox" id="edLegendar" checked>
+            <div><b>Legendas palavra por palavra</b><span>Embaixo do vídeo, com a palavra falada destacada em amarelo.</span></div>
           </label>
           <div style="margin-top:10px">
-            <label class="rot" style="margin-bottom:4px"><i data-lucide="type" class="i"></i> Fonte da legenda e do gancho</label>
+            <span style="display:block; font-size:var(--t6); color:var(--texto3); margin-bottom:4px">Fonte da legenda e do gancho:</span>
             <div class="fontes-grade" id="edFontesLegenda"></div>
           </div>
-          <label class="rot" style="margin-top:12px"><i data-lucide="captions" class="i"></i> Corrigir a legenda</label>
+          <label class="rot" style="margin-top:12px"><i data-lucide="pencil" class="i"></i> Corrigir palavras da legenda</label>
           <div class="ed-legenda" id="edLegenda"></div>
-          <div class="dica" style="margin-top:6px">Clique numa palavra e corrija. Apague o texto pra tirar a palavra da legenda. Vale quando refizer o clipe.</div>
-          <div class="aviso-ia" role="note" style="margin-top:8px"><i data-lucide="sparkles" class="i"></i><span><b>A IA pode cometer falhas</b> e errar uma palavra ou outra. Confira antes de refazer.</span></div>
+          <div class="dica" style="margin-top:6px">Clique numa palavra pra corrigir (ou apague pra remover). Você já vê a prévia ao vivo no vídeo ao lado!</div>
         </div>
 
         <div class="cartao">
@@ -4291,8 +4318,15 @@
     const antes = document.getElementById('av-clipe-' + c.numero) || document.getElementById('fz-' + c.numero);
     $('avQtd').textContent = Math.max(Number($('avQtd').textContent) || 0, c.numero);
     tirarVazio();
-    if (antes) antes.replaceWith(card);
-    else {
+    if (antes) {
+      // Se o usuario estiver assistindo o video agora quando so o botao Editar liberou, preserva o <video> tocando!
+      const vidAntes = antes.querySelector && antes.querySelector('video');
+      const vidNovo = card.querySelector && card.querySelector('video');
+      if (!novo && vidAntes && vidNovo && !vidAntes.paused) {
+        vidNovo.replaceWith(vidAntes);
+      }
+      antes.replaceWith(card);
+    } else {
       // mais novo primeiro
       const depois = [...$('avClipes').children].find((el) => Number((el.id.match(/\d+$/) || [0])[0]) < c.numero);
       $('avClipes').insertBefore(card, depois || null);
@@ -4715,9 +4749,7 @@
               '<span class="gancho-4s-txt">' + esc(c.gancho) + '</span>' +
               '<button type="button" class="seo-copiar" style="padding:2px 7px;font-size:10.5px" data-copiar="' + esc(c.gancho) + '">Copiar</button>' +
             '</div>'
-          : (daLive && !c.fonte
-              ? '<div class="gancho-4s-box" style="opacity:.75"><span class="gancho-4s-tag">GANCHO 4s</span><span class="gancho-4s-txt" style="font-weight:400;color:var(--texto2)">Ouvindo a fala pra aplicar gancho 4s + legenda...</span></div>'
-              : '')) +
+          : '') +
         '<div class="clipe-meta"><i data-lucide="clock" class="i"></i><span class="tempos">' +
           c.inicioTexto + ' → ' + c.fimTexto + ' · ' + c.duracao + 's · ' + c.tamanhoMb + ' MB</span></div>' +
         (c.observacao ? '<div class="clipe-meta" style="color:var(--azul)"><i data-lucide="info" class="i"></i><span>' + esc(c.observacao) + '</span></div>' : '') +
@@ -5224,8 +5256,12 @@
     const p = projetoAtual;
     const doClipe = !!c.fonte;
     const pastaProj = pasta || (p && p.pasta);
-    const legendaDoProjeto = !!(p && p.pasta === pastaProj && p.opcoes && p.opcoes.legendar);
+    const legendaDoProjeto = (p && p.pasta === pastaProj && p.opcoes && typeof p.opcoes.legendar === 'boolean')
+      ? p.opcoes.legendar
+      : (doClipe ? (cfg.av.legendar !== false) : !!cfg.legenda);
     const fonteDoProjeto = (c && c.fonteLegenda) || (p && p.pasta === pastaProj && p.opcoes && p.opcoes.fonteLegenda) || cfg.fonteLegenda || 'tiktok';
+    const ganchoInicial = String(c.gancho || '').trim();
+    const usarGanchoIni = ganchoInicial ? true : (doClipe ? (cfg.av.gancho !== false) : !!cfg.gancho);
     Object.assign(ed, {
       modo: 'clipe', contexto: 'projeto',
       fonte: doClipe ? { pasta: pastaProj, clipe: c.numero } : { pasta: pastaProj },
@@ -5234,14 +5270,18 @@
       edicoes: Object.assign({}, c.edicoesLegenda || {}),
       assinaturaLegenda: '',
       fonteLegenda: fonteDoProjeto,
+      varianteGancho: 0,
       base: {
-        inicio: c.inicio, fim: arred(c.inicio + c.duracao), gancho: c.gancho || '',
+        inicio: c.inicio, fim: arred(c.inicio + c.duracao), gancho: ganchoInicial,
+        usarGancho: !!ganchoInicial,
         legendar: typeof c.legendar === 'boolean' ? c.legendar : legendaDoProjeto,
         fonteLegenda: fonteDoProjeto,
         edicoes: JSON.stringify(c.edicoesLegenda || {}),
       },
     });
     $('edLegendar').checked = ed.base.legendar;
+    $('edUsarGancho').checked = usarGanchoIni;
+    $('edGanchoWrap').hidden = !usarGanchoIni;
     pintarFontesEditor();
     ed.inicio = ed.base.inicio;
     ed.fim = ed.base.fim;
@@ -5252,6 +5292,9 @@
 
     $('edTitulo').textContent = 'Clipe ' + c.numero + ' · ' + c.titulo;
     $('edGancho').value = ed.base.gancho;
+    if (usarGanchoIni && !ed.base.gancho) {
+      gerarGanchoAutoEditor(false);
+    }
     statusEditor(ed.rodando ? 'Tem outro clipe sendo refeito — espere ele terminar pra refazer este.' : '', '');
     abrirModal();
   }
@@ -5384,11 +5427,98 @@
     return saida;
   }
 
+  function ganchoEfetivoEditor() {
+    return $('edUsarGancho') && !$('edUsarGancho').checked ? '' : $('edGancho').value.trim();
+  }
+
+  async function gerarGanchoAutoEditor(proximaVariante) {
+    if (ed.modo !== 'clipe' || !ed.c) return;
+    $('edUsarGancho').checked = true;
+    $('edGanchoWrap').hidden = false;
+    if (proximaVariante) ed.varianteGancho = (ed.varianteGancho || 0) + 1;
+    const dentro = (ed.palavras || []).filter((w) => w.f > ed.inicio && w.i < ed.fim);
+    const fala = dentro.length
+      ? dentro.map((w) => Object.prototype.hasOwnProperty.call(ed.edicoes, w.k) ? ed.edicoes[w.k] : w.t).filter(Boolean).join(' ')
+      : (ed.c.texto || ed.c.titulo || '');
+    try {
+      const r = await postJson('/api/gancho-auto', {
+        texto: fala,
+        inicio: ed.inicio,
+        variante: ed.varianteGancho || 0,
+        contexto: (projetoAtual && projetoAtual.nome) || (av && av.titulo) || '',
+        canal: (av && av.canal) || '',
+      });
+      if (r && r.gancho) {
+        $('edGancho').value = r.gancho;
+        pintarEditor();
+      }
+    } catch (_) {}
+  }
+
+  function pintarPreviaOverlayEditor(tAtual) {
+    const wrap = $('edOverWrap');
+    if (!wrap) return;
+    if (!ed.aberto || ed.modo !== 'clipe') { wrap.hidden = true; return; }
+    wrap.hidden = false;
+    const cssF = cssDaFonte(ed.fonteLegenda || 'tiktok');
+    const t = typeof tAtual === 'number' ? tAtual : (ed.cursor != null ? ed.cursor : ed.inicio);
+
+    // 1. Previa do Gancho 4s
+    const gEl = $('edOverGancho');
+    const gTxt = ganchoEfetivoEditor();
+    if (gTxt && t >= ed.inicio - 0.15 && t <= ed.inicio + 4.0) {
+      gEl.style.fontFamily = cssF;
+      gEl.textContent = gTxt.toUpperCase();
+      gEl.hidden = false;
+    } else {
+      gEl.hidden = true;
+    }
+
+    // 2. Previa da Legenda palavra por palavra (blocos de ate 3 palavras)
+    const lEl = $('edOverLegenda');
+    if ($('edLegendar').checked && t >= ed.inicio - 0.05 && t <= ed.fim + 0.25) {
+      const dentro = (ed.palavras || [])
+        .filter((w) => w.f > ed.inicio && w.i < ed.fim)
+        .map((w) => ({
+          i: w.i, f: w.f,
+          t: Object.prototype.hasOwnProperty.call(ed.edicoes, w.k) ? String(ed.edicoes[w.k] || '').trim() : String(w.t || '').trim(),
+        }))
+        .filter((w) => w.t);
+      const blocos = [];
+      let cur = [];
+      for (const p of dentro) {
+        const ult = cur[cur.length - 1];
+        if (cur.length && (cur.length >= 3 || p.i - ult.f > 0.7)) { blocos.push(cur); cur = []; }
+        cur.push(p);
+      }
+      if (cur.length) blocos.push(cur);
+      const blocoAtivo = blocos.find((bl, idx) => {
+        const iniB = bl[0].i;
+        const proxIni = blocos[idx + 1] ? blocos[idx + 1][0].i : Infinity;
+        const fimB = Math.min(bl[bl.length - 1].f + 0.35, proxIni);
+        return t >= iniB - 0.05 && t <= fimB;
+      });
+      if (blocoAtivo) {
+        let ativaIdx = 0;
+        for (let i = 0; i < blocoAtivo.length; i++) {
+          if (t >= blocoAtivo[i].i - 0.04) ativaIdx = i;
+        }
+        lEl.style.fontFamily = cssF;
+        lEl.innerHTML = blocoAtivo.map((p, idx) => idx === ativaIdx ? ('<em>' + esc(p.t) + '</em>') : esc(p.t)).join(' ');
+        lEl.hidden = false;
+      } else {
+        lEl.hidden = true;
+      }
+    } else {
+      lEl.hidden = true;
+    }
+  }
+
   function mudouAlgo() {
     if (ed.modo !== 'clipe' || !ed.c) return false;
     return Math.abs(ed.inicio - ed.base.inicio) >= 0.05 ||
            Math.abs(ed.fim - ed.base.fim) >= 0.05 ||
-           $('edGancho').value.trim() !== ed.base.gancho.trim() ||
+           ganchoEfetivoEditor() !== ed.base.gancho.trim() ||
            $('edLegendar').checked !== ed.base.legendar ||
            (ed.fonteLegenda || 'tiktok') !== (ed.base.fonteLegenda || 'tiktok') ||
            JSON.stringify(ed.edicoes) !== ed.base.edicoes;
@@ -5486,8 +5616,10 @@
       const mudou = mudouAlgo();
       $('edRefazer').disabled = !mudou || ed.rodando;
       pintarLegenda();
+      pintarPreviaOverlayEditor();
       $('edDesfazer').disabled = !mudou || ed.rodando;
     } else {
+      if ($('edOverWrap')) $('edOverWrap').hidden = true;
       pintarBotaoTrecho();
     }
     $('edAntes').disabled = ed.janIni <= 0;
@@ -5591,6 +5723,7 @@
 
   function pintarCursor(t) {
     ed.cursor = t;
+    pintarPreviaOverlayEditor(t);
     const cursor = $('ltCursor');
     cursor.hidden = !(t >= ed.janIni && t <= ed.janFim);
     cursor.style.left = noTrilho(t) + '%';
@@ -5891,6 +6024,17 @@
   });
 
   $('edGancho').addEventListener('input', pintarEditor);
+  if ($('edUsarGancho')) {
+    $('edUsarGancho').addEventListener('change', () => {
+      const on = $('edUsarGancho').checked;
+      $('edGanchoWrap').hidden = !on;
+      if (on && !$('edGancho').value.trim()) gerarGanchoAutoEditor(false);
+      pintarEditor();
+    });
+  }
+  if ($('btnEdGanchoAuto')) {
+    $('btnEdGanchoAuto').addEventListener('click', () => gerarGanchoAutoEditor(true));
+  }
 
   function pintarFontesEditor() {
     renderizarGradeFontes('edFontesLegenda', () => ed.fonteLegenda, (fid) => {
@@ -5904,6 +6048,8 @@
     ed.inicio = ed.base.inicio;
     ed.fim = ed.base.fim;
     $('edGancho').value = ed.base.gancho;
+    $('edUsarGancho').checked = !!ed.base.gancho;
+    $('edGanchoWrap').hidden = !ed.base.gancho;
     $('edLegendar').checked = ed.base.legendar;
     ed.fonteLegenda = ed.base.fonteLegenda || 'tiktok';
     pintarFontesEditor();
@@ -5942,6 +6088,10 @@
     };
 
     edVideo.pause();
+    // Libera qualquer player da grade segurando o .mp4 no Windows antes de refazer
+    document.querySelectorAll('.clipe[data-numero="' + c.numero + '"] video, #av-clipe-' + c.numero + ' video').forEach((v) => {
+      try { v.pause(); v.removeAttribute('src'); v.load(); } catch (_) {}
+    });
     ed.rodando = true;
     pintarEditor();
     statusEditor('Preparando...', '');
@@ -5954,7 +6104,7 @@
           arquivo: c.arquivo, numero: c.numero,
           inicio: arred(ed.inicio),
           duracao: Math.round((ed.fim - ed.inicio) * 10) / 10,
-          gancho: $('edGancho').value.trim(),
+          gancho: ganchoEfetivoEditor(),
           legendar: $('edLegendar').checked,
           fonteLegenda: ed.fonteLegenda || cfg.fonteLegenda || 'tiktok',
           edicoes: ed.edicoes,
@@ -5974,8 +6124,10 @@
           // o que acabou de ser gravado vira o novo "como esta no arquivo"
           ed.c = novo;
           ed.fonteLegenda = novo.fonteLegenda || ed.fonteLegenda || 'tiktok';
+          const novoGancho = novo.gancho || '';
           ed.base = {
-            inicio: novo.inicio, fim: arred(novo.inicio + novo.duracao), gancho: novo.gancho || '',
+            inicio: novo.inicio, fim: arred(novo.inicio + novo.duracao), gancho: novoGancho,
+            usarGancho: !!novoGancho,
             legendar: typeof novo.legendar === 'boolean' ? novo.legendar : $('edLegendar').checked,
             fonteLegenda: ed.fonteLegenda,
             edicoes: JSON.stringify(novo.edicoesLegenda || {}),
@@ -5986,6 +6138,8 @@
           ed.inicio = ed.base.inicio;
           ed.fim = ed.base.fim;
           $('edGancho').value = ed.base.gancho;
+          $('edUsarGancho').checked = !!ed.base.gancho;
+          $('edGanchoWrap').hidden = !ed.base.gancho;
           $('edLegendar').checked = ed.base.legendar;
         }
         acabou('Pronto! O clipe ' + novo.numero + ' foi refeito — já está atualizado na lista e na pasta.', 'ok');

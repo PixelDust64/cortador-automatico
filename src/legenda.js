@@ -9,6 +9,26 @@ const fs = require('fs');
 
 const PALAVRAS_POR_BLOCO = 3;
 
+// Catalogo de fontes abertas (SIL OFL) que acompanham o programa em src/fontes/
+const FONTES_LEGENDA = {
+  tiktok:     { id: 'tiktok',     nome: 'TikTok Sans',      ass: 'TikTok Sans Jamble',    arquivo: 'TikTokSans-ExtraBold.ttf', bold: 0 },
+  montserrat: { id: 'montserrat', nome: 'Montserrat Black', ass: 'Montserrat Thin Black', arquivo: 'Montserrat-ExtraBold.ttf', bold: 0 },
+  anton:      { id: 'anton',      nome: 'Anton Impact',     ass: 'Anton',                 arquivo: 'Anton-Regular.ttf',        bold: 0 },
+  poppins:    { id: 'poppins',    nome: 'Poppins Bold',     ass: 'Poppins ExtraBold',     arquivo: 'Poppins-ExtraBold.ttf',    bold: 0 },
+  bangers:    { id: 'bangers',    nome: 'Bangers Gamer',    ass: 'Bangers',               arquivo: 'Bangers-Regular.ttf',      bold: 0 },
+  bebas:      { id: 'bebas',      nome: 'Bebas Neue',       ass: 'Bebas Neue',            arquivo: 'BebasNeue-Regular.ttf',    bold: 0 },
+  arial:      { id: 'arial',      nome: 'Clássica (Arial)', ass: 'Arial Black',           arquivo: null,                       bold: -1 },
+};
+
+function resolverFonte(idOuNome) {
+  const chave = String(idOuNome || 'tiktok').trim().toLowerCase();
+  if (FONTES_LEGENDA[chave]) return FONTES_LEGENDA[chave];
+  for (const f of Object.values(FONTES_LEGENDA)) {
+    if (f.ass.toLowerCase() === chave || f.nome.toLowerCase() === chave) return f;
+  }
+  return FONTES_LEGENDA.tiktok;
+}
+
 // Cores no formato ASS: &HAABBGGRR (sim, e BGR invertido)
 const BRANCO = '&H00FFFFFF';
 const AMARELO = '&H0000E5FF';
@@ -54,7 +74,9 @@ function escapar(t) {
 }
 
 function cabecalho(opcoes) {
-  const fonte = opcoes.fonte || 'Arial Black';
+  const fObj = resolverFonte(opcoes.fonte);
+  const fonte = fObj.ass;
+  const bold = fObj.bold;
   const tamanho = opcoes.tamanho || 78;
   const margemBaixo = opcoes.margemBaixo || 300;
   const margemGancho = opcoes.margemGancho || 150;
@@ -72,15 +94,15 @@ function cabecalho(opcoes) {
     '[V4+ Styles]',
     'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding',
     'Style: Corte,' + fonte + ',' + tamanho + ',' + BRANCO + ',' + AMARELO + ',' + PRETO + ',&H64000000,' +
-      '-1,0,0,0,100,100,1,0,1,7,4,2,70,70,' + margemBaixo + ',1',
+      bold + ',0,0,0,100,100,1,0,1,7,4,2,70,70,' + margemBaixo + ',1',
     // Alignment 8 = em cima, centralizado; 5 = bem no meio da tela. BorderStyle 3
     // desenha uma tarja atras do texto: legivel por cima de qualquer imagem.
     'Style: Gancho,' + fonte + ',' + tamanhoGancho + ',' + BRANCO + ',' + BRANCO + ',' + PRETO + ',&HC8000000,' +
-      '-1,0,0,0,100,100,0,0,3,10,0,' + (opcoes.posicaoGancho === 'meio' ? 5 : 8) + ',60,60,' +
+      bold + ',0,0,0,100,100,0,0,3,10,0,' + (opcoes.posicaoGancho === 'meio' ? 5 : 8) + ',60,60,' +
       (opcoes.posicaoGancho === 'meio' ? 0 : margemGancho) + ',1',
-    estiloFixo(opcoes.textoFixo, fonte),
+    estiloFixo(opcoes.textoFixo, fonte, bold),
     // cartao do nome: caixa azul (BorderStyle 3 = tarja), texto branco
-    'Style: Nome,' + fonte + ',68,' + BRANCO + ',' + BRANCO + ',&H00F08B3D,&H00000000,-1,0,0,0,100,100,2,0,3,20,0,5,0,0,0,1',
+    'Style: Nome,' + fonte + ',68,' + BRANCO + ',' + BRANCO + ',&H00F08B3D,&H00000000,' + bold + ',0,0,0,100,100,2,0,3,20,0,5,0,0,0,1',
     '',
     '[Events]',
     'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text',
@@ -105,13 +127,14 @@ function posicaoFixo(t) {
   return MARGEM_FIXO[t && t.posicao] != null ? t.posicao : 'meio';
 }
 
-function estiloFixo(t, fonte) {
+function estiloFixo(t, fonte, bold) {
   const pos = posicaoFixo(t);
   const tamanho = Math.max(40, Math.min(130, Number(t && t.tamanho) || 76));
   const cor = t && t.cor === 'amarelo' ? AMARELO : BRANCO;
+  const b = bold != null ? bold : -1;
   // contorno grosso + sombra, sem tarja: legivel em cima do jogo sem tampar
   return 'Style: Fixo,' + fonte + ',' + tamanho + ',' + cor + ',' + cor + ',' + PRETO + ',&H96000000,' +
-    '-1,0,0,0,100,100,0,0,1,8,3,' + ALINHA_FIXO[pos] + ',60,60,' + MARGEM_FIXO[pos] + ',1';
+    b + ',0,0,0,100,100,0,0,1,8,3,' + ALINHA_FIXO[pos] + ',60,60,' + MARGEM_FIXO[pos] + ',1';
 }
 
 function linhaFixo(t) {
@@ -165,7 +188,7 @@ function gerarAss(palavras, offset, destino, opcoes) {
   // O gancho fica na tela nos primeiros segundos. E o que segura quem parou de
   // rolar antes mesmo de entender o audio - e muita gente assiste sem som.
   const semEmoji = semEmojis(opcoes.gancho);
-  if (semEmoji.length >= 8) {
+  if (semEmoji.length >= 3) {
     const duracao = Math.max(2, Math.min(8, opcoes.duracaoGancho || 4));
     // letra maior, menos letra por linha: 26 cabe no tamanho 62
     const porLinha = Math.max(14, Math.round((26 * 62) / (opcoes.tamanhoGancho || (opcoes.posicaoGancho === 'meio' ? 74 : 62))));
@@ -262,7 +285,7 @@ function alturaDaDivisao(formato, recorte) {
 }
 
 module.exports = {
-  gerarAss, gerarSrt, alturaDaDivisao,
+  gerarAss, gerarSrt, alturaDaDivisao, FONTES_LEGENDA, resolverFonte, semEmojis,
   // texto fixo ou cartao com o nome: os dois precisam do .ass
   temTextoFixo: (t) => !!(semEmojis(t && t.texto) || semEmojis(t && t.nome)),
 };

@@ -29,7 +29,7 @@ const media = require('./media');
 const baixador = require('./baixar');
 const sessoes = require('./sessoes');
 const legenda = require('./legenda');
-const { gerarCopy, gerarSeoPlataformas } = require('./copy');
+const { gerarCopy, gerarSeoPlataformas, gerarGanchoDeTela } = require('./copy');
 const { transcrever, fontsdirRelativo } = require('./pipeline');
 const pastas = require('./pastas');
 
@@ -383,6 +383,10 @@ class SessaoAoVivo {
     this.idioma = /^[a-z]{2}$|^auto$/.test(String(o.idioma || '')) ? o.idioma : 'pt';
     // texto fixo na tela de todo clipe: { texto, posicao, duracao, cor, tamanho }
     this.textoFixo = o.textoFixo || null;
+    // gancho de 4s, legenda dinamica palavra por palavra e fonte escolhida
+    this.textoGancho = o.textoGancho !== false;
+    this.legendar = !!o.legendar;
+    this.fonteLegenda = String(o.fonteLegenda || 'tiktok');
     // Diretor IA Pro na live: refina inicio/fim pela conversa e cria titulo + gancho + SEO
     this.usarIaPro = !!o.usarIaPro;
     this.salaChat = null;
@@ -471,6 +475,9 @@ class SessaoAoVivo {
       usarIaPro: !!this.usarIaPro,
       iaLiveExpiraEm: this.iaLiveExpiraEm || null,
       textoFixo: this.textoFixo,
+      textoGancho: this.textoGancho !== false,
+      legendar: !!this.legendar,
+      fonteLegenda: this.fonteLegenda || 'tiktok',
       // o pedaco mais novo: e dele que sai a imagem pra marcar webcam e foco
       ultimoPedaco: this.ultimoPedaco(),
       // por que ainda nao tem imagem (a tela de preparo mostra)
@@ -601,6 +608,7 @@ class SessaoAoVivo {
    */
   async gravarHls(m3u8) {
     const rodada = ++this.rodada;
+    const { ffmpeg } = await media.garantirFfmpeg();
     this.status('gravando', 'Gravando a live.');
     const mediaUrl = await this.resolverPlaylistMestre(m3u8);
     if (this.parado || rodada !== this.rodada) return;
@@ -665,12 +673,33 @@ class SessaoAoVivo {
           let buf = Buffer.from(await resp.arrayBuffer());
           if (buf.length < 512) continue;
           if (initMapBuf) buf = Buffer.concat([initMapBuf, buf]);
-          const nome = 'p' + String(this.proxNumero++).padStart(7, '0') + '.ts';
+          const num = this.proxNumero++;
+          const nome = 'p' + String(num).padStart(7, '0') + '.ts';
           const arquivo = path.join(this.dir, nome);
+          const tmpRaw = path.join(this.dir, 'raw-' + num + (initMapBuf ? '.mp4' : '.ts'));
           const tmp = arquivo + '.part';
-          fs.writeFileSync(tmp, buf);
-          fs.renameSync(tmp, arquivo);
-          this.adicionarPedaco(nome, arquivo, s.dur);
+          try {
+            fs.writeFileSync(tmpRaw, buf);
+            // Normaliza cada segmento (inclusive fMP4 #EXT-X-MAP e saltos de anuncio da Twitch)
+            // para MPEG-TS com PTS iniciando em zero: evita que o concat trave apos os 3 primeiros segundos.
+            await media.rodar(ffmpeg, [
+              '-y', '-hide_banner', '-loglevel', 'error',
+              '-fflags', '+genpts+discardcorrupt',
+              '-i', tmpRaw,
+              '-map', '0:v:0', '-map', '0:a:0?',
+              '-c', 'copy', '-avoid_negative_ts', 'make_zero',
+              '-f', 'mpegts', tmp,
+            ]);
+            if (fs.existsSync(tmp) && fs.statSync(tmp).size > 512) {
+              fs.renameSync(tmp, arquivo);
+              this.adicionarPedaco(nome, arquivo, s.dur);
+            }
+          } catch (_) {
+            // Segmento corrompido isolado: ignora sem derrubar a gravacao
+          } finally {
+            try { if (fs.existsSync(tmpRaw)) fs.unlinkSync(tmpRaw); } catch (_) { }
+            try { if (fs.existsSync(tmp)) fs.unlinkSync(tmp); } catch (_) { }
+          }
         }
         falhas = 0;
       } catch (e) {
@@ -1143,7 +1172,7 @@ class SessaoAoVivo {
     if (filtro && legenda.temTextoFixo(this.textoFixo)) {
       fs.mkdirSync(pastas.trabalho(), { recursive: true });
       ass = 'aovivo-texto-' + this.id + '.ass';
-      legenda.gerarAss([], 0, path.join(pastas.trabalho(), ass), { incluirPalavras: false, textoFixo: this.textoFixo, alturaDivisao: legenda.alturaDaDivisao(this.formato, this.recorte) });
+      legenda.gerarAss([], 0, path.join(pastas.trabalho(), ass), { fonte: this.fonteLegenda, incluirPalavras: false, textoFixo: this.textoFixo, alturaDivisao: legenda.alturaDaDivisao(this.formato, this.recorte) });
     }
     // Voz atrasada: pular direto pro meio da lista de pedacos (concat + -ss)
     // fazia a imagem so comecar no proximo quadro-chave, 1-2s depois do som -
@@ -1210,7 +1239,9 @@ class SessaoAoVivo {
       // o enquadramento e o texto de quando o clipe saiu: o editor refaz igual
       recorte: this.recorte || null,
       textoFixo: this.textoFixo || null,
-      legendar: false,
+      gancho: null,
+      legendar: !!this.legendar,
+      fonteLegenda: this.fonteLegenda || 'tiktok',
       tamanhoMb: Math.round((fs.statSync(mp4).size / 1048576) * 10) / 10,
       segundosPraFicarPronto: Math.round((Date.now() - t0) / 100) / 10,
     };
@@ -1309,13 +1340,17 @@ class SessaoAoVivo {
         await media.extrairAudio(original, wav, clipe.fonte.duracao);
         const t = await transcrever(wav, fala, clipe.fonte.duracao, 'base', this.idioma);
         clipe.fonte.transcricao = path.basename(fala);
-        const palavras = (t.segmentos || []).reduce((acc, s) => acc.concat(s.palavras || []), [])
+        const todasPalavrasOrig = (t.segmentos || []).reduce((acc, s) => acc.concat(s.palavras || []), []);
+        const palavras = todasPalavrasOrig
           .filter((p) => p.fim > offset && p.inicio < offset + clipe.duracao);
         const texto = palavras.map((p) => p.texto).join(' ').replace(/\s+/g, ' ').trim();
         clipe.texto = texto;
 
         const ctxCopy = { texto: this.titulo || '', canal: this.nomeCanal || this.canal || '', evitar: (this.titulosUsados = this.titulosUsados || new Set()) };
         let aplicouIa = false;
+        let iniFinal = offset;
+        let durFinal = clipe.duracao;
+        let mudouTempoIa = false;
 
         if (this.usarIaPro && this.iaLiveExpiraEm && Date.now() >= new Date(this.iaLiveExpiraEm).getTime()) {
           this.definirExpiraIaLive(null);
@@ -1351,49 +1386,28 @@ class SessaoAoVivo {
               this.titulosUsados.add(String(clipe.titulo).toLowerCase());
               clipe.titulos = ci.titulosIa || [{ texto: clipe.titulo, estilo: 'ia' }];
               clipe.hashtags = ci.hashtagsIa || clipe.hashtags;
-              clipe.gancho = ci.ganchoIa || null;
+              clipe.gancho = this.textoGancho !== false
+                ? ((ci.ganchoIa && legenda.semEmojis(ci.ganchoIa).length >= 3 ? ci.ganchoIa : null) || gerarGanchoDeTela({ texto: ci.texto || texto, inicio: ci.inicio, contextoJogo: ctxCopy }))
+                : null;
               clipe.nota = ci.nota || clipe.nota;
               clipe.motivos = ci.motivos || clipe.motivos;
               clipe.geradoPorIa = true;
               const seoBase = gerarSeoPlataformas({ texto: ci.texto || texto }, clipe.titulo, clipe.hashtags, ctxCopy);
-              clipe.seo = Object.assign({}, seoBase, ci.seoIa || {});
+              const iaSeo = ci.seoIa || {};
+              clipe.seo = {
+                tiktok: (iaSeo.tiktok && String(iaSeo.tiktok).trim()) || seoBase.tiktok,
+                shorts: (iaSeo.shorts && String(iaSeo.shorts).trim()) || seoBase.shorts,
+                shortsTitulo: seoBase.shortsTitulo,
+                reels: (iaSeo.reels && String(iaSeo.reels).trim()) || seoBase.reels,
+              };
               clipe.legendaPost = clipe.seo.tiktok || (clipe.titulo + '\n\n' + clipe.hashtags.map((h) => '#' + h).join(' '));
               aplicouIa = true;
-
-              // Refina o arquivo de video nas frases exatas escolhidas pela IA + queima o gancho de 4s
-              if (this.formato !== 'original' && (clipe.gancho || Math.abs(ci.inicio - offset) >= 0.8 || Math.abs(ci.duracao - clipe.duracao) >= 1.2)) {
-                const assIa = 'aovivo-ia-' + this.id + '-' + clipe.numero + '.ass';
-                const caminhoAssIa = path.join(pastas.trabalho(), assIa);
-                try {
-                  legenda.gerarAss([], 0, caminhoAssIa, {
-                    incluirPalavras: false,
-                    gancho: clipe.gancho,
-                    textoFixo: this.textoFixo,
-                    alturaDivisao: legenda.alturaDaDivisao(this.formato, this.recorte),
-                  });
-                  const mp4Ia = clipe.arquivo + '.ia.mp4';
-                  await media.cortarClipe({
-                    video: original,
-                    inicio: ci.inicio,
-                    duracao: ci.duracao,
-                    formato: this.formato,
-                    recorte: this.recorte,
-                    arquivoAss: assIa,
-                    fontsdir: fontsdirRelativo(),
-                    cwdAss: pastas.trabalho(),
-                    qualidade: 'rapida',
-                    destino: mp4Ia,
-                  });
-                  if (fs.existsSync(mp4Ia) && fs.statSync(mp4Ia).size > 1024) {
-                    fs.renameSync(mp4Ia, clipe.arquivo);
-                    clipe.inicio = ci.inicio;
-                    clipe.duracao = ci.duracao;
-                    clipe.fim = Math.round((ci.inicio + ci.duracao) * 100) / 100;
-                    clipe.texto = ci.texto || texto;
-                    clipe.tamanhoMb = Math.round((fs.statSync(clipe.arquivo).size / 1048576) * 10) / 10;
-                  }
-                } catch (_) { }
-                finally { try { fs.unlinkSync(caminhoAssIa); } catch (_) { } }
+              if (isFinite(ci.inicio) && isFinite(ci.duracao) && ci.duracao >= 5) {
+                if (Math.abs(ci.inicio - offset) >= 0.8 || Math.abs(ci.duracao - clipe.duracao) >= 1.2) {
+                  iniFinal = ci.inicio;
+                  durFinal = ci.duracao;
+                  mudouTempoIa = true;
+                }
               }
             }
             if (resIa.usouTrial && !resIa.liveAtivo && Number(resIa.trialsRestantes) <= 0) {
@@ -1430,6 +1444,58 @@ class SessaoAoVivo {
           clipe.hashtags = cp.hashtags;
           clipe.seo = cp.seo;
           clipe.legendaPost = cp.legenda;
+        }
+        if (!aplicouIa) {
+          clipe.gancho = this.textoGancho !== false && texto.length >= 4
+            ? gerarGanchoDeTela({ texto, inicio: offset, contextoJogo: ctxCopy })
+            : null;
+        }
+
+        // Queima o gancho de 4s e/ou a legenda dinamica na fonte escolhida (e aplica o refinamento da IA)
+        const palsCorte = todasPalavrasOrig.filter((p) => p.fim > iniFinal && p.inicio < iniFinal + durFinal);
+        const querQueimarLegenda = !!(this.legendar && palsCorte.length);
+        if (this.formato !== 'original' && (clipe.gancho || querQueimarLegenda || mudouTempoIa)) {
+          const assLive = 'aovivo-pos-' + this.id + '-' + clipe.numero + '.ass';
+          const caminhoAssLive = path.join(pastas.trabalho(), assLive);
+          try {
+            legenda.gerarAss(palsCorte, iniFinal, caminhoAssLive, {
+              fonte: this.fonteLegenda || 'tiktok',
+              incluirPalavras: querQueimarLegenda,
+              gancho: this.textoGancho !== false ? clipe.gancho : null,
+              duracaoGancho: 4,
+              margemGancho: this.formato === 'split' ? 660 : 180,
+              margemBaixo: this.formato === 'split' ? 430 : 300,
+              textoFixo: this.textoFixo,
+              alturaDivisao: legenda.alturaDaDivisao(this.formato, this.recorte),
+            });
+            const mp4Pos = clipe.arquivo + '.pos.mp4';
+            await media.cortarClipe({
+              video: original,
+              inicio: iniFinal,
+              duracao: durFinal,
+              formato: this.formato,
+              recorte: this.recorte,
+              arquivoAss: assLive,
+              fontsdir: fontsdirRelativo(),
+              pastaTrabalho: pastas.trabalho(),
+              qualidade: 'rapida',
+              destino: mp4Pos,
+            });
+            if (fs.existsSync(mp4Pos) && fs.statSync(mp4Pos).size > 1024) {
+              fs.renameSync(mp4Pos, clipe.arquivo);
+              clipe.inicio = iniFinal;
+              clipe.duracao = durFinal;
+              clipe.fim = Math.round((iniFinal + durFinal) * 100) / 100;
+              clipe.texto = palsCorte.map((p) => p.texto).join(' ').replace(/\s+/g, ' ').trim() || clipe.texto;
+              clipe.legendar = querQueimarLegenda;
+              clipe.fonteLegenda = this.fonteLegenda || 'tiktok';
+              clipe.tamanhoMb = Math.round((fs.statSync(clipe.arquivo).size / 1048576) * 10) / 10;
+            }
+          } catch (errAss) {
+            this.emitir({ tipo: 'aviso', msg: 'Não consegui aplicar legenda/gancho no clipe ' + clipe.numero + ' (' + (errAss.message || errAss) + ').' });
+          } finally {
+            try { if (fs.existsSync(caminhoAssLive)) fs.unlinkSync(caminhoAssLive); } catch (_) { }
+          }
         }
         this.gravarRelatorio();
         this.emitir({ tipo: 'clipe-atualizado', clipe });
@@ -1470,7 +1536,8 @@ class SessaoAoVivo {
       duracaoVideo: 0,
       opcoes: {
         sessao: sessoes.pegar().id, formato: this.formato, recorte: this.recorte, textoFixo: this.textoFixo,
-        legendar: false, textoGancho: false, qualidade: 'alta', detectarWebcam: false, idioma: this.idioma,
+        legendar: !!this.legendar, textoGancho: this.textoGancho !== false, fonteLegenda: this.fonteLegenda || 'tiktok',
+        qualidade: 'alta', detectarWebcam: false, idioma: this.idioma,
       },
       clipes: this.clipes,
     };
@@ -1512,6 +1579,9 @@ class SessaoAoVivo {
     if (['split', 'vertical', 'foco', 'blur', 'original'].includes(o.formato)) this.formato = o.formato;
     if (o.recorte) this.recorte = o.recorte;
     if (o.textoFixo !== undefined) this.textoFixo = o.textoFixo;
+    if (typeof o.textoGancho === 'boolean') this.textoGancho = o.textoGancho;
+    if (typeof o.legendar === 'boolean') this.legendar = o.legendar;
+    if (o.fonteLegenda) this.fonteLegenda = String(o.fonteLegenda);
     if (typeof o.usarIaPro === 'boolean') this.usarIaPro = o.usarIaPro;
     if (o.clipando === true && !this.clipando) {
       this.clipando = true;

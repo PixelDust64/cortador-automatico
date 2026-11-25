@@ -31,8 +31,8 @@ Thumbs.db
 desktop.ini
 .DS_Store
 
-# Fontes ficam so no PC (a Burbank e paga; o programa nao usa nenhuma delas)
-fontes/
+# Fontes proprietarias locais na raiz ficam so no PC (as abertas SIL OFL ficam em src/fontes/)
+/fontes/
 
 # Python so do programa (o instalar.bat cria)
 ambiente/

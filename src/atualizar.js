@@ -214,16 +214,9 @@ async function checarRemoto(forcar) {
     if (shaLocal) {
       gitNovo = shaLocal !== shaRemoto;
     } else {
-      // Primeira vez numa instalacao sem git-rev.json: compara a data do commit no GitHub com o arquivo local
-      const dataCommit = commitRemoto && commitRemoto.data ? new Date(commitRemoto.data).getTime() : 0;
-      let mtimePkg = 0;
-      try { mtimePkg = fs.statSync(path.join(RAIZ, 'package.json')).mtimeMs; } catch (_) {}
-      if (dataCommit && mtimePkg && dataCommit > mtimePkg + 180000) {
-        gitNovo = true;
-      } else {
-        salvarShaLocal(shaRemoto);
-        shaLocal = shaRemoto;
-      }
+      // Instalacao antiga sem git-rev.json (instaladores novos ja gravam git-rev.json no build):
+      // forca a atualizacao para garantir as correcoes mais recentes da main.
+      gitNovo = true;
     }
   }
 

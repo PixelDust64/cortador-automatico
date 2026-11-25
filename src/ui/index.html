@@ -1016,7 +1016,95 @@
   .dl-fase.ativa { color: var(--texto); border-color: rgba(61,139,255,.45); background: rgba(61,139,255,.10); font-weight: 600; }
   .dl-fase.pronta { color: var(--verde); border-color: rgba(134,211,164,.3); }
 
-  /* ---------- seo por plataforma + novidades */
+  /* ---------- seo por plataforma + gancho 4s + fontes de legenda + aba consumo pro */
+  @font-face { font-family: 'CapTikTok'; src: url('/fontes/TikTokSans-ExtraBold.ttf') format('truetype'); font-display: swap; }
+  @font-face { font-family: 'CapMontserrat'; src: url('/fontes/Montserrat-ExtraBold.ttf') format('truetype'); font-display: swap; }
+  @font-face { font-family: 'CapAnton'; src: url('/fontes/Anton-Regular.ttf') format('truetype'); font-display: swap; }
+  @font-face { font-family: 'CapPoppins'; src: url('/fontes/Poppins-ExtraBold.ttf') format('truetype'); font-display: swap; }
+  @font-face { font-family: 'CapBangers'; src: url('/fontes/Bangers-Regular.ttf') format('truetype'); font-display: swap; }
+  @font-face { font-family: 'CapBebas'; src: url('/fontes/BebasNeue-Regular.ttf') format('truetype'); font-display: swap; }
+
+  .fontes-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 7px; margin-top: 8px; }
+  .fonte-op {
+    background: rgba(255,255,255,.03); border: 1px solid var(--linha2); border-radius: 11px;
+    padding: 8px 10px; cursor: pointer; text-align: left; color: var(--texto);
+    display: flex; flex-direction: column; gap: 2px; transition: .16s var(--suave);
+  }
+  .fonte-op:hover { border-color: rgba(127,178,255,.45); background: rgba(255,255,255,.055); }
+  .fonte-op[aria-pressed="true"] {
+    border-color: var(--marca); background: rgba(61,139,255,.13);
+    box-shadow: 0 0 0 1px rgba(61,139,255,.45) inset;
+  }
+  .fonte-amostra { font-size: 16px; line-height: 1.15; color: #fff; text-shadow: 0 2px 0 #000, 0 0 6px rgba(0,0,0,.85); letter-spacing: .01em; }
+  .fonte-amostra em { font-style: normal; color: #ffe600; }
+  .fonte-nome { font-size: 10.5px; color: var(--texto3); font-family: var(--fonte); font-weight: 500; }
+  .fonte-op[aria-pressed="true"] .fonte-nome { color: #9ec5ff; }
+  .leg-previa-barra {
+    margin-top: 10px; padding: 10px 12px; border-radius: 11px; background: #07090d;
+    border: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  }
+  .leg-previa-txt { font-size: 18px; line-height: 1.2; color: #fff; text-shadow: -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000; }
+  .leg-previa-txt em { font-style: normal; color: #ffe600; }
+
+  .gancho-4s-box {
+    display: flex; align-items: center; gap: 7px; padding: 7px 10px; border-radius: 9px;
+    background: rgba(61,139,255,.08); border: 1px solid rgba(127,178,255,.22); font-size: 11.5px; line-height: 1.35;
+  }
+  .gancho-4s-tag {
+    flex: none; padding: 2px 6px; border-radius: 5px; background: rgba(61,139,255,.22);
+    color: #9ec5ff; font-size: 10px; font-weight: 700; letter-spacing: .04em;
+  }
+  .gancho-4s-txt { flex: 1; min-width: 0; color: #eef3fb; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .seo-box {
+    margin-top: 6px; padding: 9px 10px; border-radius: 11px;
+    background: rgba(255,255,255,.025); border: 1px solid var(--linha); display: grid; gap: 7px;
+  }
+  .seo-topo { display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap; }
+  .seo-abas { display: inline-flex; gap: 4px; background: rgba(0,0,0,.32); padding: 3px; border-radius: 8px; border: 1px solid rgba(255,255,255,.06); }
+  .seo-aba {
+    font: inherit; font-size: 11px; font-weight: 600; padding: 4px 9px; border-radius: 6px;
+    border: none; background: transparent; color: var(--texto3); cursor: pointer; transition: .15s;
+  }
+  .seo-aba:hover { color: var(--texto); }
+  .seo-aba.ativa { background: rgba(61,139,255,.2); color: #b8d6ff; }
+  .seo-copiar {
+    font: inherit; font-size: 11px; font-weight: 600; padding: 4px 9px; border-radius: 7px;
+    border: 1px solid rgba(127,178,255,.28); background: rgba(61,139,255,.12); color: #b8d6ff;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: .15s;
+  }
+  .seo-copiar:hover { background: rgba(61,139,255,.24); color: #fff; }
+  .seo-texto {
+    font-size: 11.5px; line-height: 1.45; color: var(--texto2); white-space: pre-wrap;
+    max-height: 82px; overflow-y: auto; padding: 6px 8px; border-radius: 7px;
+    background: rgba(0,0,0,.26); border: 1px solid rgba(255,255,255,.05);
+  }
+
+  .pro-abas {
+    display: inline-flex; gap: 4px; padding: 4px; border-radius: 11px; margin-bottom: 16px;
+    background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.08); width: 100%;
+  }
+  .pro-aba {
+    flex: 1; font: inherit; font-size: 12.5px; font-weight: 600; padding: 8px 12px; border-radius: 8px;
+    border: none; background: transparent; color: var(--texto2); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: .16s;
+  }
+  .pro-aba:hover { color: var(--texto); }
+  .pro-aba.ativa { background: rgba(61,139,255,.18); color: #eef5ff; box-shadow: inset 0 0 0 1px rgba(127,178,255,.32); }
+  .consumo-card {
+    padding: 16px 18px; border-radius: 14px; background: rgba(255,255,255,.028);
+    border: 1px solid rgba(127,178,255,.2); margin-bottom: 12px;
+  }
+  .consumo-numeros { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .consumo-grande { font-size: 24px; font-weight: 600; color: #f6f8fc; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .consumo-grande small { font-size: 13px; font-weight: 400; color: var(--texto2); margin-left: 4px; }
+  .consumo-restam { font-size: 12px; font-weight: 600; color: #9ec5ff; padding: 3px 9px; border-radius: 99px; background: rgba(61,139,255,.13); border: 1px solid rgba(127,178,255,.24); }
+  .consumo-grade { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+  @media (max-width: 600px) { .consumo-grade { grid-template-columns: 1fr; } }
+  .consumo-item { padding: 11px 12px; border-radius: 11px; background: rgba(255,255,255,.022); border: 1px solid rgba(255,255,255,.07); }
+  .consumo-item b { display: block; font-size: 12.5px; color: #eef3fb; margin-bottom: 3px; }
+  .consumo-item span { display: block; font-size: 11.5px; color: var(--texto3); line-height: 1.45; }
+
   .seo-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--linha); align-items: center; }
   .seo-bar > span { font-size: 11px; color: var(--texto3); font-weight: 600; margin-right: 2px; }
   .btn-seo {
@@ -1617,22 +1705,31 @@
     </div>
 
     <div class="cartao">
-      <label class="rot"><i data-lucide="sparkles" class="i"></i> O que aparece na tela do clipe</label>
+      <label class="rot"><i data-lucide="sparkles" class="i"></i> Gancho de 4s, legenda dinâmica e fonte</label>
 
       <label class="marcar">
         <input type="checkbox" id="textoGancho" checked>
         <div>
-          <b>Gancho na tela</b>
-          <span>Texto grande nos primeiros 4 segundos, tirado da própria fala. Segura quem assiste sem som.</span>
+          <b>Gancho nos primeiros 4 segundos</b>
+          <span>Frase de impacto no topo da tela logo ao abrir o corte. Prende quem rola o feed sem som.</span>
         </div>
       </label>
       <label class="marcar">
-        <input type="checkbox" id="legendar">
+        <input type="checkbox" id="legendar" checked>
         <div>
-          <b>Legenda palavra por palavra</b>
-          <span>Estilo Shorts, embaixo do vídeo. A palavra que está sendo dita fica amarela.</span>
+          <b>Legenda dinâmica palavra por palavra</b>
+          <span>Estilo TikTok/Shorts/Reels embaixo do vídeo, destacando em amarelo a palavra falada na hora.</span>
         </div>
       </label>
+
+      <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--linha)">
+        <label class="rot" style="margin-bottom:4px"><i data-lucide="type" class="i"></i> Fonte da legenda e do gancho</label>
+        <div class="fontes-grade" id="fontesLegenda"></div>
+        <div class="leg-previa-barra">
+          <span style="font-size:11px; color:var(--texto3)">Prévia do estilo:</span>
+          <span class="leg-previa-txt" id="previaFonteVideo">ESSE MOMENTO <em>FOI</em> INSANO</span>
+        </div>
+      </div>
 
     </div>
 
@@ -1750,6 +1847,27 @@
             <button class="chip" data-av-sens="baixa" aria-pressed="false">Só os lances grandes</button>
             <button class="chip" data-av-sens="media" aria-pressed="false">Equilibrado</button>
             <button class="chip" data-av-sens="alta" aria-pressed="false">Tudo que mexer</button>
+          </div>
+        </div>
+        <div style="padding-top:14px; border-top:1px solid var(--linha)">
+          <label class="rot"><i data-lucide="captions" class="i"></i> Legenda, gancho 4s e fonte nos cortes da live</label>
+          <label class="marcar">
+            <input type="checkbox" id="avGancho" checked>
+            <div>
+              <b>Gancho de 4s na tela</b>
+              <span>Queima automaticamente uma chamada de impacto nos 4 primeiros segundos assim que a fala do clipe é ouvida.</span>
+            </div>
+          </label>
+          <label class="marcar" style="margin-top:10px">
+            <input type="checkbox" id="avLegendar" checked>
+            <div>
+              <b>Legenda dinâmica palavra por palavra</b>
+              <span>Transcreve cada clipe da live em segundo plano e aplica a legenda com destaque amarelo automaticamente.</span>
+            </div>
+          </label>
+          <div style="margin-top:12px">
+            <span style="font-size:var(--t6); color:var(--texto3)">Fonte dos cortes da live:</span>
+            <div class="fontes-grade" id="avFontesLegenda"></div>
           </div>
         </div>
       </div>
@@ -1995,23 +2113,78 @@
       <button class="of-x" id="btnFecharPro" type="button" aria-label="Fechar"><i data-lucide="x" class="i"></i></button>
     </div>
     <h2 id="proModalTitulo">Mais precisão, qualidade e engajamento com Google Gemini.</h2>
-    <p id="proModalSub">Compare o que já é gratuito para sempre com o que você desbloqueia no Plano Pro — e veja como os dois motores trabalham:</p>
+    <p id="proModalSub">Compare o que é gratuito para sempre com o Plano Pro — ou acompanhe na aba ao lado quantos vídeos completos você já usou neste mês:</p>
 
+    <div class="pro-abas" id="proAbas">
+      <button type="button" class="pro-aba ativa" data-pro-aba="planos"><i data-lucide="sparkles" class="i"></i> Planos e Recursos</button>
+      <button type="button" class="pro-aba" data-pro-aba="consumo" id="btnAbaProConsumo"><i data-lucide="bar-chart-3" class="i"></i> Meu Consumo (<span id="abaConsumoBadge">0/80</span>)</button>
+    </div>
+
+    <div id="proAbaConsumoWrap" hidden>
+      <div class="consumo-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px">
+          <span class="of-selo" id="consumoStatusSelo">Seu uso neste ciclo</span>
+          <span style="font-size:11.5px; color:var(--texto3)" id="consumoCicloTxt"></span>
+        </div>
+        <div class="consumo-numeros">
+          <div class="consumo-grande" id="consumoPrincipalTxt">0 de 80 <small>vídeos completos usados</small></div>
+          <span class="consumo-restam" id="consumoRestamTxt">Restam 80 vídeos</span>
+        </div>
+        <div class="barra-fora" style="height:8px; margin:8px 0 6px"><div class="barra-dentro" id="consumoBarra" style="width:0%"></div></div>
+        <div style="font-size:12px; color:var(--texto2); line-height:1.5" id="consumoSubTxt">
+          Cada vídeo gravado analisado pelo Google Gemini consome <b>1 vídeo</b> da cota — mesmo que ele gere <b>10 ou 20 cortes</b> de uma vez.
+        </div>
+
+        <div class="consumo-grade">
+          <div class="consumo-item">
+            <b><i data-lucide="film" class="i" style="width:13px;height:13px;vertical-align:-2px;color:#8ec0ff"></i> Vídeos gravados (IA)</b>
+            <span id="consumoCardVideos">Até 80 vídeos longos/mês analisados pelo Gemini (gere quantos cortes quiser de cada vídeo).</span>
+          </div>
+          <div class="consumo-item">
+            <b><i data-lucide="radio" class="i" style="width:13px;height:13px;vertical-align:-2px;color:#8ec0ff"></i> Lives ao vivo (IA)</b>
+            <span id="consumoCardLives">Ilimitadas no Plano Pro! Use em lives inteiras sem limite de tempo e sem descontar dos 80 vídeos.</span>
+          </div>
+          <div class="consumo-item">
+            <b><i data-lucide="cpu" class="i" style="width:13px;height:13px;vertical-align:-2px;color:#8ec0ff"></i> Motor Local + Sua API</b>
+            <span>Cortes no Motor Local ou usando sua própria chave Claude/ChatGPT são 100% ilimitados e não gastam cota.</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="proPainelAtivo" class="pro-espera" hidden style="border-color:rgba(127,178,255,.28); background:rgba(61,139,255,.07)">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap">
+          <div>
+            <b style="color:#eef5ff; font-size:14px" id="proAtivoPlano">Cortador Pro Ativo</b>
+            <div style="color:var(--texto2); margin-top:3px; font-size:12.5px" id="proAtivoMeta"></div>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+            <code id="proAtivoChave" style="padding:4px 9px; border-radius:7px; background:var(--superficie); border:1px solid var(--linha2)"></code>
+            <button class="btn p" id="btnSairChavePro" type="button">Trocar chave</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="consumoCtaNaoPro" hidden style="margin-bottom:12px">
+        <button class="of-cta-btn" type="button" id="btnConsumoIrPlanos"><i data-lucide="zap" class="i"></i> Ver planos para liberar 80 vídeos/mês + Lives ilimitadas</button>
+      </div>
+    </div>
+
+    <div id="proAbaPlanosWrap">
     <div class="of-sec-rot"><i data-lucide="layers" class="i"></i> 1. Recursos · Grátis vs. Plano Pro</div>
     <div class="of-duas">
       <div class="of-box">
         <div class="of-box-tit"><span>Plano Grátis</span><span class="tag-m">Pra sempre</span></div>
-        <div class="of-li"><i data-lucide="check" class="i"></i><span>Cortes ilimitados em vídeos e lives</span></div>
+        <div class="of-li"><i data-lucide="check" class="i"></i><span>Cortes ilimitados no Motor Local (vídeos e lives)</span></div>
         <div class="of-li"><i data-lucide="check" class="i"></i><span>Enquadramento 9:16 + webcam automática</span></div>
-        <div class="of-li"><i data-lucide="check" class="i"></i><span>Legenda palavra por palavra + áudio sincronizado</span></div>
-        <div class="of-li"><i data-lucide="check" class="i"></i><span>3 testes grátis do Pro (até 1 live de 15 min)</span></div>
+        <div class="of-li"><i data-lucide="check" class="i"></i><span>Legenda dinâmica + 6 fontes virais + áudio 0ms</span></div>
+        <div class="of-li"><i data-lucide="check" class="i"></i><span>3 testes grátis da IA (até 1 live de 15 min)</span></div>
       </div>
       <div class="of-box pro">
         <div class="of-box-tit"><span>Plano Pro</span><span class="tag-m">Completo</span></div>
         <div class="of-li"><i data-lucide="check" class="i"></i><span>Tudo do grátis + Google Gemini já incluso</span></div>
-        <div class="of-li"><i data-lucide="check" class="i"></i><span>Lives inteiras com IA sem limite de 15 min</span></div>
-        <div class="of-li"><i data-lucide="check" class="i"></i><span>Até 80 vídeos/mês com precisão de editor</span></div>
-        <div class="of-li"><i data-lucide="check" class="i"></i><span>Gancho 4s + títulos e SEO por rede</span></div>
+        <div class="of-li"><i data-lucide="check" class="i"></i><span><b>Lives ilimitadas com IA</b> (não gastam cota!)</span></div>
+        <div class="of-li"><i data-lucide="check" class="i"></i><span><b>80 vídeos completos/mês na IA</b> (até 20 cortes/vídeo)</span></div>
+        <div class="of-li"><i data-lucide="check" class="i"></i><span>Gancho 4s na tela + SEO pronto pra TikTok/Shorts/Reels</span></div>
       </div>
     </div>
 
@@ -2019,7 +2192,7 @@
     <div class="of-duas">
       <div class="of-box">
         <div class="of-box-tit"><span>Motor Local</span><span class="tag-m">Offline no PC</span></div>
-        <p class="of-motor-txt">Corta por <b>volume da voz, explosão do chat e palavras-chave</b>. Ótimo pra gritos e reações rápidas, mas não lê o contexto da história.</p>
+        <p class="of-motor-txt">Corta por <b>volume da voz, explosão do chat e palavras-chave</b>. Ótimo pra gritos e reações rápidas, e continua 100% ilimitado mesmo no Pro.</p>
       </div>
       <div class="of-box pro">
         <div class="of-box-tit"><span>Diretor IA Pro · Gemini</span><span class="tag-m">Alta precisão</span></div>
@@ -2031,23 +2204,14 @@
       <span class="of-ias-rot"><i data-lucide="plug" class="i"></i> Integração de IA</span>
       <div class="of-ias-pills">
         <span class="of-ia-pill">Google Gemini <small>incluso</small></span>
-        <span class="of-ia-pill">Claude <small>API própria</small></span>
-        <span class="of-ia-pill">ChatGPT <small>API própria</small></span>
+        <span class="of-ia-pill">Claude <small>API própria · ilimitado</small></span>
+        <span class="of-ia-pill">ChatGPT <small>API própria · ilimitado</small></span>
       </div>
     </div>
 
     <div id="proConviteBanner" class="pro-espera" hidden>
       <b style="color:#9ec5ff; font-size:13.5px; font-weight:600" id="proConviteTitulo">Diretor IA Pro</b>
       <div style="color:var(--texto2); margin-top:4px; line-height:1.5" id="proConviteTexto"></div>
-    </div>
-
-    <div id="proPainelAtivo" class="pro-espera" hidden style="border-color:rgba(134,211,164,.35); background:rgba(134,211,164,.07)">
-      <b style="color:var(--verde); font-size:var(--t3)" id="proAtivoPlano">⚡ Cortador Pro Ativo</b>
-      <div style="color:var(--texto2); margin-top:4px" id="proAtivoMeta"></div>
-      <div style="margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap">
-        <code id="proAtivoChave" style="padding:4px 9px; border-radius:7px; background:var(--superficie); border:1px solid var(--linha2)"></code>
-        <button class="btn p" id="btnSairChavePro" type="button">Trocar chave</button>
-      </div>
     </div>
 
     <div id="proPainelEspera" class="pro-espera" hidden>
@@ -2061,6 +2225,7 @@
 
     <div id="proPlanosWrap">
       <div class="pro-planos" id="proPlanosLista"></div>
+    </div>
     </div>
 
     <div class="pro-chave-bloco">
@@ -2136,8 +2301,8 @@
       <div class="of-box pro">
         <div class="of-box-tit"><span>Plano Pro</span><span class="tag-m">Completo</span></div>
         <div class="of-li"><i data-lucide="check" class="i"></i><span>Tudo do grátis + Google Gemini incluso</span></div>
-        <div class="of-li"><i data-lucide="check" class="i"></i><span>Lives inteiras com IA sem limite</span></div>
-        <div class="of-li"><i data-lucide="check" class="i"></i><span>Até 80 vídeos/mês com IA de editor</span></div>
+        <div class="of-li"><i data-lucide="check" class="i"></i><span><b>Lives ilimitadas com IA</b> (não gastam cota)</span></div>
+        <div class="of-li"><i data-lucide="check" class="i"></i><span><b>80 vídeos completos/mês na IA</b> (até 20 cortes/vídeo)</span></div>
         <div class="of-li"><i data-lucide="check" class="i"></i><span>Gancho 4s + títulos e SEO por rede</span></div>
       </div>
     </div>
@@ -2344,6 +2509,8 @@
     <p style="margin:6px 0 0; color:var(--texto2)">Confira tudo o que foi atualizado para deixar seus cortes mais precisos, sincronizados e prontos para viralizar:</p>
     <ul class="nov-lista">
       <li><i data-lucide="refresh-cw" class="i"></i><div><b>Agora o aplicativo atualiza sozinho!</b>Sempre que sair uma melhoria ou correção nova no GitHub, o próprio programa avisa, baixa em segundos com tela de progresso e reinicia atualizado — sem precisar baixar o instalador de novo.</div></li>
+      <li><i data-lucide="captions" class="i"></i><div><b>6 Fontes Virais de Legenda + Gancho 4s e SEO por Rede visível</b>Escolha entre <b>TikTok Sans, Montserrat Black, Anton, Poppins, Bangers e Bebas Neue</b> (em vídeos e lives!) e veja o <b>Gancho 4s</b> + abas de SEO prontas pra TikTok, Shorts e Reels direto em cada corte.</div></li>
+      <li><i data-lucide="bar-chart-3" class="i"></i><div><b>Nova aba "Meu Consumo" no Plano Pro</b>Veja em tempo real quantos dos seus <b>80 vídeos completos/mês</b> já usou (gerando até 20 cortes por vídeo), com <b>Lives 100% ilimitadas</b> sem descontar da cota!</div></li>
       <li><i data-lucide="trash-2" class="i"></i><div><b>Apagar projetos direto pelo programa</b>Exclua os projetos que não precisa mais direto da lista de <b>Projetos</b> ou dentro de um projeto aberto, com confirmação segura para liberar espaço no disco na hora.</div></li>
       <li><i data-lucide="sparkles" class="i"></i><div><b>Diretor IA Pro em Vídeo e em Live (3 usos grátis inclusos)</b>Entende a conversa inteira, corta no início e fim exatos da história e cria ganchos e títulos virais (com Gemini nativo incluso ou sua chave Claude/ChatGPT). Use seus 3 testes grátis (2 em vídeos + 1 vídeo ou 1 live de 15 min) — e no Plano Pro use na live inteira sem limite!</div></li>
       <li><i data-lucide="audio-lines" class="i"></i><div><b>Áudio 100% sincronizado e vídeo fluido nas lives (YouTube, Kick e Twitch)</b>Nova sincronização de áudio e vídeo em vídeos gravados e lives ao vivo — corrigido o bug que podia congelar a imagem em cortes de lives do YouTube e eliminando qualquer atraso na voz do streamer.</div></li>
@@ -2574,6 +2741,10 @@
             <input type="checkbox" id="edLegendar">
             <div><b>Legenda palavra por palavra</b><span>Embaixo do vídeo, com a palavra que está sendo dita em amarelo.</span></div>
           </label>
+          <div style="margin-top:10px">
+            <label class="rot" style="margin-bottom:4px"><i data-lucide="type" class="i"></i> Fonte da legenda e do gancho</label>
+            <div class="fontes-grade" id="edFontesLegenda"></div>
+          </div>
           <label class="rot" style="margin-top:12px"><i data-lucide="captions" class="i"></i> Corrigir a legenda</label>
           <div class="ed-legenda" id="edLegenda"></div>
           <div class="dica" style="margin-top:6px">Clique numa palavra e corrija. Apague o texto pra tirar a palavra da legenda. Vale quando refizer o clipe.</div>
@@ -2709,11 +2880,11 @@
       linha: { cor: '#ffffff', espessura: 8 },
     },
     formato: 'split', quantidade: 8, duracao: '28-62', ordem: 'nota',
-    velocidade: 'equilibrado', tamLegenda: 78,
-    gancho: true, legenda: false, focarRosto: true, picos: true,
+    velocidade: 'equilibrado', tamLegenda: 78, fonteLegenda: 'tiktok',
+    gancho: true, legenda: true, focarRosto: true, picos: true,
     resolucao: 1080, pedidos: [], idioma: 'pt', motor: 'local',
     // ao vivo: formato, webcam e o jeito de clipar
-    av: { formato: 'split', canto: 'se', tamanho: 'media', duracao: 30, auto: true, sens: 'media', clipDur: 30 },
+    av: { formato: 'split', canto: 'se', tamanho: 'media', duracao: 30, auto: true, sens: 'media', clipDur: 30, gancho: true, legendar: true },
   };
 
   // o que ele ajustou fica salvo - remarcar a webcam todo dia era um saco
@@ -2723,7 +2894,12 @@
       const rec = Object.assign(cfg.recorte, salvo.recorte || {});
       Object.assign(cfg, salvo);
       cfg.recorte = rec;
-      cfg.av = Object.assign({ formato: 'split', canto: 'se', tamanho: 'media', duracao: 30, auto: true, sens: 'media', clipDur: 30 }, salvo.av || {});
+      if (!cfg.fonteLegenda) cfg.fonteLegenda = 'tiktok';
+      // Migracao unica: ativa legenda dinamica por padrao para quem ainda nao tinha o seletor de fontes
+      if (!salvo._fontesV1) { cfg.legenda = true; cfg._fontesV1 = 1; }
+      cfg.av = Object.assign({ formato: 'split', canto: 'se', tamanho: 'media', duracao: 30, auto: true, sens: 'media', clipDur: 30, gancho: true, legendar: true }, salvo.av || {});
+    } else {
+      cfg._fontesV1 = 1;
     }
   } catch (_) {}
   const guardar = () => { try { localStorage.setItem(LEMBRAR, JSON.stringify(cfg)); } catch (_) {} };
@@ -3518,6 +3694,46 @@
   $('legendar').addEventListener('change', () => { cfg.legenda = $('legendar').checked; guardar(); resumo(); });
   $('picos').addEventListener('change', () => { cfg.picos = $('picos').checked; guardar(); });
 
+  const CATALOGO_FONTES = [
+    { id: 'tiktok',     nome: 'TikTok Sans',      css: "'CapTikTok', 'Arial Black', sans-serif" },
+    { id: 'montserrat', nome: 'Montserrat Black', css: "'CapMontserrat', 'Arial Black', sans-serif" },
+    { id: 'anton',      nome: 'Anton Impact',     css: "'CapAnton', Impact, sans-serif" },
+    { id: 'poppins',    nome: 'Poppins Bold',     css: "'CapPoppins', 'Arial Black', sans-serif" },
+    { id: 'bangers',    nome: 'Bangers Gamer',    css: "'CapBangers', Impact, sans-serif" },
+    { id: 'bebas',      nome: 'Bebas Neue',       css: "'CapBebas', Impact, sans-serif" },
+    { id: 'arial',      nome: 'Clássica',         css: "'Arial Black', Impact, sans-serif" },
+  ];
+  const cssDaFonte = (id) => (CATALOGO_FONTES.find((f) => f.id === id) || CATALOGO_FONTES[0]).css;
+
+  function renderizarGradeFontes(elId, getValor, aoMudar) {
+    const el = $(elId);
+    if (!el) return;
+    const atual = getValor() || 'tiktok';
+    el.innerHTML = CATALOGO_FONTES.map((f) =>
+      '<button type="button" class="fonte-op" data-fonte-id="' + f.id + '" aria-pressed="' + String(f.id === atual) + '">' +
+        '<span class="fonte-amostra" style="font-family:' + f.css + '">CORTE <em>VIRAL</em></span>' +
+        '<span class="fonte-nome">' + esc(f.nome) + '</span>' +
+      '</button>'
+    ).join('');
+    el.querySelectorAll('[data-fonte-id]').forEach((b) => {
+      b.addEventListener('click', () => aoMudar(b.dataset.fonteId));
+    });
+  }
+
+  function atualizarFontesGlobais() {
+    renderizarGradeFontes('fontesLegenda', () => cfg.fonteLegenda, escolherFonteGlobal);
+    renderizarGradeFontes('avFontesLegenda', () => cfg.fonteLegenda, escolherFonteGlobal);
+    if ($('previaFonteVideo')) $('previaFonteVideo').style.fontFamily = cssDaFonte(cfg.fonteLegenda);
+  }
+  function escolherFonteGlobal(id) {
+    cfg.fonteLegenda = id || 'tiktok';
+    guardar();
+    atualizarFontesGlobais();
+    resumo();
+    if (avAtivo) ajustarAoVivo();
+  }
+  atualizarFontesGlobais();
+
   // ------------------------------------------------------------ trecho (etapa 3)
   // O trecho marcado antes de gerar. Nao fica salvo: e de um video so.
   function pintarTrechoFluxo() {
@@ -3802,6 +4018,14 @@
   });
   $('avLerChat').checked = cfg.av.lerChat !== false;
   $('avLerChat').addEventListener('change', () => { cfg.av.lerChat = $('avLerChat').checked; guardar(); });
+  if ($('avGancho')) {
+    $('avGancho').checked = cfg.av.gancho !== false;
+    $('avGancho').addEventListener('change', () => { cfg.av.gancho = $('avGancho').checked; guardar(); ajustarAoVivo(); });
+  }
+  if ($('avLegendar')) {
+    $('avLegendar').checked = cfg.av.legendar !== false;
+    $('avLegendar').addEventListener('change', () => { cfg.av.legendar = $('avLegendar').checked; guardar(); ajustarAoVivo(); });
+  }
 
   // Muda formato/webcam/automatico com a live rodando, sem parar de gravar
   let ajusteAgendado = null;
@@ -3812,6 +4036,8 @@
       postJson('/api/aovivo/ajustar', {
         auto: cfg.av.auto, sensibilidade: cfg.av.sens, duracao: cfg.av.duracao,
         formato: cfg.av.formato, recorte: recorteAoVivo(), textoFixo: textoAtual(),
+        textoGancho: cfg.av.gancho !== false, legendar: cfg.av.legendar !== false,
+        fonteLegenda: cfg.fonteLegenda || 'tiktok',
         usarIaPro: cfg.motor === 'ia',
       }).then(atualizarPreviaAoVivo).catch(() => {});
     }, 250);
@@ -3838,8 +4064,10 @@
       const r = await postJson('/api/aovivo/iniciar', {
         url, formato: cfg.av.formato, recorte: recorteAoVivo(), duracao: cfg.av.duracao,
         auto: cfg.av.auto !== false, sensibilidade: cfg.av.sens, idioma: 'pt',
-        lerChat: cfg.av.lerChat !== false, textoFixo: textoAtual(), preparar: true,
-        usarIaPro: cfg.motor === 'ia',
+        lerChat: cfg.av.lerChat !== false, textoFixo: textoAtual(),
+        textoGancho: cfg.av.gancho !== false, legendar: cfg.av.legendar !== false,
+        fonteLegenda: cfg.fonteLegenda || 'tiktok',
+        preparar: true, usarIaPro: cfg.motor === 'ia',
       });
       if (r.precisaUpgrade) {
         abrirModalPro(r.erro || 'Atualize o plano Pro para usar o Diretor IA na live.');
@@ -4363,6 +4591,7 @@
         ordem: cfg.ordem, modelo: vel.modelo, qualidade: vel.qualidade,
         legendar: cfg.legenda && formato !== 'original',
         textoGancho: cfg.gancho, tamanhoLegenda: cfg.tamLegenda,
+        fonteLegenda: cfg.fonteLegenda || 'tiktok',
         detectarWebcam: cfg.focarRosto, detectarMomentos: cfg.picos,
         trecho: trechoFluxo ? { inicio: trechoFluxo.inicio, fim: trechoFluxo.fim } : null,
         modoTrecho: trechoFluxo ? trechoFluxo.modo : null,
@@ -4480,21 +4709,41 @@
             (c.origem === 'manual' ? 'Você clipou' : 'Automático') + '</span>' : '') +
         '</div>' +
         '<div class="clipe-gancho">' + esc(c.titulo) + '</div>' +
+        (c.gancho
+          ? '<div class="gancho-4s-box" title="Frase queimada nos 4 primeiros segundos do vídeo">' +
+              '<span class="gancho-4s-tag">GANCHO 4s</span>' +
+              '<span class="gancho-4s-txt">' + esc(c.gancho) + '</span>' +
+              '<button type="button" class="seo-copiar" style="padding:2px 7px;font-size:10.5px" data-copiar="' + esc(c.gancho) + '">Copiar</button>' +
+            '</div>'
+          : (daLive && !c.fonte
+              ? '<div class="gancho-4s-box" style="opacity:.75"><span class="gancho-4s-tag">GANCHO 4s</span><span class="gancho-4s-txt" style="font-weight:400;color:var(--texto2)">Ouvindo a fala pra aplicar gancho 4s + legenda...</span></div>'
+              : '')) +
         '<div class="clipe-meta"><i data-lucide="clock" class="i"></i><span class="tempos">' +
           c.inicioTexto + ' → ' + c.fimTexto + ' · ' + c.duracao + 's · ' + c.tamanhoMb + ' MB</span></div>' +
         (c.observacao ? '<div class="clipe-meta" style="color:var(--azul)"><i data-lucide="info" class="i"></i><span>' + esc(c.observacao) + '</span></div>' : '') +
 
         '<div class="clipe-acoes">' +
           '<a class="btn p" href="' + src + '" download="' + esc(c.nomeArquivo) + '"><i data-lucide="download" class="i"></i> Baixar</a>' +
-          '<button class="btn p" data-copiar="' + esc(c.legendaPost || c.titulo) + '" title="Título e hashtags, pronto pra colar no post"><i data-lucide="copy" class="i"></i> Legenda</button>' +
+          '<button class="btn p" data-copiar="' + esc(c.legendaPost || c.titulo) + '" title="Título e hashtags, pronto pra colar no post"><i data-lucide="copy" class="i"></i> Copiar post</button>' +
           editar +
-          (editar ? '<button class="btn p abrir-som"' + (podeEditarClipe(c) ? '' : ' disabled') + ' title="O som está fora de tempo com a imagem? Ajuste só esse clipe"><i data-lucide="audio-lines" class="i"></i> Áudio atrasado?</button>' : '') +
+          (editar ? '<button class="btn p abrir-som"' + (podeEditarClipe(c) ? '' : ' disabled') + ' title="O som está fora de tempo com a imagem? Ajuste só esse clipe"><i data-lucide="audio-lines" class="i"></i> Áudio?</button>' : '') +
         '</div>' +
-        (c.seo ? '<div class="seo-bar"><span>SEO pronto:</span>' +
-          (c.seo.tiktok ? '<button type="button" class="btn-seo" data-copiar="' + esc(c.seo.tiktok) + '" title="Copiar título + palavras de busca + hashtags pro TikTok"><i data-lucide="copy" class="i"></i> TikTok</button>' : '') +
-          (c.seo.shorts ? '<button type="button" class="btn-seo" data-copiar="' + esc(c.seo.shorts) + '" title="Copiar título curto #shorts + descrição pro YouTube Shorts"><i data-lucide="copy" class="i"></i> Shorts</button>' : '') +
-          (c.seo.reels ? '<button type="button" class="btn-seo" data-copiar="' + esc(c.seo.reels) + '" title="Copiar legenda de engajamento + hashtags pro Instagram Reels"><i data-lucide="copy" class="i"></i> Reels</button>' : '') +
-        '</div>' : '') +
+        (c.seo ? (function () {
+          const tk = c.seo.tiktok || c.legendaPost || c.titulo || '';
+          const sh = c.seo.shorts || (c.titulo + ' #shorts');
+          const rl = c.seo.reels || c.legendaPost || c.titulo || '';
+          return '<div class="seo-box">' +
+            '<div class="seo-topo">' +
+              '<div class="seo-abas">' +
+                '<button type="button" class="seo-aba ativa" data-seo-rede="tiktok" data-seo-txt="' + esc(tk) + '">TikTok</button>' +
+                '<button type="button" class="seo-aba" data-seo-rede="shorts" data-seo-txt="' + esc(sh) + '">Shorts</button>' +
+                '<button type="button" class="seo-aba" data-seo-rede="reels" data-seo-txt="' + esc(rl) + '">Reels</button>' +
+              '</div>' +
+              '<button type="button" class="seo-copiar btn-copiar-seo-rede" data-copiar="' + esc(tk) + '"><i data-lucide="copy" class="i"></i> Copiar SEO TikTok</button>' +
+            '</div>' +
+            '<div class="seo-texto">' + esc(tk) + '</div>' +
+          '</div>';
+        })() : '') +
         '<div class="ajuste-som" hidden>' +
           '<b>O som está fora de tempo?</b><span class="dica-som">Escolha quanto. Só esse clipe é refeito, com o som no lugar certo.' +
             (c.atrasoAudio ? ' Ajuste atual: <b>' + (c.atrasoAudio > 0 ? 'som atrasado ' : 'som adiantado ') + String(Math.abs(c.atrasoAudio)).replace('.', ',') + 's</b>.' : '') + '</span>' +
@@ -4513,6 +4762,24 @@
             (c.hashtags && c.hashtags.length ? '<div class="bloco"><b>Hashtags:</b> ' + esc(c.hashtags.map((t) => '#' + t).join(' ')) + '</div>' : '') +
           '</div></details>' +
       '</div>';
+
+    div.querySelectorAll('.seo-aba').forEach((aba) => {
+      aba.addEventListener('click', () => {
+        const box = aba.closest('.seo-box');
+        if (!box) return;
+        box.querySelectorAll('.seo-aba').forEach((x) => x.classList.toggle('ativa', x === aba));
+        const txt = aba.dataset.seoTxt || '';
+        const redeNome = { tiktok: 'TikTok', shorts: 'Shorts', reels: 'Reels' }[aba.dataset.seoRede] || 'SEO';
+        const preview = box.querySelector('.seo-texto');
+        if (preview) preview.textContent = txt;
+        const btnCop = box.querySelector('.btn-copiar-seo-rede');
+        if (btnCop) {
+          btnCop.dataset.copiar = txt;
+          btnCop.innerHTML = '<i data-lucide="copy" class="i"></i> Copiar SEO ' + redeNome;
+          icones(btnCop);
+        }
+      });
+    });
 
     div.querySelectorAll('[data-copiar]').forEach((b) => {
       b.addEventListener('click', function () {
@@ -4958,6 +5225,7 @@
     const doClipe = !!c.fonte;
     const pastaProj = pasta || (p && p.pasta);
     const legendaDoProjeto = !!(p && p.pasta === pastaProj && p.opcoes && p.opcoes.legendar);
+    const fonteDoProjeto = (c && c.fonteLegenda) || (p && p.pasta === pastaProj && p.opcoes && p.opcoes.fonteLegenda) || cfg.fonteLegenda || 'tiktok';
     Object.assign(ed, {
       modo: 'clipe', contexto: 'projeto',
       fonte: doClipe ? { pasta: pastaProj, clipe: c.numero } : { pasta: pastaProj },
@@ -4965,13 +5233,16 @@
       outros: doClipe ? [] : p.clipes, c: c, pastaProj: pastaProj,
       edicoes: Object.assign({}, c.edicoesLegenda || {}),
       assinaturaLegenda: '',
+      fonteLegenda: fonteDoProjeto,
       base: {
         inicio: c.inicio, fim: arred(c.inicio + c.duracao), gancho: c.gancho || '',
         legendar: typeof c.legendar === 'boolean' ? c.legendar : legendaDoProjeto,
+        fonteLegenda: fonteDoProjeto,
         edicoes: JSON.stringify(c.edicoesLegenda || {}),
       },
     });
     $('edLegendar').checked = ed.base.legendar;
+    pintarFontesEditor();
     ed.inicio = ed.base.inicio;
     ed.fim = ed.base.fim;
     // folga dos dois lados: pra ver o que vem antes e depois, e ter onde esticar
@@ -5119,6 +5390,7 @@
            Math.abs(ed.fim - ed.base.fim) >= 0.05 ||
            $('edGancho').value.trim() !== ed.base.gancho.trim() ||
            $('edLegendar').checked !== ed.base.legendar ||
+           (ed.fonteLegenda || 'tiktok') !== (ed.base.fonteLegenda || 'tiktok') ||
            JSON.stringify(ed.edicoes) !== ed.base.edicoes;
   }
 
@@ -5620,11 +5892,21 @@
 
   $('edGancho').addEventListener('input', pintarEditor);
 
+  function pintarFontesEditor() {
+    renderizarGradeFontes('edFontesLegenda', () => ed.fonteLegenda, (fid) => {
+      ed.fonteLegenda = fid;
+      pintarFontesEditor();
+      pintarEditor();
+    });
+  }
+
   $('edDesfazer').addEventListener('click', () => {
     ed.inicio = ed.base.inicio;
     ed.fim = ed.base.fim;
     $('edGancho').value = ed.base.gancho;
     $('edLegendar').checked = ed.base.legendar;
+    ed.fonteLegenda = ed.base.fonteLegenda || 'tiktok';
+    pintarFontesEditor();
     ed.edicoes = JSON.parse(ed.base.edicoes || '{}');
     ed.assinaturaLegenda = '';
     edVideo.pause();
@@ -5674,6 +5956,7 @@
           duracao: Math.round((ed.fim - ed.inicio) * 10) / 10,
           gancho: $('edGancho').value.trim(),
           legendar: $('edLegendar').checked,
+          fonteLegenda: ed.fonteLegenda || cfg.fonteLegenda || 'tiktok',
           edicoes: ed.edicoes,
         }),
       }).then((x) => x.json());
@@ -5690,11 +5973,14 @@
         if (mesmoClipe()) {
           // o que acabou de ser gravado vira o novo "como esta no arquivo"
           ed.c = novo;
+          ed.fonteLegenda = novo.fonteLegenda || ed.fonteLegenda || 'tiktok';
           ed.base = {
             inicio: novo.inicio, fim: arred(novo.inicio + novo.duracao), gancho: novo.gancho || '',
             legendar: typeof novo.legendar === 'boolean' ? novo.legendar : $('edLegendar').checked,
+            fonteLegenda: ed.fonteLegenda,
             edicoes: JSON.stringify(novo.edicoesLegenda || {}),
           };
+          pintarFontesEditor();
           ed.edicoes = Object.assign({}, novo.edicoesLegenda || {});
           ed.assinaturaLegenda = '';
           ed.inicio = ed.base.inicio;
@@ -5977,12 +6263,15 @@
     const subLive = $('motorIaLiveSub');
 
     if (est && est.ativo) {
+      const usados = Math.max(0, Number(est.usosMes || 0));
+      const limite = Math.max(1, Number(est.limiteMes || 80));
+      const restam = Math.max(0, limite - usados);
       btnTopo.classList.add('ativo');
-      txtTopo.textContent = 'Pro ativo';
-      selo.textContent = 'Pro ativo';
+      txtTopo.textContent = 'Pro · ' + usados + '/' + limite;
+      selo.textContent = 'Pro · restam ' + restam + '/' + limite + ' vídeos';
       selo.className = 'pilula-pro ativo';
-      if (seloLive) { seloLive.textContent = 'Pro ativo'; seloLive.className = 'pilula-pro ativo'; }
-      if (subLive) subLive.textContent = 'Plano Pro ativo · use na live inteira sem limite de tempo!';
+      if (seloLive) { seloLive.textContent = 'Pro · Lives ilimitadas'; seloLive.className = 'pilula-pro ativo'; }
+      if (subLive) subLive.textContent = 'Plano Pro ativo · lives inteiras ilimitadas (não descontam dos seus ' + limite + ' vídeos/mês)!';
     } else if (est && est.configurado) {
       btnTopo.classList.remove('ativo');
       // Selo do modo Video
@@ -6059,12 +6348,40 @@
       }
       $('proPainelAtivo').hidden = !est.ativo;
       $('proPlanosWrap').hidden = !!est.ativo;
+      if ($('consumoCtaNaoPro')) $('consumoCtaNaoPro').hidden = !!est.ativo;
       if (est.ativo) {
+        const usados = Math.max(0, Number(est.usosMes || 0));
+        const limite = Math.max(1, Number(est.limiteMes || 80));
+        const restam = Math.max(0, limite - usados);
+        const pct = Math.min(100, Math.round((usados / limite) * 100));
         const validade = est.expiraEm ? new Date(est.expiraEm).toLocaleDateString('pt-BR') : '';
+        const renova = est.renovaCotaEm ? new Date(est.renovaCotaEm).toLocaleDateString('pt-BR') : validade;
         $('proAtivoPlano').textContent = '⚡ ' + (est.plano || 'Cortador Pro Ativo');
-        $('proAtivoMeta').textContent = (validade ? 'Válido até ' + validade + ' · ' : '') +
-          'Usos neste mês: ' + (est.usosMes || 0) + ' de ' + (est.limiteMes || 80) + ' vídeos';
+        $('proAtivoMeta').textContent = (validade ? 'Passe válido até ' + validade + ' · ' : '') +
+          'Lives ilimitadas · ' + usados + ' de ' + limite + ' vídeos usados';
         $('proAtivoChave').textContent = est.chaveMascarada || '';
+        if ($('abaConsumoBadge')) $('abaConsumoBadge').textContent = usados + '/' + limite;
+        if ($('consumoStatusSelo')) $('consumoStatusSelo').textContent = 'Plano Pro Ativo · Uso mensal';
+        if ($('consumoCicloTxt')) $('consumoCicloTxt').textContent = renova ? ('Ciclo até ' + renova) : '';
+        if ($('consumoPrincipalTxt')) $('consumoPrincipalTxt').innerHTML = usados + ' de ' + limite + ' <small>vídeos completos usados</small>';
+        if ($('consumoRestamTxt')) $('consumoRestamTxt').textContent = 'Restam ' + restam + ' vídeos';
+        if ($('consumoBarra')) $('consumoBarra').style.width = pct + '%';
+        if ($('consumoSubTxt')) $('consumoSubTxt').innerHTML = 'Cada vídeo longo analisado pelo Google Gemini conta <b>1 vídeo</b> (mesmo que ele gere <b>até 20 cortes</b> de uma vez). Suas lives e o Motor Local são ilimitados.';
+        if ($('consumoCardVideos')) $('consumoCardVideos').textContent = usados + ' gastos · ainda restam ' + restam + ' vídeos completos com IA neste ciclo.';
+        if ($('consumoCardLives')) $('consumoCardLives').textContent = 'Liberadas sem limite! Nenhuma live desconta da sua cota de ' + limite + ' vídeos.';
+      } else {
+        const gastosTrial = Math.max(0, Number(est.usosFeitos != null ? est.usosFeitos : (3 - Number(est.trialsRestantes || 0))));
+        const restTrial = Math.max(0, Number(est.trialsRestantes || 0));
+        const pctTrial = Math.min(100, Math.round((gastosTrial / 3) * 100));
+        if ($('abaConsumoBadge')) $('abaConsumoBadge').textContent = gastosTrial + '/3 grátis';
+        if ($('consumoStatusSelo')) $('consumoStatusSelo').textContent = 'Modo Grátis · Testes do Diretor IA';
+        if ($('consumoCicloTxt')) $('consumoCicloTxt').textContent = '3 testes liberados por PC';
+        if ($('consumoPrincipalTxt')) $('consumoPrincipalTxt').innerHTML = gastosTrial + ' de 3 <small>testes grátis usados</small>';
+        if ($('consumoRestamTxt')) $('consumoRestamTxt').textContent = 'Restam ' + restTrial + ' grátis';
+        if ($('consumoBarra')) $('consumoBarra').style.width = pctTrial + '%';
+        if ($('consumoSubTxt')) $('consumoSubTxt').innerHTML = 'No <b>Plano Pro</b> você recebe <b>80 vídeos completos/mês</b> analisados pelo Gemini (1 vídeo enviado = até 20 cortes gerados) + <b>Lives inteiras ilimitadas</b>.';
+        if ($('consumoCardVideos')) $('consumoCardVideos').textContent = 'Grátis: até 3 testes · No Plano Pro: 80 vídeos completos por mês.';
+        if ($('consumoCardLives')) $('consumoCardLives').textContent = est.liveUsado ? '15 min grátis já usados · No Plano Pro: lives inteiras ilimitadas!' : '1 teste de 15 min disponível · No Plano Pro: lives ilimitadas!';
       }
       $('proPlanosLista').innerHTML = (est.planos || []).map((pl) =>
         '<div class="pro-plano' + (pl.destaque ? ' destaque' : '') + '">' +
@@ -6274,7 +6591,25 @@
     $('proStatusMsg').className = 'pasta-status' + (tipo ? ' ' + tipo : '');
   }
 
-  function abrirModalPro(msgInicial, conviteObj) {
+  function selecionarAbaPro(aba) {
+    const ehConsumo = aba === 'consumo';
+    document.querySelectorAll('#proAbas [data-pro-aba]').forEach((b) => {
+      b.classList.toggle('ativa', b.dataset.proAba === (ehConsumo ? 'consumo' : 'planos'));
+    });
+    if ($('proAbaConsumoWrap')) $('proAbaConsumoWrap').hidden = !ehConsumo;
+    if ($('proAbaPlanosWrap')) $('proAbaPlanosWrap').hidden = ehConsumo;
+  }
+  if ($('proAbas')) {
+    $('proAbas').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-pro-aba]');
+      if (b) selecionarAbaPro(b.dataset.proAba);
+    });
+  }
+  if ($('btnConsumoIrPlanos')) {
+    $('btnConsumoIrPlanos').addEventListener('click', () => selecionarAbaPro('planos'));
+  }
+
+  function abrirModalPro(msgInicial, conviteObj, abaForcada) {
     statusPro(msgInicial || '', msgInicial ? 'ruim' : '');
     if ($('proConviteBanner')) {
       const cv = conviteObj || (estadoPro && !estadoPro.ativo && estadoPro.conviteUpgrade);
@@ -6284,6 +6619,8 @@
         $('proConviteBanner').hidden = false;
       }
     }
+    const abaInicial = abaForcada || ((estadoPro && estadoPro.ativo && !msgInicial) ? 'consumo' : 'planos');
+    selecionarAbaPro(abaInicial);
     $('modalPro').hidden = false;
     carregarEstadoPro(true);
     icones($('modalPro'));

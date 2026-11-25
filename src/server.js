@@ -98,6 +98,8 @@ const TIPOS = {
   '.jpg': 'image/jpeg',
   '.png': 'image/png',
   '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf',
+  '.otf': 'font/otf',
   '.srt': 'text/plain; charset=utf-8',
   '.txt': 'text/plain; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
@@ -428,6 +430,10 @@ const servidor = http.createServer(async (req, res) => {
       return servirArquivo(req, res, path.join(__dirname, 'ui', path.basename(rota)));
     }
 
+    if (/^\/fontes\/[\w.-]+\.(ttf|otf|woff2)$/i.test(rota)) {
+      return servirArquivo(req, res, path.join(__dirname, 'fontes', path.basename(rota)));
+    }
+
     // A janela usa isso pra mostrar o endereco do celular e o QR code, e pra
     // saber se pode oferecer o dialogo nativo (so faz sentido no Windows local).
     if (rota === '/api/rede') {
@@ -582,6 +588,9 @@ const servidor = http.createServer(async (req, res) => {
         idioma: ant.idioma,
         lerChat: ant.lerChat,
         textoFixo: ant.textoFixo,
+        textoGancho: ant.textoGancho,
+        legendar: ant.legendar,
+        fonteLegenda: ant.fonteLegenda,
         usarIaPro: usarIa,
         preparar: false,
       }, emitirAoVivo);
@@ -865,6 +874,7 @@ const servidor = http.createServer(async (req, res) => {
         gancho: corpo.gancho,
         // legenda palavra por palavra neste clipe e o que a pessoa corrigiu nela
         legendar: typeof corpo.legendar === 'boolean' ? corpo.legendar : undefined,
+        fonteLegenda: corpo.fonteLegenda ? String(corpo.fonteLegenda) : undefined,
         edicoes: corpo.edicoes && typeof corpo.edicoes === 'object' ? corpo.edicoes : undefined,
         atrasoAudio: Number.isFinite(Number(corpo.atrasoAudio)) && corpo.atrasoAudio !== null && corpo.atrasoAudio !== undefined ? Number(corpo.atrasoAudio) : undefined,
       }, (ev) => emitir(id, ev))

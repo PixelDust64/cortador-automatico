@@ -23,27 +23,31 @@ const RAIZ = path.join(__dirname, '..');
 const pastas = require('./pastas');
 const desempenho = require('./desempenho');
 const MODELOS = process.env.MODELOS_DIR || path.join(RAIZ, 'modelos');
-// Fontes que vem com o programa (usadas no gancho e na legenda queimada)
-const FONTES = path.join(RAIZ, 'fontes');
+// Fontes abertas que acompanham o programa em src/fontes (e extras locais em fontes/, se houver)
+const FONTES_APP = path.join(__dirname, 'fontes');
+const FONTES_EXTRA = path.join(RAIZ, 'fontes');
 
 /** A pasta de fontes vista da pasta de trabalho, do jeito que o filtro do ffmpeg aceita. */
 function fontsdirRelativo() {
-  if (!fs.existsSync(FONTES)) return null;
-  const rel = path.relative(pastas.trabalho(), FONTES).split(path.sep).join('/');
-  if (!/[:\s']/.test(rel)) return rel;
-  // Outro disco ("D:...") ou caminho com espaco - como no programa instalado,
-  // com os dados em Videos: leva uma copia das fontes pra dentro da pasta de
-  // trabalho. Se nem isso der, cai na fonte do sistema.
+  const origens = [FONTES_APP, FONTES_EXTRA].filter((p) => fs.existsSync(p));
+  if (!origens.length) return null;
   try {
     const copia = path.join(pastas.trabalho(), 'fontes');
     fs.mkdirSync(copia, { recursive: true });
-    for (const nome of fs.readdirSync(FONTES)) {
-      const destino = path.join(copia, nome);
-      if (!fs.existsSync(destino)) fs.copyFileSync(path.join(FONTES, nome), destino);
+    for (const pasta of origens) {
+      for (const nome of fs.readdirSync(pasta)) {
+        if (!/\.(ttf|otf)$/i.test(nome)) continue;
+        const src = path.join(pasta, nome);
+        const destino = path.join(copia, nome);
+        if (!fs.existsSync(destino) || fs.statSync(destino).size !== fs.statSync(src).size) {
+          fs.copyFileSync(src, destino);
+        }
+      }
     }
     return 'fontes';
   } catch (_) {
-    return null;
+    const rel = path.relative(pastas.trabalho(), origens[0]).split(path.sep).join('/');
+    return !/[:\s']/.test(rel) ? rel : null;
   }
 }
 
@@ -531,7 +535,13 @@ function titular(cortes, video, sessao, nome) {
       c.titulos = c.titulosIa && c.titulosIa.length ? c.titulosIa : cp.titulos;
       c.hashtags = c.hashtagsIa && c.hashtagsIa.length ? c.hashtagsIa : cp.hashtags;
       const seoIa = require('./copy').gerarSeoPlataformas(c, c.titulo, c.hashtags, contexto);
-      c.seo = Object.assign({}, seoIa, c.seoIa || {});
+      const ia = c.seoIa || {};
+      c.seo = {
+        tiktok: (ia.tiktok && String(ia.tiktok).trim()) || seoIa.tiktok,
+        shorts: (ia.shorts && String(ia.shorts).trim()) || seoIa.shorts,
+        shortsTitulo: seoIa.shortsTitulo,
+        reels: (ia.reels && String(ia.reels).trim()) || seoIa.reels,
+      };
       c.legendaPost = c.seo.tiktok || (c.titulo + '\n\n' + c.hashtags.map((h) => '#' + h).join(' '));
       contexto.evitar.add(String(c.titulo).toLowerCase());
     } else {
@@ -563,8 +573,8 @@ async function gerarClipes(cortes, ctx) {
     // O gancho fica guardado no clipe: e o texto que a pessoa vai querer
     // reescrever depois, quando bater o olho no resultado e pensar em algo melhor.
     // ganchoFixo: o gancho escrito a mao pra um trecho marcado, no lugar do gerado
-    c.gancho = ctx.opcoes.textoGancho === false ? null
-      : (ctx.opcoes.ganchoFixo || c.ganchoIa || gerarGanchoDeTela(c, ctx.opcoes.sessao));
+    const ganchoCand = ctx.opcoes.ganchoFixo || (c.ganchoIa && legenda.semEmojis(c.ganchoIa).length >= 3 ? c.ganchoIa : null) || gerarGanchoDeTela(c, ctx.opcoes.sessao);
+    c.gancho = ctx.opcoes.textoGancho === false ? null : ganchoCand;
 
     // A nota entra no nome: assim o ranking aparece na pasta do Windows tambem
     const base = 'clipe-' + String(c.numero).padStart(2, '0') +
@@ -731,9 +741,11 @@ async function renderizarClipe(ctx, c) {
   const textoFixo = legenda.temTextoFixo(opcoes.textoFixo) ? opcoes.textoFixo : null;
 
   let arquivoAss = null;
+  const fonteLegenda = opcoes.fonteLegenda || 'tiktok';
   if ((querLegenda || gancho || textoFixo) && ctx.vertical) {
     arquivoAss = 'leg-' + ctx.assinatura + '-' + limparNome(ctx.base) + '.ass';
     legenda.gerarAss(c.palavras || [], c.inicio, path.join(pastas.trabalho(), arquivoAss), {
+      fonte: fonteLegenda,
       tamanho: opcoes.tamanhoLegenda || 78,
       margemBaixo: margemDaLegenda(opcoes, formatoDoClipe),
       incluirPalavras: querLegenda,
@@ -780,6 +792,8 @@ async function renderizarClipe(ctx, c) {
     nomeArquivo: path.basename(mp4),
     base: ctx.base,
     formatoUsado: formatoDoClipe,
+    legendar: querLegenda,
+    fonteLegenda: fonteLegenda,
     observacao,
     miniatura: fs.existsSync(miniatura) ? miniatura : null,
     tamanhoMb: Math.round((fs.statSync(mp4).size / 1048576) * 10) / 10,
@@ -885,6 +899,7 @@ function doClipeDaLive(clipe) {
   if (clipe.formatoUsado) o.formato = clipe.formatoUsado;
   if (clipe.recorte) o.recorte = clipe.recorte;
   if (clipe.textoFixo !== undefined) o.textoFixo = clipe.textoFixo;
+  if (clipe.fonteLegenda) o.fonteLegenda = clipe.fonteLegenda;
   return o;
 }
 
@@ -921,6 +936,9 @@ async function refazerClipe(pedido, avisar) {
   // ou o que ja valia pra ele, ou o do projeto
   const legendar = typeof pedido.legendar === 'boolean' ? pedido.legendar
     : (typeof antigo.legendar === 'boolean' ? antigo.legendar : !!(sessao.opcoes || {}).legendar);
+  const fonteLegenda = pedido.fonteLegenda
+    ? String(pedido.fonteLegenda)
+    : (antigo.fonteLegenda || (sessao.opcoes || {}).fonteLegenda || 'tiktok');
 
   // As palavras do trecho novo saem da transcricao que ja esta no disco.
   let palavras = [];
@@ -956,6 +974,7 @@ async function refazerClipe(pedido, avisar) {
     // ajuste do som desse clipe ("o audio esta atrasado"): fica no clipe pros proximos refazer
     atrasoAudio: pedido.atrasoAudio === undefined ? (antigo.atrasoAudio || 0) : Math.max(-5, Math.min(5, Number(pedido.atrasoAudio) || 0)),
     legendar: legendar,
+    fonteLegenda: fonteLegenda,
     edicoesLegenda: edicoes || undefined,
     editado: true,
   });
@@ -965,7 +984,7 @@ async function refazerClipe(pedido, avisar) {
     assinatura: fonte.assinatura,
     pastaSaida: pedido.pasta,
     base: antigo.base || path.basename(antigo.nomeArquivo, '.mp4'),
-    opcoes: Object.assign({}, sessao.opcoes || {}, doClipeDaLive(antigo), { legendar: legendar }),
+    opcoes: Object.assign({}, sessao.opcoes || {}, doClipeDaLive(antigo), { legendar: legendar, fonteLegenda: fonteLegenda }),
     vertical: (antigo.fonte && antigo.formatoUsado ? antigo.formatoUsado : (sessao.opcoes || {}).formato) !== 'original',
     avisar: avisar,
     aoProgredir: (frac, msg) => emitir(8 + frac * 88, msg),

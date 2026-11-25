@@ -56,5 +56,14 @@ O QUE FOI ATUALIZADO E MELHORADO NESTA VERSAO:
      lista de Projetos (botao de lixeira) ou dentro de um projeto aberto,
      com confirmacao segura para liberar espaco no disco na hora.
 
+8. 6 FONTES VIRAIS DE LEGENDA + GANCHO 4S E SEO POR REDE + ABA MEU CONSUMO
+   - Seletor de fontes para legenda dinamica e gancho (TikTok Sans,
+     Montserrat Black, Anton Impact, Poppins Bold, Bangers Gamer, Bebas Neue)
+     disponivel em videos gravados, lives ao vivo e no editor de clipes.
+   - Exibicao clara do Gancho 4s e abas interativas de SEO (TikTok, Shorts e
+     Reels) em cada corte + correcao definitiva de video fluido em lives HLS/fMP4.
+   - Nova aba "Meu Consumo" no Plano Pro mostrando quantos dos 80 videos
+     completos do mes foram usados (com Lives 100% ilimitadas sem gastar cota).
+
 Duvidas e novidades: https://www.instagram.com/gabriel.workspace/
 ======================================================================

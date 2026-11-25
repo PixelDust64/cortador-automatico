@@ -29,7 +29,7 @@ const media = require('./media');
 const baixador = require('./baixar');
 const sessoes = require('./sessoes');
 const legenda = require('./legenda');
-const { gerarCopy, gerarSeoPlataformas } = require('./copy');
+const { gerarCopy, gerarSeoPlataformas, gerarGanchoDeTela } = require('./copy');
 const { transcrever, fontsdirRelativo } = require('./pipeline');
 const pastas = require('./pastas');
 
@@ -383,6 +383,10 @@ class SessaoAoVivo {
     this.idioma = /^[a-z]{2}$|^auto$/.test(String(o.idioma || '')) ? o.idioma : 'pt';
     // texto fixo na tela de todo clipe: { texto, posicao, duracao, cor, tamanho }
     this.textoFixo = o.textoFixo || null;
+    // gancho de 4s, legenda dinamica palavra por palavra e fonte escolhida
+    this.textoGancho = o.textoGancho !== false;
+    this.legendar = !!o.legendar;
+    this.fonteLegenda = String(o.fonteLegenda || 'tiktok');
     // Diretor IA Pro na live: refina inicio/fim pela conversa e cria titulo + gancho + SEO
     this.usarIaPro = !!o.usarIaPro;
     this.salaChat = null;
@@ -471,6 +475,9 @@ class SessaoAoVivo {
       usarIaPro: !!this.usarIaPro,
       iaLiveExpiraEm: this.iaLiveExpiraEm || null,
       textoFixo: this.textoFixo,
+      textoGancho: this.textoGancho !== false,
+      legendar: !!this.legendar,
+      fonteLegenda: this.fonteLegenda || 'tiktok',
       // o pedaco mais novo: e dele que sai a imagem pra marcar webcam e foco
       ultimoPedaco: this.ultimoPedaco(),
       // por que ainda nao tem imagem (a tela de preparo mostra)
@@ -601,6 +608,7 @@ class SessaoAoVivo {
    */
   async gravarHls(m3u8) {
     const rodada = ++this.rodada;
+    const { ffmpeg } = await media.garantirFfmpeg();
     this.status('gravando', 'Gravando a live.');
     const mediaUrl = await this.resolverPlaylistMestre(m3u8);
     if (this.parado || rodada !== this.rodada) return;
@@ -665,12 +673,33 @@ class SessaoAoVivo {
           let buf = Buffer.from(await resp.arrayBuffer());
           if (buf.length < 512) continue;
           if (initMapBuf) buf = Buffer.concat([initMapBuf, buf]);
-          const nome = 'p' + String(this.proxNumero++).padStart(7, '0') + '.ts';
+          const num = this.proxNumero++;
+          const nome = 'p' + String(num).padStart(7, '0') + '.ts';
           const arquivo = path.join(this.dir, nome);
+          const tmpRaw = path.join(this.dir, 'raw-' + num + (initMapBuf ? '.mp4' : '.ts'));
           const tmp = arquivo + '.part';
-          fs.writeFileSync(tmp, buf);
-          fs.renameSync(tmp, arquivo);
-          this.adicionarPedaco(nome, arquivo, s.dur);
+          try {
+            fs.writeFileSync(tmpRaw, buf);
+            // Normaliza cada segmento (inclusive fMP4 #EXT-X-MAP e saltos de anuncio da Twitch)
+            // para MPEG-TS com PTS iniciando em zero: evita que o concat trave apos os 3 primeiros segundos.
+            await media.rodar(ffmpeg, [
+              '-y', '-hide_banner', '-loglevel', 'error',
+              '-fflags', '+genpts+discardcorrupt',
+              '-i', tmpRaw,
+              '-map', '0:v:0', '-map', '0:a:0?',
+              '-c', 'copy', '-avoid_negative_ts', 'make_zero',
+              '-f', 'mpegts', tmp,
+            ]);
+            if (fs.existsSync(tmp) && fs.statSync(tmp).size > 512) {
+              fs.renameSync(tmp, arquivo);
+              this.adicionarPedaco(nome, arquivo, s.dur);
+            }
+          } catch (_) {
+            // Segmento corrompido isolado: ignora sem derrubar a gravacao
+          } finally {
+            try { if (fs.existsSync(tmpRaw)) fs.unlinkSync(tmpRaw); } catch (_) { }
+            try { if (fs.existsSync(tmp)) fs.unlinkSync(tmp); } catch (_) { }
+          }
         }
         falhas = 0;
       } catch (e) {
@@ -1131,109 +1160,242 @@ class SessaoAoVivo {
     const lista = path.join(this.dir, nomeBase + '.txt');
     fs.writeFileSync(lista, usados.map((p) => "file '" + p.arquivo.replace(/\\/g, '/').replace(/'/g, "'\\''") + "'").join('\n'), 'utf8');
 
-    const deslocamento = Math.max(0, pedido.inicio - usados[0].t0);
-    const dur = Math.min(pedido.fim, usados[usados.length - 1].t0 + usados[usados.length - 1].dur) - Math.max(pedido.inicio, usados[0].t0);
+    const zeroJunto = usados[0].t0;
+    const fimJunto = usados[usados.length - 1].t0 + usados[usados.length - 1].dur;
+    const durJunto = Math.max(1, fimJunto - zeroJunto);
+    const deslocamento = Math.max(0, pedido.inicio - zeroJunto);
+    const dur = Math.min(pedido.fim, fimJunto) - Math.max(pedido.inicio, zeroJunto);
     const mp4 = path.join(this.pasta, nomeBase + '.mp4');
     const t0 = Date.now();
     this.emitir({ tipo: 'renderizando', numero, origem: pedido.origem });
 
     const filtro = media.filtroDeFormato(this.formato, this.recorte);
-    // texto fixo da tela (.ass na pasta de trabalho, o ffmpeg roda la dentro)
-    let ass = null;
-    if (filtro && legenda.temTextoFixo(this.textoFixo)) {
-      fs.mkdirSync(pastas.trabalho(), { recursive: true });
-      ass = 'aovivo-texto-' + this.id + '.ass';
-      legenda.gerarAss([], 0, path.join(pastas.trabalho(), ass), { incluirPalavras: false, textoFixo: this.textoFixo, alturaDivisao: legenda.alturaDaDivisao(this.formato, this.recorte) });
-    }
-    // Voz atrasada: pular direto pro meio da lista de pedacos (concat + -ss)
-    // fazia a imagem so comecar no proximo quadro-chave, 1-2s depois do som -
-    // e TikTok/CapCut, que ignoram esse vao, tocavam a voz atrasada. Agora os
-    // pedacos viram primeiro UM arquivo continuo (comeca num quadro-chave,
-    // imagem e som juntos) e o corte exato e feito nele. Em .mkv, e nao .ts:
-    // o .ts nao tem indice e o pulo caia depois do quadro-chave (mesmo vao).
+    fs.mkdirSync(pastas.trabalho(), { recursive: true });
+
+    // 1. Junta os pedacos num .mkv continuo (indice exato pra cortar no frame 0 sem atrasar voz)
     const junto = path.join(this.dir, nomeBase + '-junto.mkv');
     await media.rodar(ffmpeg, ['-y', '-hide_banner', '-loglevel', 'error',
       '-fflags', '+genpts+discardcorrupt', '-f', 'concat', '-safe', '0', '-i', lista,
       '-map', '0:v:0', '-map', '0:a:0?', '-c', 'copy', '-avoid_negative_ts', 'make_zero', '-f', 'matroska', junto]);
     try { fs.unlinkSync(lista); } catch (_) { }
 
-    let args;
+    // 2. Transcreve o trecho ANTES de gerar o .mp4 pra que o clipe ja saia na 1a vez com
+    //    Gancho 4s queimado + Legenda dinamica na fonte escolhida + SEO (evita regravar .mp4 aberto no Windows!)
+    let iniCorte = deslocamento;
+    let durCorte = dur;
+    let nota = pedido.nota != null ? pedido.nota : 70;
+    let tituloFinal = (this.nomeCanal || this.canal || 'Live') + ' ao vivo · ' + hms(pedido.inicio);
+    let titulosLista = [];
+    let hashtagsLista = /\bgta\b|vice city|leonida/i.test(this.titulo || '') ? ['gta6', 'gtavi', 'gta'] : ['cortes', 'live'];
+    let seoFinal = null;
+    let ganchoFinal = null;
+    let motivosFinais = pedido.motivos;
+    let geradoPorIa = false;
+    let textoCorte = '';
+    let palsCorte = [];
+    let legendouDeFato = false;
+
+    const ctxCopy = { texto: this.titulo || '', canal: this.nomeCanal || this.canal || '', evitar: (this.titulosUsados = this.titulosUsados || new Set()) };
+    const wavClip = path.join(pastas.trabalho(), 'av-render-' + this.id + '-' + numero + '.wav');
+    const jsonClip = path.join(pastas.trabalho(), 'av-render-' + this.id + '-' + numero + '.json');
+
+    let ass = null;
     try {
+      let transcricaoJunto = null;
+      let todasPalavras = [];
+      try {
+        await media.extrairAudio(junto, wavClip, durJunto);
+        transcricaoJunto = await transcrever(wavClip, jsonClip, durJunto, 'base', this.idioma);
+        todasPalavras = (transcricaoJunto.segmentos || []).reduce((acc, s) => acc.concat(s.palavras || []), []);
+      } catch (_) { }
+
+      const palsIniciais = todasPalavras.filter((p) => p.fim > iniCorte && p.inicio < iniCorte + durCorte);
+      textoCorte = palsIniciais.map((p) => p.texto).join(' ').replace(/\s+/g, ' ').trim();
+
+      if (this.usarIaPro && this.iaLiveExpiraEm && Date.now() >= new Date(this.iaLiveExpiraEm).getTime()) {
+        this.definirExpiraIaLive(null);
+        this.usarIaPro = false;
+        this.emitir({
+          tipo: 'pro-esgotado',
+          msg: 'Seus 15 minutos grátis do Diretor IA Pro na Live acabaram! Atualize para o Plano Pro para continuar usando IA na live (os próximos cortes seguem no Motor Local).',
+        });
+        this.emitir(Object.assign({ tipo: 'estado' }, this.resumo()));
+      }
+
+      if (this.usarIaPro && transcricaoJunto && textoCorte.length >= 10) {
+        try {
+          const pro = require('./pro');
+          const resIa = await pro.refinarClipeAoVivo(transcricaoJunto, iniCorte, durCorte, durJunto, {
+            canal: this.nomeCanal || this.canal || '',
+            contexto: this.titulo || 'Live ao vivo',
+            sessaoLiveId: this.id,
+          });
+          if (resIa.liveExpiraEm) this.definirExpiraIaLive(resIa.liveExpiraEm);
+          this.emitir({
+            tipo: 'pro-estado',
+            usouTrial: resIa.usouTrial,
+            trialsRestantes: resIa.trialsRestantes,
+            liveUsado: resIa.liveUsado,
+            liveAtivo: resIa.liveAtivo,
+            liveExpiraEm: resIa.liveExpiraEm || this.iaLiveExpiraEm || null,
+          });
+          if (resIa.corte) {
+            const ci = resIa.corte;
+            if (isFinite(ci.inicio) && isFinite(ci.duracao) && ci.duracao >= 5) {
+              iniCorte = Math.max(0, Math.min(ci.inicio, Math.max(0, durJunto - 5)));
+              durCorte = Math.max(5, Math.min(ci.duracao, durJunto - iniCorte));
+            }
+            tituloFinal = ci.titulo || tituloFinal;
+            this.titulosUsados.add(String(tituloFinal).toLowerCase());
+            titulosLista = ci.titulosIa || [{ texto: tituloFinal, estilo: 'ia' }];
+            hashtagsLista = ci.hashtagsIa || hashtagsLista;
+            nota = ci.nota || nota;
+            motivosFinais = ci.motivos || motivosFinais;
+            geradoPorIa = true;
+            if (this.textoGancho !== false) {
+              ganchoFinal = (ci.ganchoIa && legenda.semEmojis(ci.ganchoIa).length >= 3 ? ci.ganchoIa : null)
+                || gerarGanchoDeTela({ texto: ci.texto || textoCorte, inicio: zeroJunto + iniCorte, contextoJogo: ctxCopy });
+            }
+            const seoBase = gerarSeoPlataformas({ texto: ci.texto || textoCorte }, tituloFinal, hashtagsLista, ctxCopy);
+            const iaSeo = ci.seoIa || {};
+            seoFinal = {
+              tiktok: (iaSeo.tiktok && String(iaSeo.tiktok).trim()) || seoBase.tiktok,
+              shorts: (iaSeo.shorts && String(iaSeo.shorts).trim()) || seoBase.shorts,
+              shortsTitulo: seoBase.shortsTitulo,
+              reels: (iaSeo.reels && String(iaSeo.reels).trim()) || seoBase.reels,
+            };
+          }
+          if (resIa.usouTrial && !resIa.liveAtivo && Number(resIa.trialsRestantes) <= 0) {
+            this.definirExpiraIaLive(null);
+            this.usarIaPro = false;
+            this.emitir({
+              tipo: 'pro-esgotado',
+              msg: 'Seu teste grátis do Diretor IA Pro na Live terminou! Atualize o plano para continuar usando IA na live (os próximos cortes seguem no Motor Local).',
+            });
+            this.emitir(Object.assign({ tipo: 'estado' }, this.resumo()));
+          }
+        } catch (errIa) {
+          if (/teste|grátis|acabaram|usado|402|Atualize o plano|Plano Pro/i.test(errIa.message || '')) {
+            this.definirExpiraIaLive(null);
+            this.usarIaPro = false;
+            this.emitir({
+              tipo: 'pro-esgotado',
+              msg: errIa.message || 'Seu teste grátis do Diretor IA Pro na Live acabou! Atualize o plano Pro para usar a IA na live (seguindo no Motor Local).',
+            });
+            this.emitir(Object.assign({ tipo: 'estado' }, this.resumo()));
+          } else {
+            this.emitir({ tipo: 'aviso', msg: 'IA Pro indisponível neste clipe (' + errIa.message + '). Usando título local.' });
+          }
+        }
+      }
+
+      palsCorte = todasPalavras.filter((p) => p.fim > iniCorte + 0.04 && p.inicio < iniCorte + durCorte);
+      textoCorte = palsCorte.map((p) => p.texto).join(' ').replace(/\s+/g, ' ').trim() || textoCorte;
+
+      if (!geradoPorIa && this.sugerirTitulo) {
+        try {
+          const cp = gerarCopy({ texto: textoCorte, inicio: zeroJunto + iniCorte, tags: [], palavras: palsCorte, motivos: motivosFinais, origem: pedido.origem },
+            ctxCopy, sessoes.pegar());
+          if (cp && cp.titulo) {
+            tituloFinal = cp.titulo;
+            titulosLista = cp.titulos;
+            hashtagsLista = cp.hashtags;
+            seoFinal = cp.seo;
+            this.titulosUsados.add(String(cp.titulo).toLowerCase());
+          }
+        } catch (_) { }
+      }
+
+      if (this.textoGancho !== false && !ganchoFinal) {
+        ganchoFinal = gerarGanchoDeTela({ texto: textoCorte, inicio: zeroJunto + iniCorte, contextoJogo: ctxCopy }) || 'OLHA ESSE MOMENTO NA LIVE';
+      }
+
+      legendouDeFato = !!(this.legendar && palsCorte.length);
+      const temFixo = legenda.temTextoFixo(this.textoFixo);
+      if (filtro && (ganchoFinal || legendouDeFato || temFixo)) {
+        ass = 'aovivo-leg-' + this.id + '-' + numero + '.ass';
+        legenda.gerarAss(palsCorte, iniCorte, path.join(pastas.trabalho(), ass), {
+          fonte: this.fonteLegenda || 'tiktok',
+          incluirPalavras: legendouDeFato,
+          gancho: this.textoGancho !== false ? ganchoFinal : null,
+          duracaoGancho: 4,
+          margemGancho: legenda.margemGanchoIdeal(this.formato, this.recorte, this.textoFixo),
+          margemBaixo: this.formato === 'split' ? 430 : 300,
+          textoFixo: this.textoFixo,
+          alturaDivisao: legenda.alturaDaDivisao(this.formato, this.recorte),
+        });
+      }
+      if (palsCorte.length) {
+        try { legenda.gerarSrt(palsCorte, iniCorte, path.join(this.pasta, nomeBase + '.srt')); } catch (_) { }
+      }
+
+      let args;
       if (filtro) {
         const fs2 = ass ? filtro.replace(/\[v\]$/, ',subtitles=' + ass + (fontsdirRelativo() ? ':fontsdir=' + fontsdirRelativo() : '') + '[v]') : filtro;
-        args = ['-y', '-hide_banner', '-loglevel', 'error', '-ss', deslocamento.toFixed(3),
-          '-i', junto, '-t', dur.toFixed(3),
+        args = ['-y', '-hide_banner', '-loglevel', 'error', '-ss', iniCorte.toFixed(3),
+          '-i', junto, '-t', durCorte.toFixed(3),
           '-filter_complex', fs2, '-map', '[v]', '-map', '0:a?',
           '-fps_mode', 'cfr', '-avoid_negative_ts', 'make_zero',
           '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '21', '-pix_fmt', 'yuv420p',
           '-af', 'aresample=async=1000:min_hard_comp=0.100000:first_pts=0', '-c:a', 'aac', '-b:a', '160k', '-ar', '48000'];
       } else {
-        args = ['-y', '-hide_banner', '-loglevel', 'error', '-ss', deslocamento.toFixed(3), '-i', junto,
-          '-t', dur.toFixed(3), '-map', '0:v:0', '-map', '0:a?',
+        args = ['-y', '-hide_banner', '-loglevel', 'error', '-ss', iniCorte.toFixed(3), '-i', junto,
+          '-t', durCorte.toFixed(3), '-map', '0:v:0', '-map', '0:a?',
           '-fps_mode', 'cfr', '-avoid_negative_ts', 'make_zero',
           '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-pix_fmt', 'yuv420p',
           '-af', 'aresample=async=1000:min_hard_comp=0.100000:first_pts=0', '-c:a', 'aac', '-b:a', '160k', '-ar', '48000'];
       }
       args.push('-movflags', '+faststart', mp4);
       await media.rodar(ffmpeg, args, { cwd: pastas.trabalho() });
-
     } finally {
       try { fs.unlinkSync(junto); } catch (_) { }
+      try { if (fs.existsSync(wavClip)) fs.unlinkSync(wavClip); } catch (_) { }
+      try { if (fs.existsSync(jsonClip)) fs.unlinkSync(jsonClip); } catch (_) { }
       if (ass) { try { fs.unlinkSync(path.join(pastas.trabalho(), ass)); } catch (_) { } }
     }
 
     const jpg = path.join(this.pasta, nomeBase + '.jpg');
-    try { await media.gerarMiniatura(mp4, Math.min(dur / 2, 8), jpg, this.formato !== 'original'); } catch (_) { }
+    try { await media.gerarMiniatura(mp4, Math.min(durCorte / 2, 8), jpg, this.formato !== 'original'); } catch (_) { }
 
-    const nota = pedido.nota != null ? pedido.nota : 70;
+    const inicioRealNaLive = zeroJunto + iniCorte;
+    if (!seoFinal) seoFinal = gerarSeoPlataformas({ texto: textoCorte }, tituloFinal, hashtagsLista, { texto: this.titulo || '', canal: this.nomeCanal || this.canal || '' });
     const clipe = {
       numero,
       origem: pedido.origem,
       nota,
       rotulo: rotuloDoNivel(nota),
-      titulo: (this.nomeCanal || this.canal || 'Live') + ' ao vivo · ' + hms(pedido.inicio),
-      titulos: [],
-      inicio: Math.round(pedido.inicio * 10) / 10,
-      fim: Math.round((pedido.inicio + dur) * 10) / 10,
-      duracao: Math.round(dur * 10) / 10,
-      inicioTexto: hms(pedido.inicio),
-      fimTexto: hms(pedido.inicio + dur),
+      titulo: tituloFinal,
+      titulos: titulosLista,
+      inicio: Math.round(inicioRealNaLive * 10) / 10,
+      fim: Math.round((inicioRealNaLive + durCorte) * 10) / 10,
+      duracao: Math.round(durCorte * 10) / 10,
+      inicioTexto: hms(inicioRealNaLive),
+      fimTexto: hms(inicioRealNaLive + durCorte),
       quando: new Date().toISOString(),
-      motivos: pedido.motivos,
-      texto: '',
-      hashtags: /\bgta\b|vice city|leonida/i.test(this.titulo || '') ? ['gta6', 'gtavi', 'gta'] : ['cortes', 'live'],
+      motivos: motivosFinais,
+      texto: textoCorte,
+      hashtags: hashtagsLista,
+      seo: seoFinal,
+      legendaPost: (seoFinal && seoFinal.tiktok) || (tituloFinal + '\n\n' + hashtagsLista.map((h) => '#' + h).join(' ')),
       arquivo: mp4,
       nomeArquivo: path.basename(mp4),
       original: null,
       miniatura: fs.existsSync(jpg) ? jpg : null,
       formatoUsado: this.formato,
-      // o enquadramento e o texto de quando o clipe saiu: o editor refaz igual
       recorte: this.recorte || null,
       textoFixo: this.textoFixo || null,
-      legendar: false,
+      gancho: this.textoGancho !== false ? ganchoFinal : null,
+      legendar: !!this.legendar,
+      fonteLegenda: this.fonteLegenda || 'tiktok',
+      geradoPorIa: geradoPorIa || undefined,
       tamanhoMb: Math.round((fs.statSync(mp4).size / 1048576) * 10) / 10,
       segundosPraFicarPronto: Math.round((Date.now() - t0) / 100) / 10,
     };
-    // titulo com SEO na hora (streamer + jogo + o que aconteceu), sem esperar a
-    // fala: assim o clipe ja sai pronto pra postar. Melhora quando a fala chega.
-    try {
-      const cp = gerarCopy({ texto: '', inicio: pedido.inicio, motivos: pedido.motivos, origem: pedido.origem },
-        { texto: this.titulo || '', canal: this.nomeCanal || this.canal || '', evitar: (this.titulosUsados = this.titulosUsados || new Set()) }, sessoes.pegar());
-      if (cp && cp.titulo) {
-        clipe.titulo = cp.titulo;
-        clipe.titulos = cp.titulos;
-        clipe.hashtags = cp.hashtags;
-        clipe.seo = cp.seo;
-        this.titulosUsados.add(cp.titulo.toLowerCase());
-      }
-    } catch (_) { /* fica o titulo simples */ }
-    if (!clipe.seo) clipe.seo = gerarSeoPlataformas(clipe, clipe.titulo, clipe.hashtags, { texto: this.titulo || '', canal: this.nomeCanal || this.canal || '' });
-    clipe.legendaPost = (clipe.seo && clipe.seo.tiktok) || (clipe.titulo + '\n\n' + clipe.hashtags.map((h) => '#' + h).join(' '));
     this.clipes.push(clipe);
     this.gravarRelatorio();
     this.emitir({ tipo: 'clipe', clipe });
 
-    this.agendarOriginal(clipe, pedido.inicio);
+    this.agendarOriginal(clipe, inicioRealNaLive);
   }
 
   // ------------------------------------------------------------ edicao
@@ -1290,155 +1452,37 @@ class SessaoAoVivo {
       const zero = usados[0].t0;
       const ultimo = usados[usados.length - 1];
       const offset = Math.round(Math.max(0, job.inicioNaLive - zero) * 100) / 100;
+      const durOrig = Math.round((ultimo.t0 + ultimo.dur - zero) * 100) / 100;
+
+      // Transcreve o original com folga (10s antes e 10s depois) ANTES de liberar
+      // o botao Editar na janela, pra que o Editor ja abra com todas as palavras!
+      fs.mkdirSync(pastas.trabalho(), { recursive: true });
+      const wav = path.join(pastas.trabalho(), 'aovivo-' + this.id + '-' + clipe.numero + '.wav');
+      const fala = path.join(this.pasta, base + '-fala.json');
+      let nomeTransc = null;
+      try {
+        await media.extrairAudio(original, wav, durOrig);
+        await transcrever(wav, fala, durOrig, 'base', this.idioma);
+        if (fs.existsSync(fala)) nomeTransc = path.basename(fala);
+      } catch (e) {
+        if (!/fala nenhuma/i.test(e.message || '')) {
+          this.emitir({ tipo: 'aviso', msg: 'Não consegui transcrever a folga do clipe ' + clipe.numero + ' (' + e.message + ').' });
+        }
+      } finally {
+        try { fs.unlinkSync(wav); } catch (_) { }
+      }
+
       clipe.original = original;
       clipe.fonte = {
         video: path.basename(original),
-        duracao: Math.round((ultimo.t0 + ultimo.dur - zero) * 100) / 100,
+        duracao: durOrig,
         zeroNaLive: Math.round(zero * 100) / 100,
+        transcricao: nomeTransc,
       };
       clipe.inicio = offset;
       clipe.fim = Math.round((offset + clipe.duracao) * 100) / 100;
       this.gravarRelatorio();
       this.emitir({ tipo: 'clipe-atualizado', clipe });
-
-      // a fala do original: legenda editavel no editor e o titulo sugerido
-      fs.mkdirSync(pastas.trabalho(), { recursive: true });
-      const wav = path.join(pastas.trabalho(), 'aovivo-' + this.id + '-' + clipe.numero + '.wav');
-      const fala = path.join(this.pasta, base + '-fala.json');
-      try {
-        await media.extrairAudio(original, wav, clipe.fonte.duracao);
-        const t = await transcrever(wav, fala, clipe.fonte.duracao, 'base', this.idioma);
-        clipe.fonte.transcricao = path.basename(fala);
-        const palavras = (t.segmentos || []).reduce((acc, s) => acc.concat(s.palavras || []), [])
-          .filter((p) => p.fim > offset && p.inicio < offset + clipe.duracao);
-        const texto = palavras.map((p) => p.texto).join(' ').replace(/\s+/g, ' ').trim();
-        clipe.texto = texto;
-
-        const ctxCopy = { texto: this.titulo || '', canal: this.nomeCanal || this.canal || '', evitar: (this.titulosUsados = this.titulosUsados || new Set()) };
-        let aplicouIa = false;
-
-        if (this.usarIaPro && this.iaLiveExpiraEm && Date.now() >= new Date(this.iaLiveExpiraEm).getTime()) {
-          this.definirExpiraIaLive(null);
-          this.usarIaPro = false;
-          this.emitir({
-            tipo: 'pro-esgotado',
-            msg: 'Seus 15 minutos grátis do Diretor IA Pro na Live acabaram! Atualize para o Plano Pro para continuar usando IA na live (os próximos cortes seguem no Motor Local).',
-          });
-          this.emitir(Object.assign({ tipo: 'estado' }, this.resumo()));
-        }
-
-        if (this.usarIaPro && texto.length >= 12) {
-          try {
-            const pro = require('./pro');
-            const resIa = await pro.refinarClipeAoVivo(t, offset, clipe.duracao, clipe.fonte.duracao, {
-              canal: this.nomeCanal || this.canal || '',
-              contexto: this.titulo || 'Live ao vivo',
-              sessaoLiveId: this.id,
-            });
-            if (resIa.liveExpiraEm) this.definirExpiraIaLive(resIa.liveExpiraEm);
-            this.emitir({
-              tipo: 'pro-estado',
-              usouTrial: resIa.usouTrial,
-              trialsRestantes: resIa.trialsRestantes,
-              liveUsado: resIa.liveUsado,
-              liveAtivo: resIa.liveAtivo,
-              liveExpiraEm: resIa.liveExpiraEm || this.iaLiveExpiraEm || null,
-            });
-            if (resIa.corte) {
-              const ci = resIa.corte;
-              if (clipe.titulo) this.titulosUsados.delete(String(clipe.titulo).toLowerCase());
-              clipe.titulo = ci.titulo || clipe.titulo;
-              this.titulosUsados.add(String(clipe.titulo).toLowerCase());
-              clipe.titulos = ci.titulosIa || [{ texto: clipe.titulo, estilo: 'ia' }];
-              clipe.hashtags = ci.hashtagsIa || clipe.hashtags;
-              clipe.gancho = ci.ganchoIa || null;
-              clipe.nota = ci.nota || clipe.nota;
-              clipe.motivos = ci.motivos || clipe.motivos;
-              clipe.geradoPorIa = true;
-              const seoBase = gerarSeoPlataformas({ texto: ci.texto || texto }, clipe.titulo, clipe.hashtags, ctxCopy);
-              clipe.seo = Object.assign({}, seoBase, ci.seoIa || {});
-              clipe.legendaPost = clipe.seo.tiktok || (clipe.titulo + '\n\n' + clipe.hashtags.map((h) => '#' + h).join(' '));
-              aplicouIa = true;
-
-              // Refina o arquivo de video nas frases exatas escolhidas pela IA + queima o gancho de 4s
-              if (this.formato !== 'original' && (clipe.gancho || Math.abs(ci.inicio - offset) >= 0.8 || Math.abs(ci.duracao - clipe.duracao) >= 1.2)) {
-                const assIa = 'aovivo-ia-' + this.id + '-' + clipe.numero + '.ass';
-                const caminhoAssIa = path.join(pastas.trabalho(), assIa);
-                try {
-                  legenda.gerarAss([], 0, caminhoAssIa, {
-                    incluirPalavras: false,
-                    gancho: clipe.gancho,
-                    textoFixo: this.textoFixo,
-                    alturaDivisao: legenda.alturaDaDivisao(this.formato, this.recorte),
-                  });
-                  const mp4Ia = clipe.arquivo + '.ia.mp4';
-                  await media.cortarClipe({
-                    video: original,
-                    inicio: ci.inicio,
-                    duracao: ci.duracao,
-                    formato: this.formato,
-                    recorte: this.recorte,
-                    arquivoAss: assIa,
-                    fontsdir: fontsdirRelativo(),
-                    cwdAss: pastas.trabalho(),
-                    qualidade: 'rapida',
-                    destino: mp4Ia,
-                  });
-                  if (fs.existsSync(mp4Ia) && fs.statSync(mp4Ia).size > 1024) {
-                    fs.renameSync(mp4Ia, clipe.arquivo);
-                    clipe.inicio = ci.inicio;
-                    clipe.duracao = ci.duracao;
-                    clipe.fim = Math.round((ci.inicio + ci.duracao) * 100) / 100;
-                    clipe.texto = ci.texto || texto;
-                    clipe.tamanhoMb = Math.round((fs.statSync(clipe.arquivo).size / 1048576) * 10) / 10;
-                  }
-                } catch (_) { }
-                finally { try { fs.unlinkSync(caminhoAssIa); } catch (_) { } }
-              }
-            }
-            if (resIa.usouTrial && !resIa.liveAtivo && Number(resIa.trialsRestantes) <= 0) {
-              this.definirExpiraIaLive(null);
-              this.usarIaPro = false;
-              this.emitir({
-                tipo: 'pro-esgotado',
-                msg: 'Seu teste grátis do Diretor IA Pro na Live terminou! Atualize o plano para continuar usando IA na live (os próximos cortes seguem no Motor Local).',
-              });
-              this.emitir(Object.assign({ tipo: 'estado' }, this.resumo()));
-            }
-          } catch (errIa) {
-            if (/teste|grátis|acabaram|usado|402|Atualize o plano|Plano Pro/i.test(errIa.message || '')) {
-              this.definirExpiraIaLive(null);
-              this.usarIaPro = false;
-              this.emitir({
-                tipo: 'pro-esgotado',
-                msg: errIa.message || 'Seu teste grátis do Diretor IA Pro na Live acabou! Atualize o plano Pro para usar a IA na live (seguindo no Motor Local).',
-              });
-              this.emitir(Object.assign({ tipo: 'estado' }, this.resumo()));
-            } else {
-              this.emitir({ tipo: 'aviso', msg: 'IA Pro indisponível neste clipe (' + errIa.message + '). Usando título local.' });
-            }
-          }
-        }
-
-        if (!aplicouIa && this.sugerirTitulo) {
-          const cp = gerarCopy({ texto, inicio: offset, tags: [], palavras, motivos: clipe.motivos, origem: clipe.origem },
-            ctxCopy, sessoes.pegar());
-          if (clipe.titulo) this.titulosUsados.delete(String(clipe.titulo).toLowerCase());
-          clipe.titulo = cp.titulo;
-          this.titulosUsados.add(String(cp.titulo).toLowerCase());
-          clipe.titulos = cp.titulos;
-          clipe.hashtags = cp.hashtags;
-          clipe.seo = cp.seo;
-          clipe.legendaPost = cp.legenda;
-        }
-        this.gravarRelatorio();
-        this.emitir({ tipo: 'clipe-atualizado', clipe });
-      } catch (e) {
-        // trecho sem fala (so jogo, so musica) nao e erro: so fica sem legenda
-        if (!/fala nenhuma/i.test(e.message)) this.emitir({ tipo: 'aviso', msg: 'Não consegui ouvir a fala do clipe ' + clipe.numero + ' (' + e.message + ').' });
-      } finally {
-        try { fs.unlinkSync(wav); } catch (_) { }
-      }
     } catch (e) {
       this.emitir({ tipo: 'aviso', msg: 'O clipe ' + clipe.numero + ' está pronto, mas não deu pra preparar a edição dele (' + e.message + ').' });
     } finally {
@@ -1470,7 +1514,8 @@ class SessaoAoVivo {
       duracaoVideo: 0,
       opcoes: {
         sessao: sessoes.pegar().id, formato: this.formato, recorte: this.recorte, textoFixo: this.textoFixo,
-        legendar: false, textoGancho: false, qualidade: 'alta', detectarWebcam: false, idioma: this.idioma,
+        legendar: !!this.legendar, textoGancho: this.textoGancho !== false, fonteLegenda: this.fonteLegenda || 'tiktok',
+        qualidade: 'alta', detectarWebcam: false, idioma: this.idioma,
       },
       clipes: this.clipes,
     };
@@ -1512,6 +1557,9 @@ class SessaoAoVivo {
     if (['split', 'vertical', 'foco', 'blur', 'original'].includes(o.formato)) this.formato = o.formato;
     if (o.recorte) this.recorte = o.recorte;
     if (o.textoFixo !== undefined) this.textoFixo = o.textoFixo;
+    if (typeof o.textoGancho === 'boolean') this.textoGancho = o.textoGancho;
+    if (typeof o.legendar === 'boolean') this.legendar = o.legendar;
+    if (o.fonteLegenda) this.fonteLegenda = String(o.fonteLegenda);
     if (typeof o.usarIaPro === 'boolean') this.usarIaPro = o.usarIaPro;
     if (o.clipando === true && !this.clipando) {
       this.clipando = true;

@@ -14,13 +14,17 @@ const BRANCO = '&H00FFFFFF';
 const AMARELO = '&H0000E5FF';
 const PRETO = '&H00000000';
 
-function tempoAss(s) {
-  // arredonda pro centesimo ANTES de separar: 59.996 virava "0:00:60.00"
-  const cs = Math.round(Math.max(0, Number(s) || 0) * 100);
+function tempoAssCs(csTotal) {
+  const cs = Math.max(0, Math.round(Number(csTotal) || 0));
   const h = Math.floor(cs / 360000);
   const m = Math.floor((cs % 360000) / 6000);
   const seg = (cs % 6000) / 100;
   return h + ':' + String(m).padStart(2, '0') + ':' + seg.toFixed(2).padStart(5, '0');
+}
+
+function tempoAss(s) {
+  // arredonda pro centesimo ANTES de separar: 59.996 virava "0:00:60.00"
+  return tempoAssCs(Math.round(Math.max(0, Number(s) || 0) * 100));
 }
 
 // Legenda nao pode ficar parada na tela durante um silencio: se a proxima
@@ -186,37 +190,49 @@ function gerarAss(palavras, offset, destino, opcoes) {
   // querer so o gancho no topo, sem a legenda embaixo cobrindo o resto do video.
   // Agrupa em blocos curtos - texto comprido na tela ninguem le
   // (palavra que ja tinha terminado antes do clipe comecar nao entra)
+  const margemBaixo = opcoes.margemBaixo || 300;
+  const yLegenda = Math.max(240, Math.min(1760, 1920 - margemBaixo));
   const doClipe = (palavras || []).filter((p) => p && Number(p.fim) - offset > 0.05);
   const blocos = opcoes.incluirPalavras !== false ? montarBlocos(doClipe, PALAVRAS_POR_BLOCO) : [];
 
+  // Monta eventos em centesimos de segundo e garante zero sobreposicao entre
+  // linhas consecutivas (palavras curtas <120ms antes empilhavam duas legendas).
+  const eventosBrutos = [];
   for (let b = 0; b < blocos.length; b++) {
     const bloco = blocos[b];
-    // o bloco seguinte nunca pode entrar com este ainda na tela: duas legendas
-    // ao mesmo tempo o ffmpeg empilha uma em cima da outra
-    const proximoBloco = blocos[b + 1] ? blocos[b + 1][0].inicio - offset : Infinity;
+    const proxBlocoIniCs = blocos[b + 1] ? Math.max(0, Math.round((blocos[b + 1][0].inicio - offset) * 100)) : Infinity;
     for (let i = 0; i < bloco.length; i++) {
       const atual = bloco[i];
-      const inicio = Math.max(0, atual.inicio - offset);
-      // dentro do bloco a palavra segura ate a proxima comecar (evita piscada);
-      // a ultima segura um tico depois de dita, sem invadir o proximo bloco
+      const iniCs = Math.max(0, Math.round((atual.inicio - offset) * 100));
       const proxima = bloco[i + 1];
-      const desejado = proxima ? proxima.inicio - offset : atual.fim - offset + SEGURA_DEPOIS;
-      const fim = Math.max(inicio + 0.12, Math.min(desejado, proximoBloco));
-      if (fim <= 0) continue; // palavra que terminou antes do clipe comecar
+      const desejadoCs = proxima
+        ? Math.max(iniCs + 4, Math.round((proxima.inicio - offset) * 100))
+        : Math.round((atual.fim - offset + SEGURA_DEPOIS) * 100);
+      const tetoCs = proxima ? Math.round((proxima.inicio - offset) * 100) : proxBlocoIniCs;
+      const fimCs = Math.min(desejadoCs, isFinite(tetoCs) ? Math.max(iniCs + 2, tetoCs) : desejadoCs);
+      if (fimCs <= iniCs) continue;
 
       const texto = bloco.map((p, j) => {
         const limpo = escapar(p.texto);
         if (j === i) {
-          // palavra sendo dita: amarela e um tico maior
-          return '{\\c' + AMARELO + '\\fscx108\\fscy108}' + limpo + '{\\c' + BRANCO + '\\fscx100\\fscy100}';
+          // palavra sendo dita: amarela, sem alterar escala (evita pulo/deslocamento)
+          return '{\\c' + AMARELO + '}' + limpo + '{\\c' + BRANCO + '}';
         }
         return limpo;
       }).join(' ');
 
-      linhas.push(
-        'Dialogue: 0,' + tempoAss(inicio) + ',' + tempoAss(fim) + ',Corte,,0,0,0,,' + texto
-      );
+      eventosBrutos.push({ iniCs, fimCs, texto });
     }
+  }
+
+  for (let idx = 0; idx < eventosBrutos.length; idx++) {
+    const ev = eventosBrutos[idx];
+    const seg = eventosBrutos[idx + 1];
+    const fimSeguro = seg ? Math.min(ev.fimCs, seg.iniCs) : ev.fimCs;
+    if (fimSeguro <= ev.iniCs) continue;
+    linhas.push(
+      'Dialogue: 0,' + tempoAssCs(ev.iniCs) + ',' + tempoAssCs(fimSeguro) + ',Corte,,0,0,0,,{\\an5\\pos(540,' + yLegenda + ')}' + ev.texto
+    );
   }
 
   fs.writeFileSync(destino, linhas.join('\n'), 'utf8');

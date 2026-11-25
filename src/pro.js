@@ -5,7 +5,7 @@
  * Provedores suportados:
  *  - beavernet : BeaverNet (https://net.beaverai.org/v1) — pool comunitario gratuito compativel com OpenAI;
  *                chave de API OPCIONAL, selecao manual de modelo + fallback automatico na ordem:
- *                1) Linkpharm/MeroMero 26B A4B Uncensored Q4
+ *                1) s567901/Qwen3.8-Flash-Next-Huihui-Refusal-Direction-r-v2
  *                2) serranoprime1/nvidia/nemotron-3.5-super-vl:free
  *                3) Meus Artis/Gemma-4-E4B-it-Ultra-Uncensored-Heretic
  *                4) pixel.dust/Qwen3.5-0.8B-Space-Programming
@@ -21,9 +21,9 @@ const PROVEDORES = ['beavernet', 'gemini', 'openai', 'anthropic'];
 
 const BEAVERNET_BASE_URL = 'https://net.beaverai.org/v1';
 
-// Ordem de preferencia definida pelo usuario: gemma26b >> nemotron >> gemma4b >> Qwen08b
+// Ordem de preferencia padrao: Qwen3.8 Flash Next >> Nemotron >> Gemma-4 4B >> Qwen 0.8B
 const BEAVERNET_MODELOS_PADRAO = [
-  'Linkpharm/MeroMero 26B A4B Uncensored Q4',
+  's567901/Qwen3.8-Flash-Next-Huihui-Refusal-Direction-r-v2',
   'serranoprime1/nvidia/nemotron-3.5-super-vl:free',
   'Meus Artis/Gemma-4-E4B-it-Ultra-Uncensored-Heretic',
   'pixel.dust/Qwen3.5-0.8B-Space-Programming',
@@ -370,12 +370,16 @@ async function listarModelosBeaverNet() {
       return (b.contextLength - a.contextLength);
     });
 
-  // Garante os 4 favoritos no topo na ordem exata de preferencia (MeroMero 26B >> Nemotron >> Gemma-4 4B >> Qwen 0.8B)
+  // Garante os 4 favoritos no topo na ordem exata de preferencia (Qwen3.8 Flash >> Nemotron >> Gemma-4 4B >> Qwen 0.8B)
   const porId = new Map(filtrados.map((m) => [m.id, m]));
   const ordenados = [];
   for (const fav of BEAVERNET_MODELOS_PADRAO) {
-    ordenados.push(porId.get(fav) || normalizarModeloBeaver({ id: fav, allow_anonymous: true }));
+    const direto = porId.get(fav);
+    const alias = porId.get(fav + ' (alias)');
+    const escolhido = direto || (alias ? Object.assign({}, alias, { id: fav }) : normalizarModeloBeaver({ id: fav, allow_anonymous: true }));
+    ordenados.push(escolhido);
     porId.delete(fav);
+    porId.delete(fav + ' (alias)');
   }
   for (const resto of porId.values()) ordenados.push(resto);
   return {

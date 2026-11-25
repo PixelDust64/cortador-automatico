@@ -237,11 +237,11 @@ test('mega/vinhetas: inserirVinhetas() insere 2 vinhetas (apos 3s e no fim) mant
   }
 });
 
-test('mega/beavernet: ordem de fallback (MeroMero 26B >> Nemotron >> Gemma-4 4B >> Qwen 0.8B), chave opcional e sem auto-updater', async () => {
+test('mega/beavernet: ordem de fallback (Qwen3.8 Flash >> Nemotron >> Gemma-4 4B >> Qwen 0.8B), chave opcional e sem auto-updater', async () => {
   const pro = require(path.join(RAIZ, 'src', 'pro'));
   assert.equal(pro.BEAVERNET_BASE_URL, 'https://net.beaverai.org/v1');
   assert.deepEqual(pro.BEAVERNET_MODELOS_PADRAO, [
-    'Linkpharm/MeroMero 26B A4B Uncensored Q4',
+    's567901/Qwen3.8-Flash-Next-Huihui-Refusal-Direction-r-v2',
     'serranoprime1/nvidia/nemotron-3.5-super-vl:free',
     'Meus Artis/Gemma-4-E4B-it-Ultra-Uncensored-Heretic',
     'pixel.dust/Qwen3.5-0.8B-Space-Programming',
@@ -295,5 +295,46 @@ test('mega/splitter-e-ia: rotas /splitter/, /api/splitter/status, /api/ia/config
     assert.ok(Array.isArray(fontes.fontes) && fontes.fontes.length > 0);
   } finally {
     try { srv.kill(); } catch (_) {}
+  }
+});
+
+test('mega/legenda: zero sobreposicao em palavras ultra-curtas e posicao fixa travada', () => {
+  const os = require('node:os');
+  const legenda = require(path.join(RAIZ, 'src', 'legenda'));
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'teste-legenda-'));
+  const assPath = path.join(tmpDir, 'teste.ass');
+  try {
+    // Palavras ultra-curtas ("em" com apenas 50ms) que antes causavam empilhamento duplo
+    const palavras = [
+      { inicio: 23.80, fim: 24.08, texto: 'tinha' },
+      { inicio: 24.08, fim: 24.13, texto: 'em' },
+      { inicio: 24.13, fim: 24.50, texto: 'mente' },
+      { inicio: 24.51, fim: 24.55, texto: 'que' },
+      { inicio: 24.55, fim: 24.90, texto: 'talvez' },
+    ];
+    legenda.gerarAss(palavras, 0, assPath, { margemBaixo: 300 });
+    const conteudo = fs.readFileSync(assPath, 'utf8');
+    const dialogos = conteudo.split(/\r?\n/).filter((l) => l.startsWith('Dialogue: 0,'));
+    assert.ok(dialogos.length >= 4, 'deve gerar eventos de legenda');
+
+    const paraCs = (t) => {
+      const m = /^(\d+):(\d+):(\d+)\.(\d+)$/.exec(t);
+      assert.ok(m, 'timestamp ASS valido: ' + t);
+      return Number(m[1]) * 360000 + Number(m[2]) * 6000 + Number(m[3]) * 100 + Number(m[4]);
+    };
+
+    let fimAnterior = -1;
+    for (const linha of dialogos) {
+      const partes = linha.split(',');
+      const ini = paraCs(partes[1]);
+      const fim = paraCs(partes[2]);
+      assert.ok(fim > ini, 'duracao positiva');
+      assert.ok(ini >= fimAnterior, `sobreposicao detectada: anterior=${fimAnterior}cs, atual=${ini}cs`);
+      assert.match(linha, /\{\\an5\\pos\(540,1620\)\}/, 'legenda deve estar travada em pos(540,1620)');
+      assert.doesNotMatch(linha, /\\fscx108/, 'nao deve aplicar zoom que desloca palavras');
+      fimAnterior = fim;
+    }
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
   }
 });

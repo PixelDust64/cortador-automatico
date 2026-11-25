@@ -1509,6 +1509,18 @@
       <div class="barra-fora"><div class="barra-dentro" id="barraEnvio"></div></div>
       <div style="font-size:var(--t5); color:var(--texto2); margin-top:8px" id="statusEnvio"></div>
     </div>
+
+    <div class="comunicado" id="atalhoUltimoProjeto" hidden style="margin-top:16px; background:rgba(61,139,255,.06); border-color:rgba(127,178,255,.22)">
+      <div class="com-ic"><i data-lucide="folder-check" class="i"></i></div>
+      <div class="com-corpo">
+        <b id="ultProjTitulo">Seus cortes anteriores continuam salvos</b>
+        <span id="ultProjSub"></span>
+      </div>
+      <div class="com-acoes">
+        <button class="btn principal p" id="btnReabrirUltimoProj" type="button"><i data-lucide="play" class="i"></i> Abrir último projeto</button>
+        <button class="btn p" id="btnVerTodosProjTela1" type="button">Todos os projetos</button>
+      </div>
+    </div>
   </section>
 
   <!-- ============ 2 ============ -->
@@ -4677,6 +4689,7 @@
         processandoAgora = false;
         await carregarEstadoPro(true);
         await abrirProjeto(d.pasta, { recem: true, recado: d.recado, clipes: d.clipes });
+        try { atualizarAtalhoProjetosSalvos(); } catch (_) {}
         atualizarCardSugestaoResultado(d.clipes);
         if (usouIaNesteJob) {
           setTimeout(() => sugerirUpgradeAposUso('video'), 1100);
@@ -4986,6 +4999,7 @@
         pintarProjetos();
       }
       try { carregarArmazenamento(); } catch (_) {}
+      try { atualizarAtalhoProjetosSalvos(); } catch (_) {}
     } catch (e) {
       erro(e.message || 'Não consegui apagar esse projeto.');
     }
@@ -6178,9 +6192,11 @@
 
   // ------------------------------------------------------------ avisos e auto-update obrigatorio por git
   const AVISOS_LIDOS = 'cortador.avisos.dispensados.v1';
+  const CHAVE_REABRIR_POS_UPD = 'cortador.reabrir.projeto.v1';
   let estadoRemoto = null;
   let atualizandoAgora = false;
-  let updPendenteAposJob = false;
+  let updDispensadoSha = '';
+  const abertoEmMs = Date.now();
   const lerDispensados = () => { try { return JSON.parse(localStorage.getItem(AVISOS_LIDOS) || '[]'); } catch (_) { return []; } };
   const dispensarId = (id) => {
     try {
@@ -6189,6 +6205,55 @@
       localStorage.setItem(AVISOS_LIDOS, JSON.stringify(l.slice(-50)));
     } catch (_) {}
   };
+
+  // Retorna true se o usuario ja tem video escolhido, corte em andamento, live ou cortes abertos na tela.
+  // Nesses casos NUNCA reiniciamos a pagina sozinhos para nao sumir com a tela de cortes da frente dele!
+  function sessaoEmUsoNaTela() {
+    const baixando = ($('btnBaixar') && $('btnBaixar').disabled)
+      || liveBaixando
+      || ($('progressoEnvio') && $('progressoEnvio').style.display === 'block')
+      || ($('cardPreviaDownload') && !$('cardPreviaDownload').hidden);
+    const vendoResultado = $('resultado') && $('resultado').classList.contains('on');
+    const vendoProjetos = $('projetos') && $('projetos').classList.contains('on');
+    const vendoAoVivoComPainel = $('aovivo') && $('aovivo').classList.contains('on')
+      && ((!$('avPainel').hidden) || (!$('avPreparo').hidden) || !!(av && av.pasta));
+    const editorAberto = $('edFundo') && !$('edFundo').hidden;
+    return !!(
+      processandoAgora
+      || avAtivo
+      || (typeof tarefa !== 'undefined' && tarefa.rodando)
+      || baixando
+      || arquivo
+      || (projetoAtual && projetoAtual.pasta)
+      || vendoResultado
+      || vendoProjetos
+      || vendoAoVivoComPainel
+      || editorAberto
+    );
+  }
+
+  function pastaAbertaParaPreservar() {
+    if ($('resultado') && $('resultado').classList.contains('on') && projetoAtual && projetoAtual.pasta) {
+      return projetoAtual.pasta;
+    }
+    if ($('aovivo') && $('aovivo').classList.contains('on') && av && av.pasta && Number($('avQtd').textContent) > 0) {
+      return av.pasta;
+    }
+    return '';
+  }
+
+  function mostrarBarraAtualizacaoDisponivel(emAndamento) {
+    $('updTitulo').textContent = emAndamento
+      ? 'Nova atualização disponível'
+      : 'Nova melhoria pronta pra instalar (leva 3s)';
+    $('updResumo').textContent = emAndamento
+      ? 'Seus cortes continuam normalmente! Quando terminar, clique ao lado se quiser atualizar.'
+      : 'Todos os seus cortes ficam salvos em Projetos. Clique ao lado quando quiser atualizar.';
+    $('btnAtualizarAgora').disabled = !!emAndamento;
+    $('btnFecharUpd').hidden = false;
+    $('barraAtualizar').hidden = false;
+    icones($('barraAtualizar'));
+  }
 
   function marcarPassoAutoUpd(passo, pct) {
     $('autoUpdBarra').style.width = pct + '%';
@@ -6214,7 +6279,7 @@
     if (atualizandoAgora) return;
     if (estadoRemoto && estadoRemoto.precisaInstalador && estadoRemoto.urlInstalador) {
       $('modalAutoUpdate').hidden = false;
-      $('autoUpdTitulo').textContent = 'Novo instalador obrigatório disponível';
+      $('autoUpdTitulo').textContent = 'Novo instalador disponível';
       $('autoUpdResumo').textContent = estadoRemoto.resumoVersao || 'Esta atualização inclui novos componentes de vídeo e precisa do instalador.';
       $('autoUpdBarra').style.width = '100%';
       $('autoUpdAcoes').hidden = false;
@@ -6224,25 +6289,20 @@
       return;
     }
 
-    // Se estiver no meio de um corte ou gravacao de live, agenda pra rodar assim que terminar
-    if (processandoAgora || avAtivo) {
-      updPendenteAposJob = true;
-      $('updTitulo').textContent = 'Nova atualização pronta no GitHub';
-      $('updResumo').textContent = 'Assim que o corte atual terminar, o programa vai atualizar sozinho.';
-      $('btnFecharUpd').hidden = true;
-      $('barraAtualizar').hidden = false;
+    // Se estiver cortando ou gravando live agora, nunca interrompe — so avisa na barra discreta
+    if (processandoAgora || avAtivo || (typeof tarefa !== 'undefined' && tarefa.rodando)) {
+      mostrarBarraAtualizacaoDisponivel(true);
       return;
     }
 
     atualizandoAgora = true;
-    updPendenteAposJob = false;
     $('barraAtualizar').hidden = true;
     $('autoUpdAcoes').hidden = true;
     $('autoUpdSelo').textContent = estadoRemoto && estadoRemoto.shaRemoto
       ? ('Git novo detectado · #' + estadoRemoto.shaRemoto + ' · v' + (estadoRemoto.versaoRemota || ''))
       : 'Nova atualização encontrada no GitHub';
     $('autoUpdTitulo').textContent = 'Atualizando o Cortador Automático...';
-    $('autoUpdResumo').textContent = (estadoRemoto && estadoRemoto.resumoVersao) || 'Sincronizando arquivos novos do GitHub...';
+    $('autoUpdResumo').textContent = (estadoRemoto && estadoRemoto.resumoVersao) || 'Sincronizando arquivos novos do GitHub (seus cortes salvos permanecem intactos)...';
     marcarPassoAutoUpd(1, 24);
     $('modalAutoUpdate').hidden = false;
     icones($('modalAutoUpdate'));
@@ -6254,7 +6314,7 @@
       if (r && r.ocupado) {
         atualizandoAgora = false;
         $('modalAutoUpdate').hidden = true;
-        updPendenteAposJob = true;
+        mostrarBarraAtualizacaoDisponivel(true);
         return;
       }
       if (r.erro) throw new Error(r.erro);
@@ -6263,6 +6323,10 @@
       $('autoUpdTitulo').textContent = 'Reiniciando na nova versão...';
       $('autoUpdResumo').textContent = 'Quase lá! Reabrindo o programa atualizado.';
       try { localStorage.removeItem('cortador_novidades_v2_0_8'); } catch (_) {}
+      try {
+        const pastaSalvar = pastaAbertaParaPreservar();
+        if (pastaSalvar) sessionStorage.setItem(CHAVE_REABRIR_POS_UPD, pastaSalvar);
+      } catch (_) {}
 
       await new Promise((res) => setTimeout(res, 1100));
       await esperarServidorVoltar();
@@ -6321,7 +6385,7 @@
     }
   }
 
-  async function checarComunicados(forcar) {
+  async function checarComunicados(forcar, ehInicializacao) {
     try {
       const r = await fetch('/api/comunicados' + (forcar ? '?forcar=1' : '')).then((x) => x.json());
       estadoRemoto = r;
@@ -6330,7 +6394,16 @@
       }
 
       if (r.temAtualizacao) {
-        executarAtualizacao();
+        const chaveUpd = (r.shaRemoto || r.versaoRemota || 'upd');
+        const ocupadoAgora = !!(processandoAgora || avAtivo || (typeof tarefa !== 'undefined' && tarefa.rodando));
+        const recemAberto = !!ehInicializacao && (Date.now() - abertoEmMs < 15000);
+        // So atualiza sozinho ao abrir o app pela 1a vez com a tela limpa (sem cortes abertos nem video escolhido).
+        // Se o usuario ja estiver usando ou vendo cortes prontos, NUNCA fecha a tela dele sozinho!
+        if (recemAberto && !sessaoEmUsoNaTela()) {
+          executarAtualizacao();
+        } else if (updDispensadoSha !== chaveUpd) {
+          mostrarBarraAtualizacaoDisponivel(ocupadoAgora);
+        }
       } else {
         $('barraAtualizar').hidden = true;
       }
@@ -6342,7 +6415,10 @@
     }
   }
 
-  $('btnFecharUpd').addEventListener('click', () => { $('barraAtualizar').hidden = true; });
+  $('btnFecharUpd').addEventListener('click', () => {
+    if (estadoRemoto) updDispensadoSha = estadoRemoto.shaRemoto || estadoRemoto.versaoRemota || 'upd';
+    $('barraAtualizar').hidden = true;
+  });
   $('btnFecharAvisoRemoto').addEventListener('click', () => {
     if (estadoRemoto && estadoRemoto.aviso) dispensarId(estadoRemoto.aviso.id);
     $('avisoRemoto').hidden = true;
@@ -6353,28 +6429,74 @@
     const st = $('statusUpdAjustes');
     st.textContent = 'Buscando último commit no GitHub...';
     st.className = 'pasta-status';
-    const r = await checarComunicados(true);
+    const r = await checarComunicados(true, false);
     if (!r || r.offline) {
       st.textContent = 'Sem conexão com a internet no momento.';
       st.className = 'pasta-status ruim';
     } else if (r.temAtualizacao) {
-      st.textContent = 'Novo Git encontrado! Iniciando atualização automática...';
+      st.textContent = 'Novo Git encontrado! Iniciando atualização...';
       st.className = 'pasta-status ok';
       abrir(false);
+      executarAtualizacao();
     } else {
       st.textContent = 'Já está no último Git (v' + r.versaoAtual + (r.shaRemoto ? ' · #' + r.shaRemoto : '') + ').';
       st.className = 'pasta-status ok';
     }
   });
 
-  // Sempre busca Git novo ao abrir, a cada 2 minutos e quando a janela volta ao foco
-  checarComunicados(true);
+  // Carrega contagem e atalho do ultimo projeto salvo para que o usuario sempre veja onde estao seus cortes
+  async function atualizarAtalhoProjetosSalvos() {
+    try {
+      const r = await fetch('/api/projetos?sessao=' + SESSAO).then((x) => x.json());
+      const projs = (r && r.projetos) || [];
+      if ($('btnProjetos')) {
+        $('btnProjetos').innerHTML = '<i data-lucide="folder-kanban" class="i"></i> Projetos' + (projs.length ? ' (' + projs.length + ')' : '');
+        icones($('btnProjetos'));
+      }
+      const box = $('atalhoUltimoProjeto');
+      if (box && projs.length > 0) {
+        const ult = projs[0];
+        $('ultProjTitulo').textContent = 'Últimos cortes salvos: ' + (ult.nome || 'Projeto');
+        $('ultProjSub').textContent = ult.quantidade + (ult.quantidade === 1 ? ' corte pronto' : ' cortes prontos')
+          + (ult.criado ? ' · ' + dataCurta(ult.criado) : '')
+          + ' · Tudo salvo no seu PC';
+        $('btnReabrirUltimoProj').onclick = () => abrirProjeto(ult.pasta);
+        $('btnVerTodosProjTela1').onclick = () => abrirProjetos();
+        box.hidden = false;
+        icones(box);
+      } else if (box) {
+        box.hidden = true;
+      }
+    } catch (_) {}
+  }
+  atualizarAtalhoProjetosSalvos();
+
+  // Se o usuario clicou em Atualizar com um projeto/live aberto na tela, reabre os cortes dele automaticamente!
+  (async function restaurarProjetoAposUpdate() {
+    let pastaReabrir = '';
+    try {
+      pastaReabrir = sessionStorage.getItem(CHAVE_REABRIR_POS_UPD) || '';
+      if (pastaReabrir) sessionStorage.removeItem(CHAVE_REABRIR_POS_UPD);
+    } catch (_) {}
+    if (pastaReabrir) {
+      await abrirProjeto(pastaReabrir, {
+        recado: {
+          titulo: 'Programa atualizado com sucesso!',
+          detalhe: 'Todos os seus cortes continuam salvos aqui no projeto.',
+        },
+      });
+      checarComunicados(true, false);
+    } else {
+      await new Promise((res) => setTimeout(res, 450));
+      checarComunicados(true, true);
+    }
+  })();
+
   setInterval(() => {
-    if (updPendenteAposJob && !processandoAgora && !avAtivo) executarAtualizacao();
-    else checarComunicados(true);
-  }, 2 * 60 * 1000);
+    if (!atualizandoAgora) checarComunicados(true, false);
+  }, 3 * 60 * 1000);
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && !atualizandoAgora) checarComunicados(false);
+    if (document.visibilityState === 'visible' && !atualizandoAgora) checarComunicados(false, false);
   });
 
   // ------------------------------------------------------------ cortador pro (ia + checkout infinitepay)

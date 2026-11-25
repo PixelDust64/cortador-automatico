@@ -1150,7 +1150,9 @@ const servidor = http.createServer(async (req, res) => {
 
     if (rota === '/api/atualizar' && req.method === 'POST') {
       if (jobAtivo) return json(res, 409, { erro: 'Espere terminar os cortes em andamento antes de atualizar.', ocupado: true });
-      if (aoVivoAtual && !aoVivoAtual.parado) return json(res, 409, { erro: 'Pare a gravação da live antes de atualizar.', ocupado: true });
+      if (aoVivoAtual && (!aoVivoAtual.parado || aoVivoAtual.renderizando || (aoVivoAtual.fila && aoVivoAtual.fila.length > 0))) {
+        return json(res, 409, { erro: 'Aguarde a gravação e os cortes da live terminarem antes de atualizar.', ocupado: true });
+      }
       const atualizador = require('./atualizar');
       try {
         const r = await atualizador.aplicarAtualizacao();

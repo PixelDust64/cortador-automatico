@@ -166,6 +166,15 @@ async function obterEstadoBase(forcar) {
   try {
     const qs = '?machine=' + encodeURIComponent(machine) + (chave ? '&chave=' + encodeURIComponent(chave) : '');
     const d = await chamarWorker('/v1/status' + qs, 'GET', null, 10000);
+    let chaveFinal = chave;
+    if (!chaveFinal && d.ativo && d.chaveRecuperada) {
+      chaveFinal = String(d.chaveRecuperada).trim().toUpperCase();
+      try {
+        const cfg = pastas.lerConfig();
+        cfg.chavePro = chaveFinal;
+        pastas.gravarConfig(cfg);
+      } catch (_) {}
+    }
     const trialsRest = Math.max(0, Number(d.trialsRestantes != null ? d.trialsRestantes : 3));
     const podeVideo = !!(d.ativo || (d.podeUsarVideo != null ? d.podeUsarVideo : trialsRest > 0));
     const podeLive = !!(d.ativo || (d.podeUsarLive != null ? d.podeUsarLive : (d.liveAtivo || (!d.liveUsado && trialsRest > 0))));
@@ -188,7 +197,7 @@ async function obterEstadoBase(forcar) {
       liveExpiraEm: d.liveExpiraEm || null,
       liveRestanteSeg: Number(d.liveRestanteSeg != null ? d.liveRestanteSeg : (d.liveUsado ? 0 : 900)),
       conviteUpgrade: d.conviteUpgrade || null,
-      chaveMascarada: d.ativo ? mascararChave(chave) : '',
+      chaveMascarada: d.ativo ? mascararChave(chaveFinal) : '',
       planos: Array.isArray(d.planos) && d.planos.length ? d.planos : PLANOS_PADRAO,
     };
     cacheEstado = est;

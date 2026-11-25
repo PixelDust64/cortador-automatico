@@ -39,7 +39,10 @@ const MODELOS_PADRAO_PROVEDOR = {
 function provedorSalvo() {
   const cfg = pastas.lerConfig();
   const provedor = PROVEDORES.includes(cfg.iaProvedor) ? cfg.iaProvedor : 'beavernet';
-  const chave = String(cfg.iaChavePropria || '').trim();
+  let chave = String(cfg.iaChavePropria || '').trim();
+  if (!chave && provedor === 'beavernet' && process.env.BEAVERNET_API_KEY) {
+    chave = String(process.env.BEAVERNET_API_KEY).trim();
+  }
   const modelo = String(cfg.iaModeloProprio || '').trim();
   const baseUrl = String(cfg.iaBaseUrl || '').trim();
   return { provedor, chave, modelo, baseUrl };
@@ -193,10 +196,79 @@ async function chamarAnthropic({ apiKey, model, systemPrompt, userPrompt, maxTok
   return text;
 }
 
+// Cache em memoria de GET /v1/models do BeaverNet (2 minutos)
+let cacheModelosBeaver = { ts: 0, lista: null };
+
+function normalizarModeloBeaver(m) {
+  const id = String(m && (m.id || m.name) || '').trim();
+  if (!id) return null;
+  const limits = (m && m.limits) || {};
+  const anon = (m && m.anonymous) || {};
+  const allowAnon = m && typeof m.allow_anonymous === 'boolean' ? m.allow_anonymous : true;
+  const unstable = !!(m && m.unstable);
+  const ctx = Number(limits.contextLength || limits.context_length || m.context_length || 32768) || 32768;
+  const maxOutChave = Number(limits.maxTokens || limits.max_tokens || 2000) || 2000;
+  const maxOutAnon = Number(anon.maxTokens || anon.max_tokens || anon.maxOutputTokens || 512) || 512;
+  const maxPromptAnon = Number(anon.maxPromptTokens || anon.max_prompt_tokens || 8192) || 8192;
+  const ctxK = ctx >= 1000 ? Math.round(ctx / 1000) + 'k ctx' : ctx + ' ctx';
+  return {
+    id,
+    allowAnonymous: allowAnon,
+    unstable,
+    contextLength: ctx,
+    maxOutChave,
+    maxOutAnon,
+    maxPromptAnon,
+    label: `${id} · ${allowAnon ? 'sem chave' : 'requer chave grátis'} · ${ctxK}`,
+  };
+}
+
+async function obterCatalogoBeaverNet(forcar = false) {
+  const agora = Date.now();
+  if (!forcar && cacheModelosBeaver.lista && (agora - cacheModelosBeaver.ts) < 120000) {
+    return cacheModelosBeaver.lista;
+  }
+  try {
+    const r = await fetch(BEAVERNET_BASE_URL + '/models', { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    const brutos = Array.isArray(d && d.data) ? d.data : [];
+    const mapa = new Map();
+    for (const item of brutos) {
+      const norm = normalizarModeloBeaver(item);
+      if (norm && !norm.unstable) mapa.set(norm.id, norm);
+    }
+    const lista = Array.from(mapa.values());
+    if (lista.length) {
+      cacheModelosBeaver = { ts: agora, lista };
+      return lista;
+    }
+  } catch (_) {}
+  // Fallback estatico caso /v1/models esteja indisponivel
+  return BEAVERNET_MODELOS_PADRAO.map((id) => normalizarModeloBeaver({ id, allow_anonymous: true }));
+}
+
+async function validarChaveBeaverNet(chave) {
+  const c = String(chave || '').trim();
+  if (!c) return { ok: true, anonimo: true };
+  try {
+    const r = await fetch(BEAVERNET_BASE_URL + '/users/me', {
+      headers: { Authorization: 'Bearer ' + c, Accept: 'application/json' },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!r.ok) return { ok: false, erro: 'Chave BeaverNet inválida ou expirada (HTTP ' + r.status + ').' };
+    const u = await r.json().catch(() => ({}));
+    return { ok: true, anonimo: false, usuario: u.username || u.name || u.handle || 'autenticado' };
+  } catch (_) {
+    // Se a rede oscilar durante a validacao, nao bloqueia o salvamento
+    return { ok: true, anonimo: false, aviso: 'Chave salva (não foi possível confirmar /v1/users/me agora).' };
+  }
+}
+
 /**
  * Executa o prompt no provedor configurado.
- * No BeaverNet, tenta primeiro o modelo escolhido pelo usuario (se houver) e faz fallback
- * automatico na ordem: MeroMero 26B >> Nemotron 3.5 >> Gemma-4 4B >> Qwen3.5 0.8B.
+ * No BeaverNet, consulta os limites reais de /v1/models (sem capar modelos que aceitam mais tokens)
+ * e faz fallback inteligente: modelo escolhido -> favoritos -> modelos online (>=16k ctx) -> beaverlite.
  */
 async function chamarIa(systemPrompt, userPrompt, opcoes = {}) {
   const cfg = provedorSalvo();
@@ -205,16 +277,35 @@ async function chamarIa(systemPrompt, userPrompt, opcoes = {}) {
 
   if (cfg.provedor === 'beavernet') {
     const baseUrl = cfg.baseUrl || BEAVERNET_BASE_URL;
-    const fila = [];
-    if (cfg.modelo && cfg.modelo !== 'auto') fila.push(cfg.modelo);
-    for (const m of BEAVERNET_MODELOS_PADRAO) {
-      if (!fila.includes(m)) fila.push(m);
-    }
+    const temChave = !!cfg.chave;
+    const catalogo = await obterCatalogoBeaverNet(false);
+    const porId = new Map(catalogo.map((m) => [m.id, m]));
 
-    // Sem chave no BeaverNet o limite de saida por requisicao e 512 tokens
-    const maxTok = cfg.chave ? maxTokens : Math.min(maxTokens, 512);
+    // Monta fila inteligente respeitando perfil com chave vs sem chave
+    const fila = [];
+    const add = (id) => { if (id && id !== 'auto' && !fila.includes(id)) fila.push(id); };
+
+    if (cfg.modelo && cfg.modelo !== 'auto') add(cfg.modelo);
+    for (const fav of BEAVERNET_MODELOS_PADRAO) {
+      const info = porId.get(fav);
+      if (!info || temChave || info.allowAnonymous) add(fav);
+    }
+    // Completa com outros modelos online estaveis de contexto grande (>= 16k)
+    const extras = catalogo
+      .filter((m) => !m.unstable && (temChave || m.allowAnonymous) && m.contextLength >= 16384)
+      .sort((a, b) => (b.contextLength - a.contextLength) || ((temChave ? b.maxOutChave : b.maxOutAnon) - (temChave ? a.maxOutChave : a.maxOutAnon)))
+      .slice(0, 4);
+    for (const ex of extras) add(ex.id);
+    // Ultimo fallback do proprio pool BeaverNet
+    add('beaverlite');
+
     const erros = [];
     for (const modelo of fila) {
+      const info = porId.get(modelo);
+      const tetoReal = info
+        ? (temChave ? info.maxOutChave : info.maxOutAnon)
+        : (temChave ? maxTokens : 512);
+      const maxTok = Math.max(128, Math.min(maxTokens, tetoReal));
       try {
         const texto = await chamarOpenAiCompativel({
           baseUrl,
@@ -225,6 +316,7 @@ async function chamarIa(systemPrompt, userPrompt, opcoes = {}) {
           maxTokens: maxTok,
           timeoutMs,
         });
+        if (opcoes.validarJson) extrairJson(texto);
         return { texto, provedor: 'beavernet', modeloUsado: modelo };
       } catch (e) {
         erros.push(e.message);
@@ -266,19 +358,30 @@ async function chamarIa(systemPrompt, userPrompt, opcoes = {}) {
 }
 
 async function listarModelosBeaverNet() {
-  try {
-    const r = await fetch(BEAVERNET_BASE_URL + '/models', { signal: AbortSignal.timeout(8000) });
-    if (!r.ok) return BEAVERNET_MODELOS_PADRAO;
-    const d = await r.json();
-    const online = Array.isArray(d.data) ? d.data.map((m) => m.id).filter(Boolean) : [];
-    const combinados = [...BEAVERNET_MODELOS_PADRAO];
-    for (const id of online) {
-      if (!combinados.includes(id)) combinados.push(id);
-    }
-    return combinados;
-  } catch (_) {
-    return BEAVERNET_MODELOS_PADRAO;
+  const cfg = provedorSalvo();
+  const temChave = !!cfg.chave;
+  const catalogo = await obterCatalogoBeaverNet(true);
+  const filtrados = catalogo
+    .filter((m) => !m.unstable && (temChave || m.allowAnonymous))
+    .sort((a, b) => {
+      const ia = BEAVERNET_MODELOS_PADRAO.indexOf(a.id);
+      const ib = BEAVERNET_MODELOS_PADRAO.indexOf(b.id);
+      if (ia !== -1 || ib !== -1) return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+      return (b.contextLength - a.contextLength);
+    });
+
+  // Garante os 4 favoritos no topo na ordem exata de preferencia (MeroMero 26B >> Nemotron >> Gemma-4 4B >> Qwen 0.8B)
+  const porId = new Map(filtrados.map((m) => [m.id, m]));
+  const ordenados = [];
+  for (const fav of BEAVERNET_MODELOS_PADRAO) {
+    ordenados.push(porId.get(fav) || normalizarModeloBeaver({ id: fav, allow_anonymous: true }));
+    porId.delete(fav);
   }
+  for (const resto of porId.values()) ordenados.push(resto);
+  return {
+    modelos: ordenados.map((m) => m.id),
+    detalhes: ordenados,
+  };
 }
 
 async function testarConexao() {
@@ -311,15 +414,93 @@ function compactarTranscricao(transcricao, trecho, maxChars) {
 }
 
 function extrairJson(texto) {
-  const limpo = String(texto || '').trim();
-  const bloco = /```(?:json)?\s*([\s\S]*?)```/i.exec(limpo);
-  const candidato = bloco ? bloco[1].trim() : limpo;
-  const i = candidato.indexOf('{');
-  const j = candidato.lastIndexOf('}');
-  if (i >= 0 && j > i) {
-    return JSON.parse(candidato.slice(i, j + 1));
+  let s = String(texto || '').trim();
+  // Remove blocos de raciocinio (<think>...</think>) de modelos reasoning
+  s = s.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+  // Se vier em bloco markdown ```json ... ```, prioriza o conteudo interno
+  const bloco = /```(?:json)?\s*([\s\S]*?)```/i.exec(s);
+  if (bloco) s = bloco[1].trim();
+
+  const limparVirgulas = (str) => str.replace(/,\s*([}\]])/g, '$1');
+
+  // 1. Extrai todos os objetos JSON balanceados { ... } respeitando strings e escapes
+  const candidatos = [];
+  let depth = 0;
+  let inStr = false;
+  let esc = false;
+  let start = -1;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (inStr) {
+      if (esc) { esc = false; }
+      else if (ch === '\\') { esc = true; }
+      else if (ch === '"') { inStr = false; }
+      continue;
+    }
+    if (ch === '"') { inStr = true; continue; }
+    if (ch === '{') {
+      if (depth === 0) start = i;
+      depth++;
+    } else if (ch === '}') {
+      if (depth > 0) {
+        depth--;
+        if (depth === 0 && start >= 0) {
+          candidatos.push(s.slice(start, i + 1));
+          start = -1;
+        }
+      }
+    }
   }
-  return JSON.parse(candidato);
+
+  for (const cand of candidatos) {
+    try {
+      const obj = JSON.parse(limparVirgulas(cand));
+      if (obj && (Array.isArray(obj.cortes) || typeof obj.inicio === 'number' || obj.ok === true)) {
+        return obj;
+      }
+    } catch (_) {}
+  }
+  for (const cand of candidatos) {
+    try { return JSON.parse(limparVirgulas(cand)); } catch (_) {}
+  }
+
+  // 2. Recuperacao de JSON truncado (ex: limite de 512 tokens no BeaverNet sem chave):
+  // extrai todos os objetos de corte completos ja gerados dentro de "cortes":[ ...
+  const idxCortes = s.search(/"cortes"\s*:\s*\[/i);
+  if (idxCortes >= 0) {
+    const sub = s.slice(idxCortes);
+    const arrStart = sub.indexOf('[');
+    if (arrStart >= 0) {
+      const itens = [];
+      let d = 0, str = false, e = false, st = -1;
+      for (let i = arrStart + 1; i < sub.length; i++) {
+        const ch = sub[i];
+        if (str) {
+          if (e) e = false;
+          else if (ch === '\\') e = true;
+          else if (ch === '"') str = false;
+          continue;
+        }
+        if (ch === '"') { str = true; continue; }
+        if (ch === '{') { if (d === 0) st = i; d++; }
+        else if (ch === '}') {
+          if (d > 0) {
+            d--;
+            if (d === 0 && st >= 0) {
+              try {
+                const it = JSON.parse(limparVirgulas(sub.slice(st, i + 1)));
+                if (it && typeof it.inicio !== 'undefined') itens.push(it);
+              } catch (_) {}
+              st = -1;
+            }
+          }
+        }
+      }
+      if (itens.length > 0) return { cortes: itens };
+    }
+  }
+
+  throw new Error('A IA não retornou um JSON válido de cortes.');
 }
 
 /**
@@ -330,8 +511,14 @@ async function analisarComIa(transcricao, picos, duracao, opcoes = {}) {
   const quantidade = Math.max(1, Math.min(20, Number(opcoes.quantidade || 8)));
   const minDur = Number(opcoes.minDur || 28);
   const maxDur = Number(opcoes.maxDur || 62);
-  // Sem chave no BeaverNet, o prompt e limitado a 8.192 tokens (~22.000 chars); com chave cabe muito mais
-  const limiteChars = (cfg.provedor === 'beavernet' && !cfg.chave) ? 18000 : 60000;
+  // Usa limite real de prompt do modelo quando disponivel (evita capar modelos grandes sem chave)
+  let limiteChars = 60000;
+  if (cfg.provedor === 'beavernet' && !cfg.chave) {
+    const cat = await obterCatalogoBeaverNet(false);
+    const alvo = cat.find((m) => m.id === (cfg.modelo || BEAVERNET_MODELOS_PADRAO[0]));
+    const promptTok = alvo ? alvo.maxPromptAnon : 8192;
+    limiteChars = Math.max(18000, Math.min(60000, Math.round(promptTok * 2.6)));
+  }
   const { linhas, palavras } = compactarTranscricao(transcricao, opcoes.trecho, limiteChars);
   if (!linhas) return { cortes: [], usouTrial: false };
 
@@ -352,7 +539,8 @@ async function analisarComIa(transcricao, picos, duracao, opcoes = {}) {
     linhas,
   ].filter(Boolean).join('\n');
 
-  const res = await chamarIa(systemPrompt, userPrompt, { maxTokens: 2000, timeoutMs: 60000 });
+  const maxTokensPedido = Math.min(8192, Math.max(2500, quantidade * 280));
+  const res = await chamarIa(systemPrompt, userPrompt, { maxTokens: maxTokensPedido, timeoutMs: 90000, validarJson: true });
   const parsed = extrairJson(res.texto);
   const brutos = Array.isArray(parsed && parsed.cortes) ? parsed.cortes : [];
 
@@ -363,20 +551,23 @@ async function analisarComIa(transcricao, picos, duracao, opcoes = {}) {
       if (fim - inicio < 8) fim = Math.min(duracao || 99999, inicio + minDur);
       const dur = Math.round((fim - inicio) * 10) / 10;
       const pags = palavras.filter((p) => p.inicio >= inicio - 0.3 && p.fim <= fim + 0.3);
+      const notaVal = Math.max(50, Math.min(99, Math.round(Number(c.nota) || 85)));
+      const motivoTxt = String(c.motivo || 'Selecionado pelo Diretor IA (' + res.modeloUsado + ')').trim();
       return {
         inicio,
         fim,
         duracao: dur,
         inicioMmss: mmss(inicio),
         fimMmss: mmss(fim),
-        nota: Math.max(50, Math.min(99, Math.round(Number(c.nota) || 85))),
-        rotulo: rotulo(Number(c.nota) || 85),
+        nota: notaVal,
+        rotulo: rotulo(notaVal),
         titulo: String(c.titulo || '').trim().slice(0, 90),
         gancho: String(c.gancho || '').trim().slice(0, 60),
         hashtags: Array.isArray(c.hashtags) ? c.hashtags.map((h) => String(h).replace(/^#/, '').trim()).filter(Boolean).slice(0, 5) : [],
-        motivo: String(c.motivo || 'Selecionado pelo Diretor IA (' + res.modeloUsado + ')'),
+        motivo: motivoTxt,
+        motivos: [{ fator: motivoTxt, pontos: notaVal }],
         palavras: pags,
-        texto: pags.map((p) => p.palavra).join(' ').trim(),
+        texto: pags.map((p) => p.texto || p.palavra || '').join(' ').trim(),
         feitoComIa: true,
         modeloIa: res.modeloUsado,
       };
@@ -406,7 +597,7 @@ async function refinarClipeAoVivo(transcricao, offset, duracaoAlvo, duracaoTotal
 
   const userPrompt = `Live: ${opcoes.contexto || 'Ao vivo'} (${opcoes.canal || ''})\nDuração alvo: ~${Math.round(duracaoAlvo || 30)}s\nTranscrição:\n${linhas}`;
 
-  const res = await chamarIa(systemPrompt, userPrompt, { maxTokens: 350, timeoutMs: 30000 });
+  const res = await chamarIa(systemPrompt, userPrompt, { maxTokens: 350, timeoutMs: 30000, validarJson: true });
   const parsed = extrairJson(res.texto);
   if (!parsed) return { corte: null, usouTrial: false, liveAtivo: true };
 
@@ -439,5 +630,7 @@ module.exports = {
   salvarProvedor,
   resumoProvedor,
   listarModelosBeaverNet,
+  validarChaveBeaverNet,
   testarConexao,
+  extrairJson,
 };

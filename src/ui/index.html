@@ -1703,8 +1703,11 @@ body[data-modo="splitter"] .fila-aba { display: none !important; }
           <input type="text" id="iaModeloManual" placeholder="Ou digite manualmente o routing string do modelo..." style="width:100%; margin-top:6px; padding:7px 9px; border-radius:8px; background:var(--superficie2); border:1px solid var(--linha2); color:var(--texto); font:inherit; font-size:var(--t5)">
         </label>
         <label style="font-size:11.5px; color:var(--texto2)">Chave de API <span id="iaChaveHint" style="color:var(--texto3)">(opcional no BeaverNet)</span>
-          <input type="password" id="iaChave" placeholder="Opcional no BeaverNet · obrigatória em Gemini/OpenAI/Claude" autocomplete="off" style="width:100%; margin-top:4px; padding:7px 9px; border-radius:8px; background:var(--superficie2); border:1px solid var(--linha2); color:var(--texto); font:inherit; font-size:var(--t5)">
+          <input type="password" id="iaChave" placeholder="Opcional no BeaverNet (bn-...) · obrigatória em Gemini/OpenAI/Claude" autocomplete="off" style="width:100%; margin-top:4px; padding:7px 9px; border-radius:8px; background:var(--superficie2); border:1px solid var(--linha2); color:var(--texto); font:inherit; font-size:var(--t5)">
         </label>
+        <div id="iaBeaverDica" class="dica" style="font-size:11.5px; line-height:1.45">
+          <b>Grátis e sem cadastro tradicional:</b> o BeaverNet já funciona sem chave. Para limites maiores de texto e todos os modelos, gere uma chave gratuita (<code>bn-...</code>) em segundos em <a href="https://net.beaverai.org/account" target="_blank" rel="noopener" style="color:var(--marca2)">net.beaverai.org/account</a> (pede só um apelido e anti-robô — sem e-mail, sem senha e sem cartão).
+        </div>
         <div style="display:flex; gap:6px; flex-wrap:wrap">
           <button type="button" class="btn p" id="btnSalvarIa">Salvar IA</button>
           <button type="button" class="btn p" id="btnTestarIa">Testar conexão</button>
@@ -5090,6 +5093,7 @@ body[data-modo="splitter"] .fila-aba { display: none !important; }
     $('iaChaveHint').textContent = p === 'beavernet' ? '(opcional no BeaverNet — grátis sem chave)' : '(obrigatória para ' + p + ')';
     $('iaModeloPreset').style.display = p === 'beavernet' ? '' : 'none';
     $('btnAtualizarModelosBeaver').style.display = p === 'beavernet' ? '' : 'none';
+    if ($('iaBeaverDica')) $('iaBeaverDica').style.display = p === 'beavernet' ? '' : 'none';
   }
   $('iaProvedor').addEventListener('change', atualizarHintsIa);
   $('iaModeloPreset').addEventListener('change', () => {
@@ -5114,12 +5118,15 @@ body[data-modo="splitter"] .fila-aba { display: none !important; }
     $('iaStatusTxt').textContent = 'Consultando modelos online no BeaverNet...';
     try {
       const d = await fetch('/api/ia/beavernet-modelos').then((r) => r.json());
-      if (Array.isArray(d.modelos) && d.modelos.length) {
+      const itens = Array.isArray(d.detalhes) && d.detalhes.length
+        ? d.detalhes
+        : (Array.isArray(d.modelos) ? d.modelos.map((id) => ({ id, label: id })) : []);
+      if (itens.length) {
         const atual = $('iaModeloManual').value;
         $('iaModeloPreset').innerHTML =
-          '<option value="auto">Automático (MeroMero 26B &gt;&gt; Nemotron &gt;&gt; Gemma-4 4B &gt;&gt; Qwen 0.8B)</option>' +
-          d.modelos.map((m) => '<option value="' + esc(m) + '"' + (m === atual ? ' selected' : '') + '>' + esc(m) + '</option>').join('');
-        $('iaStatusTxt').textContent = d.modelos.length + ' modelos carregados do BeaverNet.';
+          '<option value="auto">Automático (MeroMero 26B &gt;&gt; Nemotron &gt;&gt; Gemma-4 4B &gt;&gt; Qwen 0.8B &gt;&gt; beaverlite)</option>' +
+          itens.map((m) => '<option value="' + esc(m.id) + '"' + (m.id === atual ? ' selected' : '') + '>' + esc(m.label || m.id) + '</option>').join('');
+        $('iaStatusTxt').textContent = itens.length + ' modelos online carregados do BeaverNet (com limites reais).';
       }
     } catch (_) { $('iaStatusTxt').textContent = 'Não foi possível listar modelos do BeaverNet agora.'; }
   });

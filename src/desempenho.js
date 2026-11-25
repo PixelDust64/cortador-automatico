@@ -220,7 +220,11 @@ function detectarCuda(pythonBin) {
   return testandoCuda;
 }
 
-function placaLigada() { return !!pastas.lerConfig().placaVideo; }
+function placaLigada() {
+  const v = pastas.lerConfig().placaVideo;
+  // Ligada por padrao quando o usuario ainda nao desativou manualmente (se nao houver GPU compativel, cai para CPU).
+  return v === undefined ? true : !!v;
+}
 function usarCudaNaTranscricao() { return placaLigada() && !!cudaAchada; }
 function definirPlaca(ligada) {
   const cfg = pastas.lerConfig();

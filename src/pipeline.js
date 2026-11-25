@@ -136,9 +136,15 @@ function conferirTrecho(t, duracaoVideo, modo) {
 
 // ---------------------------------------------------------------- transcricao
 
-function transcrever(audio, destinoJson, duracao, modelo, idioma, aoProgredir, aoAvisar) {
+async function transcrever(audio, destinoJson, duracao, modelo, idioma, aoProgredir, aoAvisar) {
+  const py = acharPython();
+  // Garante que a deteccao de CUDA ja concluiu antes de decidir USAR_GPU
+  await desempenho.detectarCuda(py).catch(() => null);
+  const usarGpu = process.env.USAR_GPU != null
+    ? String(process.env.USAR_GPU)
+    : (desempenho.usarCudaNaTranscricao() ? '1' : '0');
+
   return new Promise((resolve, reject) => {
-    const py = acharPython();
     const script = path.join(RAIZ, 'py', 'transcrever.py');
     const p = spawn(py, [
       script,
@@ -152,6 +158,7 @@ function transcrever(audio, destinoJson, duracao, modelo, idioma, aoProgredir, a
       env: Object.assign({}, process.env, {
         PYTHONIOENCODING: 'utf-8',
         HF_HOME: process.env.HF_HOME || MODELOS,
+        USAR_GPU: usarGpu,
         // Em container, os.cpus() enxerga os nucleos do HOST, nao a cota da
         // maquina (cgroup). Numa VM de 2 vCPU rodando num host de 48 nucleos
         // isso pediria 46 threads: contexto trocando o tempo todo e a
@@ -616,7 +623,11 @@ function textoDoRelatorio(r) {
     if (c.leva > 1) linhas.push('Extraido depois, na ' + c.leva + 'a leva de cortes');
     if (c.hashtags && c.hashtags.length) linhas.push('Hashtags: ' + c.hashtags.map((t) => '#' + t).join(' '));
     else if (c.tags && c.tags.length) linhas.push('Hashtags: ' + c.tags.map((t) => '#' + t).join(' '));
-    linhas.push('Por que pontuou: ' + c.motivos.map((m) => m.fator + ' (' + (m.pontos > 0 ? '+' : '') + m.pontos + ')').join(', '));
+    if (Array.isArray(c.motivos) && c.motivos.length) {
+      linhas.push('Por que pontuou: ' + c.motivos.map((m) => m.fator + ' (' + (m.pontos > 0 ? '+' : '') + m.pontos + ')').join(', '));
+    } else if (c.motivo) {
+      linhas.push('Por que pontuou: ' + c.motivo);
+    }
     linhas.push('');
     linhas.push('Transcricao:');
     linhas.push(quebrar(c.texto, 68));

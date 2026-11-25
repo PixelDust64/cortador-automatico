@@ -258,6 +258,20 @@ test('mega/beavernet: ordem de fallback (MeroMero 26B >> Nemotron >> Gemma-4 4B 
   const st = await pro.obterEstado();
   assert.equal(typeof st.provedor, 'string');
   assert.ok(Array.isArray(st.beavernetModelos) && st.beavernetModelos.length === 4);
+
+  // Parser JSON resiliente (texto extra com chaves apos JSON, <think>, virgula sobrando e JSON truncado)
+  const r1 = pro.extrairJson('<think>analisando {foo}</think>\n{"cortes":[{"inicio":10,"fim":40,"titulo":"Teste",}]}\nNota final: {ok}');
+  assert.equal(r1.cortes.length, 1);
+  assert.equal(r1.cortes[0].inicio, 10);
+
+  const r2 = pro.extrairJson('{"cortes":[{"inicio":5,"fim":35,"titulo":"Primeiro"},{"inicio":60,"fim":95,"titulo":"Segundo"},{"inicio":120,"fim":150,"titul');
+  assert.equal(r2.cortes.length, 2);
+  assert.equal(r2.cortes[1].titulo, 'Segundo');
+
+  // Garante que pipeline.js passa USAR_GPU a partir de desempenho.usarCudaNaTranscricao()
+  const pipeSrc = fs.readFileSync(path.join(RAIZ, 'src', 'pipeline.js'), 'utf8');
+  assert.match(pipeSrc, /desempenho\.usarCudaNaTranscricao\(\)/);
+  assert.match(pipeSrc, /USAR_GPU:\s*usarGpu/);
 });
 
 test('mega/splitter-e-ia: rotas /splitter/, /api/splitter/status, /api/ia/config e /api/fontes-sistema respondem HTTP 200', async () => {

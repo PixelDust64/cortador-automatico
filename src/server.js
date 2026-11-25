@@ -1140,11 +1140,18 @@ const servidor = http.createServer(async (req, res) => {
     }
     if (rota === '/api/ia/config' && req.method === 'POST') {
       const corpo = await lerCorpo(req);
-      try { return json(res, 200, pro.salvarProvedor(corpo.provedor, corpo.chave, corpo.modelo, corpo.baseUrl)); }
-      catch (e) { return json(res, 400, { erro: e.message }); }
+      try {
+        if ((corpo.provedor || 'beavernet') === 'beavernet' && String(corpo.chave || '').trim()) {
+          const v = await pro.validarChaveBeaverNet(corpo.chave);
+          if (!v.ok) return json(res, 400, { erro: v.erro });
+        }
+        return json(res, 200, pro.salvarProvedor(corpo.provedor, corpo.chave, corpo.modelo, corpo.baseUrl));
+      } catch (e) {
+        return json(res, 400, { erro: e.message });
+      }
     }
     if (rota === '/api/ia/beavernet-modelos' && req.method === 'GET') {
-      return json(res, 200, { modelos: await pro.listarModelosBeaverNet() });
+      return json(res, 200, await pro.listarModelosBeaverNet());
     }
     if (rota === '/api/ia/testar' && req.method === 'POST') {
       try { return json(res, 200, await pro.testarConexao()); }

@@ -285,9 +285,11 @@ async function chamarIa(systemPrompt, userPrompt, opcoes = {}) {
     const fila = [];
     const add = (id) => { if (id && id !== 'auto' && !fila.includes(id)) fila.push(id); };
 
+    const buscarInfo = (id) => porId.get(id) || porId.get(id + ' (alias)');
+
     if (cfg.modelo && cfg.modelo !== 'auto') add(cfg.modelo);
     for (const fav of BEAVERNET_MODELOS_PADRAO) {
-      const info = porId.get(fav);
+      const info = buscarInfo(fav);
       if (!info || temChave || info.allowAnonymous) add(fav);
     }
     // Completa com outros modelos online estaveis de contexto grande (>= 16k)
@@ -301,7 +303,7 @@ async function chamarIa(systemPrompt, userPrompt, opcoes = {}) {
 
     const erros = [];
     for (const modelo of fila) {
-      const info = porId.get(modelo);
+      const info = buscarInfo(modelo);
       const tetoReal = info
         ? (temChave ? info.maxOutChave : info.maxOutAnon)
         : (temChave ? maxTokens : 512);
@@ -519,7 +521,8 @@ async function analisarComIa(transcricao, picos, duracao, opcoes = {}) {
   let limiteChars = 60000;
   if (cfg.provedor === 'beavernet' && !cfg.chave) {
     const cat = await obterCatalogoBeaverNet(false);
-    const alvo = cat.find((m) => m.id === (cfg.modelo || BEAVERNET_MODELOS_PADRAO[0]));
+    const idAlvo = cfg.modelo || BEAVERNET_MODELOS_PADRAO[0];
+    const alvo = cat.find((m) => m.id === idAlvo || m.id === idAlvo + ' (alias)');
     const promptTok = alvo ? alvo.maxPromptAnon : 8192;
     limiteChars = Math.max(18000, Math.min(60000, Math.round(promptTok * 2.6)));
   }

@@ -264,7 +264,11 @@ function servirArquivo(req, res, arquivo) {
   if (faixa) {
     const m = /bytes=(\d*)-(\d*)/.exec(faixa);
     const ini = m && m[1] ? Number(m[1]) : 0;
-    const fim = m && m[2] ? Number(m[2]) : st.size - 1;
+    const fim = m && m[2] ? Math.min(Number(m[2]), st.size - 1) : st.size - 1;
+    if (!Number.isFinite(ini) || !Number.isFinite(fim) || ini < 0 || ini >= st.size || fim < ini) {
+      res.writeHead(416, { 'Content-Range': 'bytes */' + st.size });
+      return res.end();
+    }
     res.writeHead(206, {
       'Content-Type': tipo,
       'Content-Range': 'bytes ' + ini + '-' + fim + '/' + st.size,
@@ -339,7 +343,7 @@ function paginaLogin(erro) {
     '.erro{color:#fca5a5;font-size:13px;margin-bottom:12px}' +
     '</style></head><body>' +
     '<form method="POST" action="/api/login">' +
-    '<h1>✂️ Cortador Automático</h1>' +
+    '<h1>Mega Cortes HD</h1>' +
     (erro ? '<div class="erro">Senha incorreta.</div>' : '') +
     '<input type="password" name="senha" placeholder="Senha" autofocus required>' +
     '<button type="submit">Entrar</button>' +
@@ -440,7 +444,7 @@ function janelaDoWindows(linhasDoDialogo, propriedade) {
 function escolherPastaNativa() {
   return janelaDoWindows([
     '$d = New-Object System.Windows.Forms.FolderBrowserDialog',
-    '$d.Description = "Escolha onde o Cortador Automatico vai salvar os cortes"',
+    '$d.Description = "Escolha onde o Mega Cortes HD vai salvar os cortes"',
     '$d.ShowNewFolderButton = $true',
   ], 'SelectedPath').then((r) => r.caminho);
 }
@@ -612,7 +616,21 @@ function dentroDaSaida(caminho) {
   return resolvido;
 }
 
+function podarTrabalhosAntigos() {
+  let terminados = 0;
+  for (const [, t] of trabalhos) if (t.terminou) terminados++;
+  if (terminados <= 30) return;
+  for (const [id, t] of trabalhos) {
+    if (terminados <= 30) break;
+    if (t.terminou && t.ouvintes.size === 0) {
+      trabalhos.delete(id);
+      terminados--;
+    }
+  }
+}
+
 function novoTrabalho() {
+  podarTrabalhosAntigos();
   const id = Math.random().toString(36).slice(2, 10);
   trabalhos.set(id, { eventos: [], ouvintes: new Set(), terminou: false });
   return id;
@@ -1381,7 +1399,7 @@ function subir(porta, tentativas) {
   servidor.once('listening', () => {
     const endereco = 'http://127.0.0.1:' + porta;
     console.log('');
-    console.log('  Cortador automatico rodando em ' + endereco);
+    console.log('  Mega Cortes HD rodando em ' + endereco);
 
     if (NA_REDE) {
       for (const ip of enderecosDaRede()) {

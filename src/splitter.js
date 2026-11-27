@@ -586,8 +586,13 @@ async function tratarRota(req, res, rota, urlObj) {
       const range = req.headers.range;
       if (range) {
         const [s, e] = range.replace(/bytes=/, '').split('-');
-        const start = parseInt(s, 10);
-        const end = e ? parseInt(e, 10) : stat.size - 1;
+        const start = s ? parseInt(s, 10) : 0;
+        const end = e ? Math.min(parseInt(e, 10), stat.size - 1) : stat.size - 1;
+        if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || start >= stat.size || end < start) {
+          res.writeHead(416, { 'Content-Range': `bytes */${stat.size}` });
+          res.end();
+          return true;
+        }
         res.writeHead(206, { 'Content-Range': `bytes ${start}-${end}/${stat.size}`, 'Accept-Ranges': 'bytes', 'Content-Length': end - start + 1, 'Content-Type': mime });
         fs.createReadStream(m.arquivo, { start, end }).pipe(res);
       } else {

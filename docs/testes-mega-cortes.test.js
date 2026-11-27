@@ -359,4 +359,11 @@ test('mega/v2.4.0: melhorias tecnicas (Whisper local-first, wav atomico, skip_fr
 
   const wfSrc = fs.readFileSync(path.join(RAIZ, '.github', 'workflows', 'instalador.yml'), 'utf8');
   assert.match(wfSrc, /Instalar-Mega-Cortes-HD\.exe/, 'workflow de release deve publicar Instalar-Mega-Cortes-HD.exe');
+
+  const proSrc = fs.readFileSync(path.join(RAIZ, 'src', 'pro.js'), 'utf8');
+  assert.match(proSrc, /porId\.get\(id \+ ' \(alias\)'\)/, 'chamarIa deve resolver modelos com sufixo (alias) do BeaverNet');
+
+  const srvSrc = fs.readFileSync(path.join(RAIZ, 'src', 'server.js'), 'utf8');
+  assert.match(srvSrc, /podarTrabalhosAntigos/, 'server.js deve podar trabalhos concluidos para evitar crescimento de memoria');
+  assert.match(srvSrc, /writeHead\(416/, 'server.js deve responder 416 para Range invalido');
 });

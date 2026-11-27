@@ -143,6 +143,28 @@ def main():
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "modelos"
     )
 
+    # Primeiro so do disco (local_files_only=True): os modelos ja vem no
+    # instalador, e com internet ruim a checagem no HuggingFace atrasava ou
+    # travava o comeco de toda transcricao. Se nao existir no disco, baixa.
+    def carregar_modelo(device, compute_type, **extra):
+        try:
+            return WhisperModel(
+                args.modelo,
+                device=device,
+                compute_type=compute_type,
+                download_root=pasta_modelos,
+                local_files_only=True,
+                **extra,
+            )
+        except Exception:
+            return WhisperModel(
+                args.modelo,
+                device=device,
+                compute_type=compute_type,
+                download_root=pasta_modelos,
+                **extra,
+            )
+
     # Quando a placa de video esta ligada e o PC tem GPU NVIDIA com CUDA,
     # carrega o Whisper na GPU (em Pascal sm_61 como GTX 10xx usa
     # int8_float32; em GPUs mais novas usa float16). Se falhar, cai pro CPU.
@@ -153,12 +175,7 @@ def main():
             ct = escolher_compute_type_cuda()
             if ct:
                 avisar("progresso", pct=3, msg="Carregando o modelo na placa de video (CUDA/%s)..." % ct)
-                modelo = WhisperModel(
-                    args.modelo,
-                    device="cuda",
-                    compute_type=ct,
-                    download_root=pasta_modelos,
-                )
+                modelo = carregar_modelo("cuda", ct)
                 usou_cuda = True
         except Exception as e:
             avisar("progresso", pct=4, msg="CUDA indisponivel (%s), usando o processador..." % str(e)[:120])
@@ -166,13 +183,7 @@ def main():
 
     if modelo is None:
         # int8 no CPU: bem mais rapido e cabe folgado na RAM.
-        modelo = WhisperModel(
-            args.modelo,
-            device="cpu",
-            compute_type="int8",
-            cpu_threads=threads,
-            download_root=pasta_modelos,
-        )
+        modelo = carregar_modelo("cpu", "int8", cpu_threads=threads)
 
     avisar("progresso", pct=6, msg="Ouvindo o video inteiro%s..." % (" (GPU)" if usou_cuda else ""))
 

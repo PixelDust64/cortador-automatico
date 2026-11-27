@@ -939,7 +939,7 @@ const servidor = http.createServer(async (req, res) => {
       if (!ped) return json(res, 400, { erro: 'Ainda não tem imagem da live.' });
       fs.mkdirSync(pastas.trabalho(), { recursive: true });
       const alvo = path.join(pastas.trabalho(), 'aovivo-previa.jpg');
-      await media.gerarPrevia(ped, 0, corpo.formato || 'vertical', corpo.recorte, alvo, textoDaPrevia(corpo.textoFixo, 'aovivo'));
+      await media.gerarPrevia(ped, 0, corpo.formato || 'vertical', corpo.recorte, alvo, textoDaPrevia(corpo.textoFixo, 'aovivo', corpo.formato || 'vertical', corpo.recorte));
       return enviarImagem(res, alvo);
     }
 

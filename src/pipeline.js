@@ -217,6 +217,20 @@ async function transcrever(audio, destinoJson, duracao, modelo, idioma, aoProgre
  *
  * @returns {Promise<object>} { info, assinatura, wav, jsonTranscricao, transcricao, energia, picos }
  */
+/** O .wav guardado presta? (cabecalho RIFF/WAVE e pelo menos ~1 s de som) */
+function wavUtilizavel(wav) {
+  try {
+    if (fs.statSync(wav).size < 44 + 32000) return false;
+    const fd = fs.openSync(wav, 'r');
+    const cab = Buffer.alloc(12);
+    fs.readSync(fd, cab, 0, 12, 0);
+    fs.closeSync(fd);
+    return cab.toString('ascii', 0, 4) === 'RIFF' && cab.toString('ascii', 8, 12) === 'WAVE';
+  } catch (_) {
+    return false;
+  }
+}
+
 async function prepararAnalise(video, opcoes, emitir, avisar) {
   fs.mkdirSync(pastas.trabalho(), { recursive: true });
 
@@ -246,6 +260,11 @@ async function prepararAnalise(video, opcoes, emitir, avisar) {
   const jsonTranscricao = path.join(pastas.trabalho(), assinatura + '-' + (opcoes.modelo || 'small') + '-' + idiomaCache + '-v3.json');
 
   // ---- 2. audio
+  // Um .wav vazio ou so com cabecalho (sobra de uma extracao que falhou) fazia
+  // toda tentativa seguinte dar "Invalid data found". Esse nao vale: refaz.
+  if (fs.existsSync(wav) && !wavUtilizavel(wav)) {
+    try { fs.unlinkSync(wav); } catch (_) { }
+  }
   if (!fs.existsSync(wav)) {
     emitir(2, 'audio', 'Separando o audio do video...');
     await media.extrairAudio(video, wav, info.duracao, (frac) => {
@@ -373,22 +392,30 @@ async function processar(opcoes, avisar) {
   } else if (opcoes.usarIaPro) {
     const pro = require('./pro');
     const ctxVid = contextoDoVideo(video);
-    emitir(64, 'analise', 'Diretor IA Pro lendo a conversa inteira e criando títulos virais...');
-    const resIa = await pro.analisarComIa(transcricao, picos, info.duracao, {
-      quantidade: opcoes.quantidade || 8,
-      minDur: opcoes.minDur || 28,
-      maxDur: opcoes.maxDur || 62,
-      descricao: opcoes.descricao,
-      contexto: ctxVid.texto,
-      canal: ctxVid.canal,
-      trecho: trecho,
-    });
-    cortes = resIa.cortes;
-    feitoComIa = true;
-    if (resIa.usouTrial) {
-      avisar({ tipo: 'aviso', msg: '✨ Diretor IA Pro usado! Você ainda tem ' + resIa.trialsRestantes + ' teste(s) grátis.' });
+    emitir(64, 'analise', 'Diretor IA lendo a conversa inteira e criando títulos virais...');
+    try {
+      const resIa = await pro.analisarComIa(transcricao, picos, info.duracao, {
+        quantidade: opcoes.quantidade || 8,
+        minDur: opcoes.minDur || 28,
+        maxDur: opcoes.maxDur || 62,
+        descricao: opcoes.descricao,
+        contexto: ctxVid.texto,
+        canal: ctxVid.canal,
+        trecho: trecho,
+      });
+      cortes = resIa.cortes;
+      feitoComIa = true;
+      if (resIa.usouTrial) {
+        avisar({ tipo: 'aviso', msg: '✨ Diretor IA usado! Você ainda tem ' + resIa.trialsRestantes + ' teste(s) grátis.' });
+      }
+    } catch (e) {
+      // Internet caiu, provedor fora ou timeout: a transcricao ja esta pronta,
+      // entao em vez de perder tudo, o Motor Local faz os cortes.
+      avisar({ tipo: 'aviso', msg: 'O Diretor IA não respondeu (' + String((e && e.message) || 'erro').slice(0, 160) + '). Fiz os cortes com o Motor Local para você não perder o trabalho.' });
+      cortes = null;
     }
-  } else {
+  }
+  if (!cortes && !exato) {
     emitir(64, 'analise', trecho
       ? 'Procurando os melhores momentos entre ' + mmss(trecho.inicio) + ' e ' + mmss(trecho.fim) + '...'
       : 'Procurando os melhores momentos...');

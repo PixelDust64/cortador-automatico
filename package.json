@@ -1,6 +1,6 @@
 {
   "name": "cortador-automatico",
-  "version": "1.0.0",
+  "version": "2.4.0",
   "private": true,
   "description": "Cortador automatico: corta video e live (gravada ou ao vivo) da Kick, Twitch e YouTube em clipes verticais, tudo no proprio PC",
   "main": "src/server.js",

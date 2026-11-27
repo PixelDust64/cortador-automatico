@@ -17,12 +17,12 @@ node src/server.js
 | `PORTA` ou `PORT` | `4321` | Porta HTTP do servidor |
 | `REDE` | *(vazio)* | Defina `REDE=1` (ou `HOST=0.0.0.0`) para escutar na rede local |
 | `DADOS` | `D:\CortadorAutomatico` | Pasta raiz onde ficam `baixados/`, `saida/`, `trabalho/` e `ao-vivo/` |
-| `SENHA` | *(vazio)* | Ativa autenticação obrigatória via cookie `sessao` em todas as rotas `/api/*` |
+| `AUTH_SENHA` | *(vazio)* | Ativa autenticação obrigatória via cookie `sessao` em todas as rotas `/api/*` |
 | `USAR_GPU` | automático | Controle de aceleração GPU/CUDA na transcrição |
 
 ---
 
-## 2. Autenticação (quando `SENHA` está definida)
+## 2. Autenticação (quando `AUTH_SENHA` está definida)
 
 ### `POST /api/login`
 - **Content-Type:** `application/x-www-form-urlencoded`
@@ -52,11 +52,11 @@ node src/server.js
 |---|---|---|---|
 | `POST` | `/api/espiar` | `{ "url": "https://..." }` | Consulta metadados do link (título, duração, ao vivo) sem baixar |
 | `POST` | `/api/baixar` | `{ "url": "https://...", "limiteAltura": 1080 }` | Inicia download via `yt-dlp` para `baixados/`. Retorna `{ id }` (acompanhe via SSE `/api/eventos?id=...`) |
-| `POST` | `/api/upload` | Binário + header `X-File-Name` | Envia arquivo de vídeo local para processamento |
-| `POST` | `/api/info` | `{ "caminho": "..." }` | Retorna metadados (`ffprobe`) do vídeo (duração, largura, altura, FPS) |
-| `POST` | `/api/achar-webcam` | `{ "caminho": "..." }` | Detecta automaticamente região da webcam no vídeo |
-| `POST` | `/api/frame` | `{ "caminho": "...", "segundos": 10 }` | Extrai frame JPEG no instante especificado |
-| `POST` | `/api/previa` | `{ "caminho": "...", "formato": "split", ... }` | Gera imagem de prévia do enquadramento 9:16 |
+| `POST` | `/api/upload?nome=video.mp4` | Binário + query `?nome=...` | Envia arquivo de vídeo local para processamento |
+| `POST` | `/api/info` | `{ "video": "..." }` | Retorna metadados (`ffprobe`) do vídeo (duração, largura, altura, FPS) |
+| `POST` | `/api/achar-webcam` | `{ "video": "...", "duracao": 120 }` | Detecta automaticamente região da webcam no vídeo |
+| `POST` | `/api/frame` | `{ "video": "...", "segundo": 10, "sid": "local" }` | Extrai frame JPEG no instante especificado |
+| `POST` | `/api/previa` | `{ "video": "...", "formato": "split", ... }` | Gera imagem de prévia do enquadramento 9:16 |
 
 ---
 
@@ -71,7 +71,7 @@ Todas as operações pesadas de vídeo entram na **fila sequencial** (`filaTraba
 | `POST` | `/api/projeto/mais` | `{ "pasta": "<pasta_projeto>", ... }` | Extrai novos clipes de um projeto já transcrito sem baixar novamente |
 | `GET` | `/api/eventos?id=<id>` | Query `id` | **Server-Sent Events (SSE):** stream em tempo real de `{ tipo: "progresso" \| "fim" \| "erro", pct, etapa, msg, pasta }` |
 | `GET` | `/api/fila` | — | Estado atual da fila: `{ ativo, itens: [{ id, tipo, titulo, status, pct, etapa, msg, pasta }] }` |
-| `POST` | `/api/fila/mover` | `{ "id": "...", "direcao": -1 \| 1 }` | Move trabalho `aguardando` para cima (`-1`) ou para baixo (`1`) na fila |
+| `POST` | `/api/fila/mover` | `{ "id": "...", "direcao": "subir" \| "descer" }` | Move trabalho `aguardando` para cima (`"subir"`) ou para baixo (`"descer"`) na fila |
 | `POST` | `/api/fila/cancelar` | `{ "id": "..." }` | Cancela um trabalho na fila ou encerra o processo em execução |
 | `POST` | `/api/fila/limpar` | — | Remove itens já concluídos/cancelados/com erro da lista da fila |
 | `GET` | `/api/atual` | — | Retorna o ID do último trabalho ativo |
@@ -87,7 +87,8 @@ Todas as operações pesadas de vídeo entram na **fila sequencial** (`filaTraba
 | `GET` | `/api/video` | `?pasta=...` ou `?caminho=...` ou `?clipe=...` | Stream de vídeo com suporte a `Range` (`206 Partial Content`) |
 | `GET` | `/api/quadro` | `?pasta=...&t=12.5` | Frame JPEG sob demanda do vídeo de um projeto |
 | `GET` | `/api/palavras` | `?pasta=...` | Retorna transcrição palavra por palavra com timestamps |
-| `GET` | `/arquivo` | `?caminho=<arquivo_em_saida>` | Baixa/serve um clipe ou miniatura dentro de `saida/` |
+| `GET` | `/arquivo` | `?p=<arquivo_em_saida>` | Baixa/serve um clipe ou miniatura dentro de `saida/` |
+| `DELETE` | `/api/projeto` | `?pasta=<caminho>` | Apaga uma pasta de projeto dentro de `saida/` |
 
 ---
 
@@ -97,7 +98,7 @@ Todas as operações pesadas de vídeo entram na **fila sequencial** (`filaTraba
 |---|---|---|---|
 | `POST` | `/api/aovivo/iniciar` | `{ "url": "https://...", ... }` | Inicia gravação contínua (buffer 20 min) e monitoramento de chat/áudio |
 | `POST` | `/api/aovivo/parar` | — | Encerra a gravação da live |
-| `POST` | `/api/aovivo/clipar` | `{ "duracao": 30 }` | Gera um clipe imediato dos últimos `N` segundos |
+| `POST` | `/api/aovivo/clipar` | `{ "segundos": 30 }` | Gera um clipe imediato dos últimos `N` segundos |
 | `POST` | `/api/aovivo/ajustar` | `{ ... }` | Atualiza configurações de enquadramento/detecção em tempo real |
 | `GET` | `/api/aovivo/estado` | — | Estado atual da live conectada e clipes gerados |
 | `GET` | `/api/aovivo/quadro` | — | Frame atual da transmissão ao vivo |
@@ -111,7 +112,7 @@ Todas as operações pesadas de vídeo entram na **fila sequencial** (`filaTraba
 | Método | Rota | Corpo / Query | Descrição |
 |---|---|---|---|
 | `GET` | `/api/croma/favoritos` | — | Lista gradientes favoritos (até 10), thumbs favoritas (até 10) e `finalPadrao` |
-| `POST` | `/api/croma/favoritos` | `{ "tipo": "thumb" \| "gradiente", "nome": "...", "imagemBase64": "data:image/png;base64,...", "dados": {...} }` | Salva novo favorito |
+| `POST` | `/api/croma/favoritos` | `{ "tipo": "thumb" \| "gradiente", "nome": "...", "pngBase64": "data:image/png;base64,...", "dados": {...} }` | Salva novo favorito |
 | `DELETE` | `/api/croma/favoritos` | `?tipo=thumb&id=<id>` | Remove um favorito |
 | `POST` | `/api/croma/final-padrao` | `{ "thumbId": "<id>" \| null, "duracao": 2.5, "audio": "<caminho>" \| null }` | Define (ou desativa com `thumbId: null`) a tela final padrão em todos os novos cortes |
 | `GET` | `/api/croma/favoritos/img/:arquivo.png` | — | Retorna a imagem PNG de uma thumb favorita |

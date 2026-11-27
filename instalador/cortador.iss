@@ -3,7 +3,7 @@
 ; "montagem" com tudo que o programa precisa e chama o compilador.
 
 #define Nome "Mega Cortes HD"
-#define Versao "2.3.1"
+#define Versao "2.4.0"
 #define Marca "PixelDust64"
 #define Exe "CortadorAutomatico.exe"
 #ifndef MONTAGEM

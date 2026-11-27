@@ -338,3 +338,25 @@ test('mega/legenda: zero sobreposicao em palavras ultra-curtas e posicao fixa tr
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
 });
+
+test('mega/v2.4.0: melhorias tecnicas (Whisper local-first, wav atomico, skip_frame nokey, fallback Motor Local, YouTube cookies e CI release)', () => {
+  const pySrc = fs.readFileSync(path.join(RAIZ, 'py', 'transcrever.py'), 'utf8');
+  assert.match(pySrc, /local_files_only=True/, 'transcrever.py deve carregar do disco primeiro antes do HuggingFace');
+
+  const mediaSrc = fs.readFileSync(path.join(RAIZ, 'src', 'media.js'), 'utf8');
+  assert.match(mediaSrc, /\.parcial/, 'extrairAudio deve gravar em arquivo provisorio antes de renomear');
+
+  const pipeSrc = fs.readFileSync(path.join(RAIZ, 'src', 'pipeline.js'), 'utf8');
+  assert.match(pipeSrc, /function wavUtilizavel\(/, 'pipeline deve validar cabecalho RIFF/WAVE antes de reusar .wav');
+  assert.match(pipeSrc, /Fiz os cortes com o Motor Local/, 'pipeline deve fazer fallback para Motor Local se Diretor IA falhar');
+
+  const momSrc = fs.readFileSync(path.join(RAIZ, 'src', 'momentos.js'), 'utf8');
+  assert.match(momSrc, /'-skip_frame',\s*'nokey'/, 'momentos.js deve usar -skip_frame nokey em videos longos');
+  assert.match(momSrc, /split\(\/\\r\\n\|\\r\|\\n\/\)/, 'momentos.js deve processar progresso FFmpeg separado por \\r');
+
+  const liveSrc = fs.readFileSync(path.join(RAIZ, 'src', 'aovivo.js'), 'utf8');
+  assert.match(liveSrc, /cookie\|browser\|firefox\|chrome\|edge/, 'aovivo.js deve pular navegador sem cookies legiveis');
+
+  const wfSrc = fs.readFileSync(path.join(RAIZ, '.github', 'workflows', 'instalador.yml'), 'utf8');
+  assert.match(wfSrc, /Instalar-Mega-Cortes-HD\.exe/, 'workflow de release deve publicar Instalar-Mega-Cortes-HD.exe');
+});

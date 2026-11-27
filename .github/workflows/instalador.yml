@@ -53,8 +53,8 @@ jobs:
       - name: Guardar o instalador
         uses: actions/upload-artifact@v4
         with:
-          name: Instalar-Cortador-Automatico
-          path: instalador/dist/Instalar-Cortador-Automatico.exe
+          name: Instalar-Mega-Cortes-HD
+          path: instalador/dist/Instalar-Mega-Cortes-HD.exe
           retention-days: 14
 
       - name: Publicar no Releases
@@ -64,10 +64,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $tag = '${{ github.ref_name }}'
-          $exe = 'instalador/dist/Instalar-Cortador-Automatico.exe'
+          $exe = 'instalador/dist/Instalar-Mega-Cortes-HD.exe'
           gh release view $tag 2>$null
           if ($LASTEXITCODE -eq 0) {
             gh release upload $tag $exe --clobber
           } else {
-            gh release create $tag $exe --title "Cortador Automatico $tag" --notes "Baixe o Instalar-Cortador-Automatico.exe e instale. Tudo vem dentro: nao precisa instalar mais nada."
+            gh release create $tag $exe --title "Mega Cortes HD $tag" --notes "Baixe o Instalar-Mega-Cortes-HD.exe e instale. Tudo vem dentro: nao precisa instalar mais nada."
           }

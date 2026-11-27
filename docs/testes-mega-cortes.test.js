@@ -351,6 +351,7 @@ test('mega/v2.4.0: melhorias tecnicas (Whisper local-first, wav atomico, skip_fr
   const pipeSrc = fs.readFileSync(path.join(RAIZ, 'src', 'pipeline.js'), 'utf8');
   assert.match(pipeSrc, /function wavUtilizavel\(/, 'pipeline deve validar cabecalho RIFF/WAVE antes de reusar .wav');
   assert.match(pipeSrc, /Fiz os cortes com o Motor Local/, 'pipeline deve fazer fallback para Motor Local se Diretor IA falhar');
+  assert.match(pipeSrc, /async function substituirArquivoSeguro\(/, 'renderizarClipe deve gravar em temporario e substituir sem trava no Windows');
 
   const momSrc = fs.readFileSync(path.join(RAIZ, 'src', 'momentos.js'), 'utf8');
   assert.match(momSrc, /'-skip_frame',\s*'nokey'/, 'momentos.js deve usar -skip_frame nokey em videos longos');

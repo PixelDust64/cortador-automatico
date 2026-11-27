@@ -4764,6 +4764,12 @@ body[data-modo="splitter"] .fila-aba { display: none !important; }
     };
 
     edVideo.pause();
+    // Libera qualquer player da grade segurando o .mp4 antigo pra evitar trava de arquivo no Windows
+    document.querySelectorAll('video').forEach((v) => {
+      if (v !== edVideo && v.src && v.src.includes(encodeURIComponent(c.arquivo))) {
+        try { v.pause(); v.removeAttribute('src'); v.load(); } catch (_) {}
+      }
+    });
     ed.rodando = true;
     pintarEditor();
     statusEditor('Preparando...', '');

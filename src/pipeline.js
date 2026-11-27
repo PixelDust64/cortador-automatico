@@ -725,6 +725,51 @@ function explicarPoucos(sairam, pedidos, d, opcoes) {
 // ---------------------------------------------------------------- um clipe
 
 /**
+ * Substitui destinoFinal pelo arquivo temporario recem-renderizado sem quebrar
+ * por trava de arquivo no Windows (quando o player do navegador ainda segura o .mp4).
+ * Tenta renomear com breves retentativas; se continuar travado, grava com sufixo _ed
+ * e devolve o caminho final realmente salvo.
+ */
+async function substituirArquivoSeguro(origemTmp, destinoFinal) {
+  for (let tentativa = 0; tentativa < 6; tentativa++) {
+    try {
+      fs.renameSync(origemTmp, destinoFinal);
+      return destinoFinal;
+    } catch (e) {
+      if (e && e.code === 'EXDEV') {
+        try {
+          fs.copyFileSync(origemTmp, destinoFinal);
+          try { fs.unlinkSync(origemTmp); } catch (_) {}
+          return destinoFinal;
+        } catch (e2) {
+          if (tentativa < 5 && ['EPERM', 'EBUSY', 'EACCES'].includes(e2.code)) {
+            await new Promise((r) => setTimeout(r, 180));
+            continue;
+          }
+          break;
+        }
+      }
+      if (tentativa < 5 && e && ['EPERM', 'EBUSY', 'EACCES'].includes(e.code)) {
+        await new Promise((r) => setTimeout(r, 180));
+        continue;
+      }
+      break;
+    }
+  }
+  const dir = path.dirname(destinoFinal);
+  const ext = path.extname(destinoFinal) || '.mp4';
+  const baseLimpa = path.basename(destinoFinal, ext).replace(/_ed\d+$/, '');
+  const alternativo = path.join(dir, `${baseLimpa}_ed${Date.now().toString(36).slice(-4)}${ext}`);
+  try {
+    fs.renameSync(origemTmp, alternativo);
+  } catch (_) {
+    fs.copyFileSync(origemTmp, alternativo);
+    try { fs.unlinkSync(origemTmp); } catch (_) {}
+  }
+  return alternativo;
+}
+
+/**
  * Gera UM clipe: confere o enquadramento, monta a legenda, corta e faz a
  * miniatura. Vive separado do laco principal porque o "refazer" usa exatamente
  * o mesmo caminho - so muda o corte que entra.
@@ -738,7 +783,9 @@ async function renderizarClipe(ctx, c) {
   const avisar = ctx.avisar || (() => { });
   const aoProgredir = ctx.aoProgredir || (() => { });
   const rotulo = ctx.rotulo || 'clipe';
-  const mp4 = path.join(ctx.pastaSaida, ctx.base + '.mp4');
+  const mp4Destino = path.join(ctx.pastaSaida, ctx.base + '.mp4');
+  fs.mkdirSync(pastas.trabalho(), { recursive: true });
+  const mp4Tmp = path.join(pastas.trabalho(), 'clipe-tmp-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6) + '.mp4');
 
   // O layout do video muda ao longo da gravacao: as vezes e webcam + gameplay,
   // as vezes o streamer poe a cara em tela cheia. Aplicar o split nesse segundo
@@ -795,91 +842,100 @@ async function renderizarClipe(ctx, c) {
     });
   }
 
-  await media.cortarClipe({
-    video: ctx.video,
-    inicio: c.inicio,
-    duracao: c.duracao,
-    destino: mp4,
-    formato: formatoDoClipe,
-    recorte: opcoes.recorte,
-    qualidade: opcoes.qualidade || 'maxima',
-    arquivoAss,
-    // chamariz: 3s da carta na frente do corte (vem no proprio corte, porque
-    // o instante da revelacao muda de clipe pra clipe)
-    teaser: c.teaser || null,
-    atrasoAudio: c.atrasoAudio || 0,
-    fontsdir: arquivoAss ? fontsdirRelativo() : null,
-    pastaTrabalho: pastas.trabalho(),
-    aoProgredir: (frac) => aoProgredir(frac,
-      'Gerando o ' + rotulo + '... ' + Math.round(frac * 100) + '%'),
-  });
+  let mp4;
+  try {
+    await media.cortarClipe({
+      video: ctx.video,
+      inicio: c.inicio,
+      duracao: c.duracao,
+      destino: mp4Tmp,
+      formato: formatoDoClipe,
+      recorte: opcoes.recorte,
+      qualidade: opcoes.qualidade || 'maxima',
+      arquivoAss,
+      // chamariz: 3s da carta na frente do corte (vem no proprio corte, porque
+      // o instante da revelacao muda de clipe pra clipe)
+      teaser: c.teaser || null,
+      atrasoAudio: c.atrasoAudio || 0,
+      fontsdir: arquivoAss ? fontsdirRelativo() : null,
+      pastaTrabalho: pastas.trabalho(),
+      aoProgredir: (frac) => aoProgredir(frac,
+        'Gerando o ' + rotulo + '... ' + Math.round(frac * 100) + '%'),
+    });
 
-  // Se o usuario adicionou ate 2 vinhetas (ou marcou um finalPadrao global no Croma Studio),
-  // insere elas no clipe ja cortado mantendo audio e video 100% sincronizados.
-  // Se nao houver nenhuma marcada, segue 100% o fluxo original sem tocar no arquivo.
-  const pastaFav = path.join(pastas.dados(), 'croma-favoritos');
-  let favIdx = null;
-  try { favIdx = JSON.parse(fs.readFileSync(path.join(pastaFav, 'index.json'), 'utf8')); } catch (_) {}
-  let vinhetas;
-  if (Array.isArray(c.vinhetas)) {
-    vinhetas = c.vinhetas.filter((v) => v && v.thumbId).slice(0, 2);
-  } else if (favIdx && favIdx.finalPadrao && favIdx.finalPadrao.thumbId) {
-    vinhetas = [{
-      thumbId: favIdx.finalPadrao.thumbId,
-      onde: (c.duracao || 0) + (c.teaser ? (c.teaser.duracao || 0) : 0),
-      duracao: favIdx.finalPadrao.duracao || 2.5,
-      audio: favIdx.finalPadrao.audio || null,
-      texto: '',
-    }];
-  } else {
-    vinhetas = [];
-  }
-  if (vinhetas.length) {
-    const favs = favIdx && Array.isArray(favIdx.thumbs) ? favIdx.thumbs : [];
-    const assVinhetas = [];
-    const preparadas = [];
-    for (let i = 0; i < vinhetas.length; i++) {
-      const v = vinhetas[i];
-      const fav = favs.find((f) => f.id === v.thumbId);
-      const img = fav && fav.arquivoPng ? path.join(pastaFav, path.basename(fav.arquivoPng)) : null;
-      if (!img || !fs.existsSync(img)) continue;
-      let vAss = null;
-      const textoLimpo = String(v.texto || '').trim();
-      if (textoLimpo) {
-        vAss = 'vin-' + ctx.assinatura + '-' + i + '-' + Date.now() + '.ass';
-        assVinhetas.push(path.join(pastas.trabalho(), vAss));
-        legenda.gerarAss([], 0, path.join(pastas.trabalho(), vAss), {
-          fonte: v.fonte || opcoes.fonteLegenda || undefined,
-          incluirPalavras: false,
-          textoFixo: { texto: textoLimpo, posicao: 'meio', duracao: 'todo', cor: 'branco' },
+    // Se o usuario adicionou ate 2 vinhetas (ou marcou um finalPadrao global no Croma Studio),
+    // insere elas no clipe ja cortado mantendo audio e video 100% sincronizados.
+    // Se nao houver nenhuma marcada, segue 100% o fluxo original sem tocar no arquivo.
+    const pastaFav = path.join(pastas.dados(), 'croma-favoritos');
+    let favIdx = null;
+    try { favIdx = JSON.parse(fs.readFileSync(path.join(pastaFav, 'index.json'), 'utf8')); } catch (_) {}
+    let vinhetas;
+    if (Array.isArray(c.vinhetas)) {
+      vinhetas = c.vinhetas.filter((v) => v && v.thumbId).slice(0, 2);
+    } else if (favIdx && favIdx.finalPadrao && favIdx.finalPadrao.thumbId) {
+      vinhetas = [{
+        thumbId: favIdx.finalPadrao.thumbId,
+        onde: (c.duracao || 0) + (c.teaser ? (c.teaser.duracao || 0) : 0),
+        duracao: favIdx.finalPadrao.duracao || 2.5,
+        audio: favIdx.finalPadrao.audio || null,
+        texto: '',
+      }];
+    } else {
+      vinhetas = [];
+    }
+    if (vinhetas.length) {
+      const favs = favIdx && Array.isArray(favIdx.thumbs) ? favIdx.thumbs : [];
+      const assVinhetas = [];
+      const preparadas = [];
+      for (let i = 0; i < vinhetas.length; i++) {
+        const v = vinhetas[i];
+        const fav = favs.find((f) => f.id === v.thumbId);
+        const img = fav && fav.arquivoPng ? path.join(pastaFav, path.basename(fav.arquivoPng)) : null;
+        if (!img || !fs.existsSync(img)) continue;
+        let vAss = null;
+        const textoLimpo = String(v.texto || '').trim();
+        if (textoLimpo) {
+          vAss = 'vin-' + ctx.assinatura + '-' + i + '-' + Date.now() + '.ass';
+          assVinhetas.push(path.join(pastas.trabalho(), vAss));
+          legenda.gerarAss([], 0, path.join(pastas.trabalho(), vAss), {
+            fonte: v.fonte || opcoes.fonteLegenda || undefined,
+            incluirPalavras: false,
+            textoFixo: { texto: textoLimpo, posicao: 'meio', duracao: 'todo', cor: 'branco' },
+          });
+        }
+        preparadas.push({
+          imagem: img,
+          onde: Math.max(0, Number(v.onde) || 0),
+          duracao: Math.max(0.5, Math.min(15, Number(v.duracao) || 2)),
+          audio: v.audio && fs.existsSync(v.audio) ? v.audio : null,
+          arquivoAss: vAss,
+          fontsdir: vAss ? fontsdirRelativo() : null,
         });
       }
-      preparadas.push({
-        imagem: img,
-        onde: Math.max(0, Number(v.onde) || 0),
-        duracao: Math.max(0.5, Math.min(15, Number(v.duracao) || 2)),
-        audio: v.audio && fs.existsSync(v.audio) ? v.audio : null,
-        arquivoAss: vAss,
-        fontsdir: vAss ? fontsdirRelativo() : null,
-      });
-    }
-    try {
-      if (preparadas.length) {
-        aoProgredir(0.92, 'Inserindo vinhetas no ' + rotulo + '...');
-        await media.inserirVinhetas(mp4, preparadas, {
-          pastaTrabalho: pastas.trabalho(),
-          qualidade: opcoes.qualidade || 'maxima',
-        });
+      try {
+        if (preparadas.length) {
+          aoProgredir(0.92, 'Inserindo vinhetas no ' + rotulo + '...');
+          await media.inserirVinhetas(mp4Tmp, preparadas, {
+            pastaTrabalho: pastas.trabalho(),
+            qualidade: opcoes.qualidade || 'maxima',
+          });
+        }
+      } finally {
+        for (const a of assVinhetas) { try { fs.unlinkSync(a); } catch (_) {} }
       }
-    } finally {
-      for (const a of assVinhetas) { try { fs.unlinkSync(a); } catch (_) {} }
     }
+
+    mp4 = await substituirArquivoSeguro(mp4Tmp, mp4Destino);
+  } catch (e) {
+    try { fs.unlinkSync(mp4Tmp); } catch (_) {}
+    throw e;
   }
 
   // legenda solta, pra editar depois
-  legenda.gerarSrt(c.palavras || [], c.inicio, path.join(ctx.pastaSaida, ctx.base + '.srt'));
+  const baseFinal = path.basename(mp4, '.mp4');
+  legenda.gerarSrt(c.palavras || [], c.inicio, path.join(ctx.pastaSaida, baseFinal + '.srt'));
 
-  const miniatura = path.join(ctx.pastaSaida, ctx.base + '.jpg');
+  const miniatura = path.join(ctx.pastaSaida, baseFinal + '.jpg');
   await media.gerarMiniatura(ctx.video, c.inicio + c.duracao / 2, miniatura, ctx.vertical);
 
   if (arquivoAss) { try { fs.unlinkSync(path.join(pastas.trabalho(), arquivoAss)); } catch (_) { } }
@@ -887,7 +943,7 @@ async function renderizarClipe(ctx, c) {
   return Object.assign(semPalavras(c), {
     arquivo: mp4,
     nomeArquivo: path.basename(mp4),
-    base: ctx.base,
+    base: baseFinal,
     formatoUsado: formatoDoClipe,
     observacao,
     miniatura: fs.existsSync(miniatura) ? miniatura : null,

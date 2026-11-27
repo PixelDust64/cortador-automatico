@@ -34,6 +34,8 @@ Guia de uso detalhado: [LEIA-ME.txt](LEIA-ME.txt) · Documentação da API HTTP 
 - **Splitter Studio integrado (aba própria na barra superior):** estúdio completo de manipulação de áudio com **8 ferramentas**, reaproveitamento automático da pasta `baixados/` (sem baixar o mesmo link duas vezes) e instalação adaptativa de IA (GPU CUDA ou CPU).
 - **Fila lateral ao vivo:** acompanhe o progresso de múltiplos vídeos, reordene trabalhos pendentes ou cancele cortes em andamento sem sair da tela principal.
 - **Diretor IA opcional (BeaverNet gratuito + Gemini / OpenAI / Claude):** além do **Motor Local** 100% offline e ilimitado, você pode ativar o Diretor IA nos Ajustes para analisar a transcrição inteira e gerar títulos e ganchos ainda mais precisos.
+- **Arquitetura modular:** as ferramentas adicionais além dos cortes (**Croma Studio** e **Splitter Studio**) são mantidas de forma **modular e independente**, permitindo que sejam alteradas, evoluídas ou usadas separadamente com baixo acoplamento em relação à aplicação principal.
+- **GitFlow orientado a testes (desenvolvimento auxiliado pelo Antigravity):** o projeto segue **GitFlow orientado a testes**, com desenvolvimento auxiliado pelo **Antigravity**. Além da `main`, o repositório possui outras branches de trabalho e compatibilidade, mas **para usuários finais recomenda-se utilizar as Releases oficiais, hotfixes e a branch `main`**.
 
 ## Diretor IA Gratuito com BeaverNet (BeaverAI)
 

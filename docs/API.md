@@ -43,6 +43,7 @@ node src/server.js
 | `POST` | `/api/armazenamento` | Muda a pasta de dados: `{ "pasta": "E:\\Cortes" }` (ou `null` para padrão) |
 | `GET` | `/api/sessoes` | Lista os perfis/sessões de corte disponíveis |
 | `GET` | `/api/saida` | Retorna o caminho da pasta de saída (`saida/`) |
+| `GET` | `/api/fontes-sistema` | Lista as fontes instaladas no sistema operacional para legendas, vinhetas e Croma Studio |
 
 ---
 
@@ -144,7 +145,18 @@ Todos os endpoints do **Splitter Studio** ficam sob `/api/splitter/*` e reaprove
 
 ---
 
-## 10. Exemplos de Automação Headless
+## 10. Diretor IA (BeaverNet gratuito + Gemini / OpenAI / Claude)
+
+| Método | Rota | Corpo / Query | Descrição |
+|---|---|---|---|
+| `GET` | `/api/ia/config` | — | Retorna o provedor ativo, modelo configurado, status de chave e lista padrão do BeaverNet (`Qwen3.8-Flash-Next` como #1) |
+| `POST` | `/api/ia/config` | `{ "provedor": "beavernet" \| "gemini" \| "openai" \| "anthropic", "chave": "...", "modelo": "...", "baseUrl": "..." }` | Salva configuração do Diretor IA (no BeaverNet, valida a chave em `/v1/users/me` quando informada) |
+| `GET` | `/api/ia/beavernet-modelos` | — | Consulta `/v1/models` do BeaverNet e retorna modelos online estáveis com limites reais de contexto e saída |
+| `POST` | `/api/ia/testar` | — | Executa teste rápido de conexão com o provedor/modelo configurado |
+
+---
+
+## 11. Exemplos de Automação Headless
 
 ### Exemplo A — Separar voz e baixar o instrumental em MP3 (PowerShell / curl)
 

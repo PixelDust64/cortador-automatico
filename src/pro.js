@@ -401,6 +401,14 @@ async function testarConexao() {
 
 // ---------------------------------------------------------------- preparacao de transcricao e parsing JSON
 
+// Regras de fatiamento para videos longos (ex.: live gravada de 5h) no Diretor IA:
+// acima de 1 hora (3600s), fatia em blocos sequenciais de 30 min (1800s) com 60s de
+// sobreposicao na fronteira para nunca estourar a janela de contexto do modelo nem
+// cortar uma historia no meio.
+const LIMITE_FATIA_DURACAO = 3600;
+const TAMANHO_FATIA_SEG = 1800;
+const SOBREPOSICAO_FATIA_SEG = 60;
+
 function compactarTranscricao(transcricao, trecho, maxChars) {
   const palavras = achatarPalavras(transcricao);
   const frases = montarFrases(palavras);
@@ -417,6 +425,95 @@ function compactarTranscricao(transcricao, trecho, maxChars) {
     total += l.length + 1;
   }
   return { linhas: linhas.join('\n'), palavras };
+}
+
+/**
+ * Quebra uma lista de frases em blocos que nunca ultrapassam maxChars,
+ * preservando timestamps originais do video.
+ */
+function quebrarPorCaracteres(frases, maxChars) {
+  const blocos = [];
+  let atual = [];
+  let total = 0;
+  let ini = null;
+  let fim = 0;
+
+  for (const f of frases) {
+    const l = `[${f.inicio.toFixed(1)}-${f.fim.toFixed(1)}] ${f.texto}`;
+    if (atual.length && total + l.length + 1 > maxChars) {
+      blocos.push({ inicio: ini, fim, linhas: atual.join('\n') });
+      atual = [];
+      total = 0;
+      ini = null;
+    }
+    if (ini === null) ini = f.inicio;
+    fim = Math.max(fim, f.fim);
+    atual.push(l);
+    total += l.length + 1;
+  }
+  if (atual.length) blocos.push({ inicio: ini, fim, linhas: atual.join('\n') });
+  return blocos;
+}
+
+/**
+ * Prepara fatias sequenciais para o Diretor IA:
+ * - Videos <= 1h que cabem em maxChars: 1 fatia unica (sem custo extra).
+ * - Videos > 1h (ex.: live gravada de 5h): fatias de 30 min com 60s de sobreposicao.
+ * - Qualquer fatia mais densa que maxChars e subdividida automaticamente.
+ */
+function fatiarTranscricao(transcricao, trecho, duracao, maxChars) {
+  const palavras = achatarPalavras(transcricao);
+  const frases = montarFrases(palavras);
+  const filtradas = trecho
+    ? frases.filter((f) => f.fim >= trecho.inicio && f.inicio <= trecho.fim)
+    : frases;
+
+  if (!filtradas.length) return { fatias: [], palavras };
+
+  const iniTotal = trecho ? Number(trecho.inicio) || 0 : 0;
+  const fimTotal = trecho
+    ? Number(trecho.fim) || filtradas[filtradas.length - 1].fim
+    : Math.max(Number(duracao) || 0, filtradas[filtradas.length - 1].fim);
+  const durEfetiva = Math.max(0, fimTotal - iniTotal);
+
+  if (durEfetiva <= LIMITE_FATIA_DURACAO) {
+    const blocos = quebrarPorCaracteres(filtradas, maxChars);
+    return { fatias: blocos, palavras };
+  }
+
+  const passo = Math.max(300, TAMANHO_FATIA_SEG - SOBREPOSICAO_FATIA_SEG);
+  const fatias = [];
+  for (let t = iniTotal; t < fimTotal; t += passo) {
+    const janelaFim = Math.min(fimTotal, t + TAMANHO_FATIA_SEG);
+    const daJanela = filtradas.filter((f) => f.fim >= t && f.inicio <= janelaFim);
+    if (daJanela.length) {
+      const subBlocos = quebrarPorCaracteres(daJanela, maxChars);
+      for (const b of subBlocos) {
+        fatias.push({ inicio: b.inicio, fim: b.fim, linhas: b.linhas });
+      }
+    }
+    if (janelaFim >= fimTotal) break;
+  }
+  return { fatias, palavras };
+}
+
+/** Remove cortes duplicados/sobrepostos (ex.: na emenda de 60s entre fatias), mantendo o de maior nota. */
+function deduplicarCortesIa(candidatos, quantidade) {
+  const ordenados = candidatos.slice().sort((a, b) => (b.nota - a.nota) || (a.inicio - b.inicio));
+  const escolhidos = [];
+  for (const c of ordenados) {
+    const duplica = escolhidos.some((e) => {
+      const inter = Math.min(c.fim, e.fim) - Math.max(c.inicio, e.inicio);
+      if (inter <= 0) return false;
+      const menor = Math.max(1, Math.min(c.duracao, e.duracao));
+      return (inter / menor) >= 0.4;
+    });
+    if (!duplica) {
+      escolhidos.push(c);
+      if (escolhidos.length >= quantidade) break;
+    }
+  }
+  return escolhidos;
 }
 
 function extrairJson(texto) {
@@ -511,6 +608,8 @@ function extrairJson(texto) {
 
 /**
  * Analisa a transcricao inteira com IA na nuvem e devolve cortes com titulo, gancho e hashtags.
+ * Para videos longos (> 1h, ex.: live gravada de 5h), processa em fila sequencial de fatias
+ * de 30 minutos (com 60s de sobreposicao) e consolida os melhores cortes sem estourar o contexto.
  */
 async function analisarComIa(transcricao, picos, duracao, opcoes = {}) {
   const cfg = provedorSalvo();
@@ -526,8 +625,9 @@ async function analisarComIa(transcricao, picos, duracao, opcoes = {}) {
     const promptTok = alvo ? alvo.maxPromptAnon : 8192;
     limiteChars = Math.max(18000, Math.min(60000, Math.round(promptTok * 2.6)));
   }
-  const { linhas, palavras } = compactarTranscricao(transcricao, opcoes.trecho, limiteChars);
-  if (!linhas) return { cortes: [], usouTrial: false };
+
+  const { fatias, palavras } = fatiarTranscricao(transcricao, opcoes.trecho, duracao, limiteChars);
+  if (!fatias.length) return { cortes: [], usouTrial: false };
 
   const systemPrompt = [
     'Você é um diretor de cortes virais para TikTok, YouTube Shorts e Instagram Reels em português do Brasil.',
@@ -538,54 +638,86 @@ async function analisarComIa(transcricao, picos, duracao, opcoes = {}) {
     '{"cortes":[{"inicio":12.5,"fim":52.0,"nota":92,"titulo":"Título curto e chamativo","gancho":"FRASE CURTA DE 4S","hashtags":["tag1","tag2","tag3"],"motivo":"Por que este trecho viraliza"}]}',
   ].join('\n');
 
-  const userPrompt = [
-    `Contexto: ${opcoes.contexto || 'Vídeo'} ${opcoes.canal ? '(' + opcoes.canal + ')' : ''}`,
-    `Duração total: ${Math.round(duracao || 0)}s | Quantidade desejada: ${quantidade} cortes | Duração de cada corte: entre ${minDur}s e ${maxDur}s.`,
-    opcoes.descricao ? `Pedido específico do usuário: ${opcoes.descricao}` : '',
-    'Transcrição:',
-    linhas,
-  ].filter(Boolean).join('\n');
+  const totalFatias = fatias.length;
+  const qtdPorFatia = totalFatias === 1
+    ? quantidade
+    : Math.max(2, Math.min(5, Math.ceil((quantidade * 1.6) / totalFatias) + 1));
 
-  const maxTokensPedido = Math.min(8192, Math.max(2500, quantidade * 280));
-  const res = await chamarIa(systemPrompt, userPrompt, { maxTokens: maxTokensPedido, timeoutMs: 90000, validarJson: true });
-  const parsed = extrairJson(res.texto);
-  const brutos = Array.isArray(parsed && parsed.cortes) ? parsed.cortes : [];
+  const candidatos = [];
+  let ultimoRes = null;
+  const errosFatias = [];
 
-  const cortes = brutos
-    .map((c) => {
-      const inicio = Math.max(0, Number(c.inicio) || 0);
-      let fim = Math.min(duracao || 99999, Number(c.fim) || (inicio + minDur));
-      if (fim - inicio < 8) fim = Math.min(duracao || 99999, inicio + minDur);
-      const dur = Math.round((fim - inicio) * 10) / 10;
-      const pags = palavras.filter((p) => p.inicio >= inicio - 0.3 && p.fim <= fim + 0.3);
-      const notaVal = Math.max(50, Math.min(99, Math.round(Number(c.nota) || 85)));
-      const motivoTxt = String(c.motivo || 'Selecionado pelo Diretor IA (' + res.modeloUsado + ')').trim();
-      return {
-        inicio,
-        fim,
-        duracao: dur,
-        inicioMmss: mmss(inicio),
-        fimMmss: mmss(fim),
-        nota: notaVal,
-        rotulo: rotulo(notaVal),
-        titulo: String(c.titulo || '').trim().slice(0, 90),
-        gancho: String(c.gancho || '').trim().slice(0, 60),
-        hashtags: Array.isArray(c.hashtags) ? c.hashtags.map((h) => String(h).replace(/^#/, '').trim()).filter(Boolean).slice(0, 5) : [],
-        motivo: motivoTxt,
-        motivos: [{ fator: motivoTxt, pontos: notaVal }],
-        palavras: pags,
-        texto: pags.map((p) => p.texto || p.palavra || '').join(' ').trim(),
-        feitoComIa: true,
-        modeloIa: res.modeloUsado,
-      };
-    })
-    .filter((c) => c.duracao >= 5)
-    .slice(0, quantidade);
+  for (let i = 0; i < totalFatias; i++) {
+    const fatia = fatias[i];
+    if (typeof opcoes.aoProgredir === 'function') {
+      opcoes.aoProgredir(i + 1, totalFatias, fatia);
+    }
+
+    const cabecalhoFatia = totalFatias > 1
+      ? `Bloco ${i + 1}/${totalFatias} da live gravada (${mmss(fatia.inicio)} até ${mmss(fatia.fim)}) | Duração total: ${Math.round(duracao || 0)}s`
+      : `Duração total: ${Math.round(duracao || 0)}s`;
+
+    const userPrompt = [
+      `Contexto: ${opcoes.contexto || 'Vídeo'} ${opcoes.canal ? '(' + opcoes.canal + ')' : ''}`,
+      `${cabecalhoFatia} | Quantidade desejada neste bloco: até ${qtdPorFatia} cortes | Duração de cada corte: entre ${minDur}s e ${maxDur}s.`,
+      opcoes.descricao ? `Pedido específico do usuário: ${opcoes.descricao}` : '',
+      'Transcrição:',
+      fatia.linhas,
+    ].filter(Boolean).join('\n');
+
+    const maxTokensPedido = Math.min(8192, Math.max(2000, qtdPorFatia * 280));
+    try {
+      const res = await chamarIa(systemPrompt, userPrompt, { maxTokens: maxTokensPedido, timeoutMs: 90000, validarJson: true });
+      ultimoRes = res;
+      const parsed = extrairJson(res.texto);
+      const brutos = Array.isArray(parsed && parsed.cortes) ? parsed.cortes : [];
+
+      for (const c of brutos) {
+        const inicio = Math.max(0, Number(c.inicio) || 0);
+        let fim = Math.min(duracao || 99999, Number(c.fim) || (inicio + minDur));
+        if (fim - inicio < 8) fim = Math.min(duracao || 99999, inicio + minDur);
+        const dur = Math.round((fim - inicio) * 10) / 10;
+        if (dur < 5) continue;
+        const pags = palavras.filter((p) => p.inicio >= inicio - 0.3 && p.fim <= fim + 0.3);
+        const notaVal = Math.max(50, Math.min(99, Math.round(Number(c.nota) || 85)));
+        const motivoTxt = String(c.motivo || 'Selecionado pelo Diretor IA (' + res.modeloUsado + ')').trim();
+        candidatos.push({
+          inicio,
+          fim,
+          duracao: dur,
+          inicioMmss: mmss(inicio),
+          fimMmss: mmss(fim),
+          nota: notaVal,
+          rotulo: rotulo(notaVal),
+          titulo: String(c.titulo || '').trim().slice(0, 90),
+          gancho: String(c.gancho || '').trim().slice(0, 60),
+          hashtags: Array.isArray(c.hashtags) ? c.hashtags.map((h) => String(h).replace(/^#/, '').trim()).filter(Boolean).slice(0, 5) : [],
+          motivo: motivoTxt,
+          motivos: [{ fator: motivoTxt, pontos: notaVal }],
+          palavras: pags,
+          texto: pags.map((p) => p.texto || p.palavra || '').join(' ').trim(),
+          feitoComIa: true,
+          modeloIa: res.modeloUsado,
+        });
+      }
+    } catch (e) {
+      errosFatias.push(`bloco ${i + 1}/${totalFatias}: ${e.message}`);
+      if (totalFatias === 1) throw e;
+    }
+  }
+
+  if (!candidatos.length) {
+    if (errosFatias.length) throw new Error(errosFatias[0]);
+    return { cortes: [], usouTrial: false, fatiasProcessadas: totalFatias };
+  }
+
+  const cortes = deduplicarCortesIa(candidatos, quantidade);
 
   return {
     cortes,
-    provedor: res.provedor,
-    modeloUsado: res.modeloUsado,
+    provedor: ultimoRes ? ultimoRes.provedor : cfg.provedor,
+    modeloUsado: ultimoRes ? ultimoRes.modeloUsado : (cfg.modelo || BEAVERNET_MODELOS_PADRAO[0]),
+    fatiasProcessadas: totalFatias,
     usouTrial: false,
     trialsRestantes: 999,
   };
@@ -631,6 +763,9 @@ module.exports = {
   PROVEDORES,
   BEAVERNET_BASE_URL,
   BEAVERNET_MODELOS_PADRAO,
+  LIMITE_FATIA_DURACAO,
+  TAMANHO_FATIA_SEG,
+  SOBREPOSICAO_FATIA_SEG,
   obterEstado,
   analisarComIa,
   refinarClipeAoVivo,
@@ -640,4 +775,6 @@ module.exports = {
   validarChaveBeaverNet,
   testarConexao,
   extrairJson,
+  fatiarTranscricao,
+  deduplicarCortesIa,
 };

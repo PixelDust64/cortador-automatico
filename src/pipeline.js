@@ -402,6 +402,11 @@ async function processar(opcoes, avisar) {
         contexto: ctxVid.texto,
         canal: ctxVid.canal,
         trecho: trecho,
+        aoProgredir: (indice, total, fatia) => {
+          if (total <= 1) return;
+          const pct = 64 + Math.round(((indice - 1) / total) * 5);
+          emitir(pct, 'analise', `Diretor IA analisando bloco ${indice}/${total} (${mmss(fatia.inicio)}–${mmss(fatia.fim)})...`);
+        },
       });
       cortes = resIa.cortes;
       feitoComIa = true;

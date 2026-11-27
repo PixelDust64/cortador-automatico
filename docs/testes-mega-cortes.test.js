@@ -367,3 +367,40 @@ test('mega/v2.4.0: melhorias tecnicas (Whisper local-first, wav atomico, skip_fr
   assert.match(srvSrc, /podarTrabalhosAntigos/, 'server.js deve podar trabalhos concluidos para evitar crescimento de memoria');
   assert.match(srvSrc, /writeHead\(416/, 'server.js deve responder 416 para Range invalido');
 });
+
+test('mega/v2.4.0-fatiamento: live gravada de 5h fatia em blocos sequenciais de 30 min sem estourar contexto e deduplica fronteiras', () => {
+  const pro = require(path.join(RAIZ, 'src', 'pro'));
+  // Simula 5 horas de live gravada (18.000s) com 1 frase a cada 60s
+  const segmentos = [];
+  for (let t = 0; t < 18000; t += 60) {
+    segmentos.push({
+      inicio: t,
+      fim: t + 10,
+      texto: `Momento da live no minuto ${Math.floor(t / 60)} com fala completa.`,
+      palavras: [
+        { inicio: t, fim: t + 3, texto: 'Momento' },
+        { inicio: t + 3, fim: t + 6, texto: 'minuto' },
+        { inicio: t + 6, fim: t + 10, texto: String(Math.floor(t / 60)) + '.' },
+      ],
+    });
+  }
+  const { fatias } = pro.fatiarTranscricao({ segmentos }, null, 18000, 18000);
+  // 5h em blocos de 30 min (passo 29 min) => 10 a 11 fatias sequenciais
+  assert.ok(fatias.length >= 10 && fatias.length <= 12, 'esperado ~10-11 fatias para 5h, obtido: ' + fatias.length);
+  for (const f of fatias) {
+    assert.ok(f.linhas.length <= 18000, 'nenhuma fatia pode exceder limite de caracteres');
+  }
+  // Garante cobertura do inicio (0s) ate perto do fim (5h)
+  assert.ok(fatias[0].inicio <= 60);
+  assert.ok(fatias[fatias.length - 1].fim >= 17900);
+
+  // Deduplicacao na emenda de 60s entre fatias mantem o corte de maior nota
+  const dedup = pro.deduplicarCortesIa([
+    { inicio: 1750, fim: 1790, duracao: 40, nota: 82, titulo: 'Menor' },
+    { inicio: 1755, fim: 1795, duracao: 40, nota: 95, titulo: 'Maior' },
+    { inicio: 7200, fim: 7245, duracao: 45, nota: 88, titulo: 'Outro bloco' },
+  ], 5);
+  assert.equal(dedup.length, 2);
+  assert.equal(dedup[0].titulo, 'Maior');
+  assert.equal(dedup[1].titulo, 'Outro bloco');
+});

@@ -342,6 +342,8 @@ test('mega/legenda: zero sobreposicao em palavras ultra-curtas e posicao fixa tr
 test('mega/v2.4.0: melhorias tecnicas (Whisper local-first, wav atomico, skip_frame nokey, fallback Motor Local, YouTube cookies e CI release)', () => {
   const pySrc = fs.readFileSync(path.join(RAIZ, 'py', 'transcrever.py'), 'utf8');
   assert.match(pySrc, /local_files_only=True/, 'transcrever.py deve carregar do disco primeiro antes do HuggingFace');
+  assert.match(pySrc, /cublas64_12\.dll/, 'transcrever.py deve validar cublas64_12.dll antes de ativar CUDA');
+  assert.match(pySrc, /CUDA falhou na transcricao/, 'transcrever.py deve ter fallback para CPU se encode() falhar em CUDA');
 
   const mediaSrc = fs.readFileSync(path.join(RAIZ, 'src', 'media.js'), 'utf8');
   assert.match(mediaSrc, /\.parcial/, 'extrairAudio deve gravar em arquivo provisorio antes de renomear');

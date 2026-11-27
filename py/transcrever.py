@@ -60,6 +60,24 @@ def registrar_dlls_cuda():
         os.environ["PATH"] = os.pathsep.join(extras) + os.pathsep + path_atual
 
 
+def verificar_cublas_cuda():
+    """
+    ctranslate2 4.x carrega cublas64_12.dll preguicosamente so no primeiro encode().
+    Sem conferir antes, get_cuda_device_count() e WhisperModel(..., device='cuda')
+    passam em PCs sem CUDA 12 (ex.: so driver NVIDIA ou CUDA 13.x) e quebram na hora
+    de transcrever com RuntimeError: Library cublas64_12.dll is not found.
+    """
+    if sys.platform != "win32":
+        return True
+    import ctypes
+    for dll in ("cublas64_12.dll", "cublasLt64_12.dll"):
+        try:
+            ctypes.WinDLL(dll)
+        except OSError:
+            return False
+    return True
+
+
 def escolher_compute_type_cuda():
     """
     Descobre o melhor tipo numerico pra GPU NVIDIA deste PC.
@@ -67,6 +85,8 @@ def escolher_compute_type_cuda():
     entao cai naturalmente em int8_float32; Turing/Ampere/Ada/Blackwell usam float16.
     """
     registrar_dlls_cuda()
+    if not verificar_cublas_cuda():
+        return None
     import ctranslate2
     if ctranslate2.get_cuda_device_count() <= 0:
         return None
@@ -185,91 +205,104 @@ def main():
         # int8 no CPU: bem mais rapido e cabe folgado na RAM.
         modelo = carregar_modelo("cpu", "int8", cpu_threads=threads)
 
-    avisar("progresso", pct=6, msg="Ouvindo o video inteiro%s..." % (" (GPU)" if usou_cuda else ""))
+    def executar_transcricao(modelo_ativo, em_cuda):
+        avisar("progresso", pct=6, msg="Ouvindo o video inteiro%s..." % (" (GPU)" if em_cuda else ""))
 
-    opcoes = dict(
-        language=(None if args.idioma == "auto" else args.idioma),
-        task="transcribe",
-        beam_size=1,                           # greedy: ~2x mais rapido no CPU e quase a mesma qualidade
-        best_of=1,
-        temperature=0.0,
-        vad_filter=True,                       # corta silencio, acelera e evita alucinacao
-        vad_parameters={"min_silence_duration_ms": 400},
-        word_timestamps=True,                  # precisamos disso pro corte e pra legenda
-        condition_on_previous_text=False,      # evita o modelo repetir frase em loop
-    )
+        opcoes = dict(
+            language=(None if args.idioma == "auto" else args.idioma),
+            task="transcribe",
+            beam_size=1,                           # greedy: ~2x mais rapido no CPU e quase a mesma qualidade
+            best_of=1,
+            temperature=0.0,
+            vad_filter=True,                       # corta silencio, acelera e evita alucinacao
+            vad_parameters={"min_silence_duration_ms": 400},
+            word_timestamps=True,                  # precisamos disso pro corte e pra legenda
+            condition_on_previous_text=False,      # evita o modelo repetir frase em loop
+        )
 
-    # Audio longo (live de 3, 10 horas) vai em pedacos: o faster-whisper
-    # carrega o arquivo inteiro na memoria, e 6h de audio viram 1,5 GB antes
-    # de comecar - numa maquina com pouca RAM livre o processo morre.
-    pedacos = pedacos_do_wav(args.audio, args.duracao) if args.duracao > LIMITE_INTEIRO else None
-    if pedacos is None:
-        # O audio vai ja lido (numeros), e nao o caminho do arquivo: com o
-        # caminho o faster-whisper abre o arquivo pelo PyAV, e o PyAV 19 quebrou
-        # isso ("open() got an unexpected keyword argument 'metadata_errors'").
-        lido = ler_wav(args.audio)
-        entrada = lido if lido is not None else args.audio
-        segmentos_iter, info = modelo.transcribe(entrada, **opcoes)
-        duracao = args.duracao or float(getattr(info, "duration", 0) or 0)
-        idioma = getattr(info, "language", None) or opcoes["language"] or args.idioma
-        fontes = [(0.0, segmentos_iter, float("inf"))]
-    else:
-        duracao = args.duracao
-        # o idioma sai do primeiro pedaco e vale pra live inteira: cada pedaco
-        # descobrindo o seu poderia trocar de lingua no meio
-        primeiro = next(pedacos, None)
-        if primeiro is None:
-            avisar("erro", msg="Nao encontrei fala nenhuma no audio desse video.")
-            sys.exit(3)
-        idioma = opcoes["language"] or descobrir(modelo, primeiro[1])[0] or args.idioma
-        opcoes["language"] = idioma
+        # Audio longo (live de 3, 10 horas) vai em pedacos: o faster-whisper
+        # carrega o arquivo inteiro na memoria, e 6h de audio viram 1,5 GB antes
+        # de comecar - numa maquina com pouca RAM livre o processo morre.
+        pedacos = pedacos_do_wav(args.audio, args.duracao) if args.duracao > LIMITE_INTEIRO else None
+        if pedacos is None:
+            # O audio vai ja lido (numeros), e nao o caminho do arquivo: com o
+            # caminho o faster-whisper abre o arquivo pelo PyAV, e o PyAV 19 quebrou
+            # isso ("open() got an unexpected keyword argument 'metadata_errors'").
+            lido = ler_wav(args.audio)
+            entrada = lido if lido is not None else args.audio
+            segmentos_iter, info = modelo_ativo.transcribe(entrada, **opcoes)
+            duracao_local = args.duracao or float(getattr(info, "duration", 0) or 0)
+            idioma_local = getattr(info, "language", None) or opcoes["language"] or args.idioma
+            fontes = [(0.0, segmentos_iter, float("inf"))]
+        else:
+            duracao_local = args.duracao
+            # o idioma sai do primeiro pedaco e vale pra live inteira: cada pedaco
+            # descobrindo o seu poderia trocar de lingua no meio
+            primeiro = next(pedacos, None)
+            if primeiro is None:
+                avisar("erro", msg="Nao encontrei fala nenhuma no audio desse video.")
+                sys.exit(3)
+            idioma_local = opcoes["language"] or descobrir(modelo_ativo, primeiro[1])[0] or args.idioma
+            opcoes["language"] = idioma_local
 
-        def todos():
-            yield primeiro
-            for p_ in pedacos:
-                yield p_
-        fontes = ((inicio, modelo.transcribe(audio, **opcoes)[0], limite)
-                  for inicio, audio, limite in todos())
+            def todos():
+                yield primeiro
+                for p_ in pedacos:
+                    yield p_
+            fontes = ((inicio, modelo_ativo.transcribe(audio, **opcoes)[0], limite)
+                      for inicio, audio, limite in todos())
 
-    segmentos = []
-    ultimo_aviso = 0.0
-    for deslocamento, segmentos_iter, limite in fontes:
-        # o pedaco comeca uns segundos antes do fim do anterior: o que ja foi
-        # ouvido la fica de fora, pra frase da emenda nao sair repetida
-        ja_ouvido = segmentos[-1]["fim"] - 0.1 if segmentos else -1.0
-        for s in segmentos_iter:
-            if deslocamento + float(s.start) < ja_ouvido:
-                continue
-            # frase que termina colada no fim do pedaco pode ter sido cortada
-            # no meio: o proximo pedaco, que comeca antes, ouve ela inteira
-            if deslocamento + float(s.end) > limite:
-                break
-            palavras = []
-            for w in (s.words or []):
-                texto = (w.word or "").strip()
-                if not texto:
+        segs = []
+        ultimo_aviso = 0.0
+        for deslocamento, segmentos_iter, limite in fontes:
+            # o pedaco comeca uns segundos antes do fim do anterior: o que ja foi
+            # ouvido la fica de fora, pra frase da emenda nao sair repetida
+            ja_ouvido = segs[-1]["fim"] - 0.1 if segs else -1.0
+            for s in segmentos_iter:
+                if deslocamento + float(s.start) < ja_ouvido:
                     continue
-                palavras.append({
-                    "inicio": round(deslocamento + float(w.start), 3),
-                    "fim": round(deslocamento + float(w.end), 3),
-                    "texto": texto,
-                    "conf": round(float(getattr(w, "probability", 0.0) or 0.0), 3),
+                # frase que termina colada no fim do pedaco pode ter sido cortada
+                # no meio: o proximo pedaco, que comeca antes, ouve ela inteira
+                if deslocamento + float(s.end) > limite:
+                    break
+                palavras = []
+                for w in (s.words or []):
+                    texto = (w.word or "").strip()
+                    if not texto:
+                        continue
+                    palavras.append({
+                        "inicio": round(deslocamento + float(w.start), 3),
+                        "fim": round(deslocamento + float(w.end), 3),
+                        "texto": texto,
+                        "conf": round(float(getattr(w, "probability", 0.0) or 0.0), 3),
+                    })
+
+                fim = deslocamento + float(s.end)
+                segs.append({
+                    "inicio": round(deslocamento + float(s.start), 3),
+                    "fim": round(fim, 3),
+                    "texto": (s.text or "").strip(),
+                    "palavras": palavras,
                 })
 
-            fim = deslocamento + float(s.end)
-            segmentos.append({
-                "inicio": round(deslocamento + float(s.start), 3),
-                "fim": round(fim, 3),
-                "texto": (s.text or "").strip(),
-                "palavras": palavras,
-            })
+                # 6% -> 92% conforme caminha na linha do tempo do video
+                if duracao_local > 0 and (fim - ultimo_aviso) > 3:
+                    ultimo_aviso = fim
+                    pct = 6 + min(86.0, (fim / duracao_local) * 86.0)
+                    avisar("progresso", pct=round(pct, 1),
+                           msg="Transcrevendo... %s de %s" % (mmss(fim), mmss(duracao_local)))
+        return segs, duracao_local, idioma_local
 
-            # 6% -> 92% conforme caminha na linha do tempo do video
-            if duracao > 0 and (fim - ultimo_aviso) > 3:
-                ultimo_aviso = fim
-                pct = 6 + min(86.0, (fim / duracao) * 86.0)
-                avisar("progresso", pct=round(pct, 1),
-                       msg="Transcrevendo... %s de %s" % (mmss(fim), mmss(duracao)))
+    try:
+        segmentos, duracao, idioma = executar_transcricao(modelo, usou_cuda)
+    except (RuntimeError, OSError) as e:
+        if not usou_cuda:
+            raise
+        # Falha tardia de CUDA/cuBLAS/cuDNN durante encode(): cai pro CPU sem perder o job
+        avisar("progresso", pct=5, msg="CUDA falhou na transcricao (%s), alternando para o processador..." % str(e)[:120])
+        modelo = carregar_modelo("cpu", "int8", cpu_threads=threads)
+        usou_cuda = False
+        segmentos, duracao, idioma = executar_transcricao(modelo, False)
 
     total_palavras = sum(len(s["palavras"]) for s in segmentos)
     if total_palavras == 0:

@@ -4793,8 +4793,10 @@ body[data-modo="splitter"] .fila-aba { display: none !important; }
     }
     if (r.erro) return acabou(r.erro, 'ruim');
 
+    let ultimoAviso = '';
     ouvir(r.id, {
       progresso: (d) => { if (mesmoClipe()) statusEditor(d.msg, ''); },
+      aviso: (d) => { ultimoAviso = d.msg || ''; if (mesmoClipe() && ultimoAviso) statusEditor(ultimoAviso, ''); },
       'clipe-refeito': (d) => {
         const novo = d.clipe;
         trocarClipe(novo, pasta);
@@ -4813,7 +4815,10 @@ body[data-modo="splitter"] .fila-aba { display: none !important; }
           $('edGancho').value = ed.base.gancho;
           $('edLegendar').checked = ed.base.legendar;
         }
-        acabou('Pronto! O clipe ' + novo.numero + ' foi refeito — já está atualizado na lista e na pasta.', 'ok');
+        const msgAviso = novo.avisoArquivo || ultimoAviso;
+        acabou(msgAviso
+          ? 'Clipe ' + novo.numero + ' refeito! ' + msgAviso
+          : 'Pronto! O clipe ' + novo.numero + ' foi refeito — já está atualizado na lista e na pasta.', 'ok');
       },
       erro: (m) => acabou(m, 'ruim'),
       caiu: () => acabou('Perdi o contato com o programa. Confira se a janela preta ainda está aberta.', 'ruim'),

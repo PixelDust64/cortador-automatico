@@ -730,43 +730,55 @@ function explicarPoucos(sairam, pedidos, d, opcoes) {
  * Tenta renomear com breves retentativas; se continuar travado, grava com sufixo _ed
  * e devolve o caminho final realmente salvo.
  */
-async function substituirArquivoSeguro(origemTmp, destinoFinal) {
+async function substituirArquivoSeguro(origemTmp, destinoFinal, avisar) {
+  let travado = false;
   for (let tentativa = 0; tentativa < 6; tentativa++) {
     try {
       fs.renameSync(origemTmp, destinoFinal);
-      return destinoFinal;
+      return { caminho: destinoFinal, travado: false };
     } catch (e) {
       if (e && e.code === 'EXDEV') {
         try {
           fs.copyFileSync(origemTmp, destinoFinal);
           try { fs.unlinkSync(origemTmp); } catch (_) {}
-          return destinoFinal;
+          return { caminho: destinoFinal, travado: false };
         } catch (e2) {
-          if (tentativa < 5 && ['EPERM', 'EBUSY', 'EACCES'].includes(e2.code)) {
-            await new Promise((r) => setTimeout(r, 180));
-            continue;
+          if (e2 && ['EPERM', 'EBUSY', 'EACCES'].includes(e2.code)) {
+            travado = true;
+            if (tentativa < 5) { await new Promise((r) => setTimeout(r, 180)); continue; }
           }
           break;
         }
       }
-      if (tentativa < 5 && e && ['EPERM', 'EBUSY', 'EACCES'].includes(e.code)) {
-        await new Promise((r) => setTimeout(r, 180));
-        continue;
+      if (e && ['EPERM', 'EBUSY', 'EACCES'].includes(e.code)) {
+        travado = true;
+        if (tentativa < 5) { await new Promise((r) => setTimeout(r, 180)); continue; }
       }
       break;
     }
   }
   const dir = path.dirname(destinoFinal);
   const ext = path.extname(destinoFinal) || '.mp4';
-  const baseLimpa = path.basename(destinoFinal, ext).replace(/_ed\d+$/, '');
+  const baseLimpa = path.basename(destinoFinal, ext).replace(/_ed[a-z0-9]+$/i, '');
   const alternativo = path.join(dir, `${baseLimpa}_ed${Date.now().toString(36).slice(-4)}${ext}`);
   try {
     fs.renameSync(origemTmp, alternativo);
   } catch (_) {
-    fs.copyFileSync(origemTmp, alternativo);
-    try { fs.unlinkSync(origemTmp); } catch (_) {}
+    try {
+      fs.copyFileSync(origemTmp, alternativo);
+      try { fs.unlinkSync(origemTmp); } catch (_) {}
+    } catch (e3) {
+      if (e3 && ['EPERM', 'EBUSY', 'EACCES'].includes(e3.code)) {
+        throw new Error('O vídeo está aberto em outro player (Media Player, VLC ou editor). Feche o vídeo lá e tente novamente.');
+      }
+      throw e3;
+    }
   }
-  return alternativo;
+  const aviso = travado
+    ? 'O clipe anterior estava aberto em outro player (Media Player/VLC). Feche o vídeo lá se quiser substituir o original; salvei a nova versão como ' + path.basename(alternativo) + '.'
+    : null;
+  if (aviso && typeof avisar === 'function') avisar({ tipo: 'aviso', msg: aviso });
+  return { caminho: alternativo, travado, aviso };
 }
 
 /**
@@ -843,6 +855,7 @@ async function renderizarClipe(ctx, c) {
   }
 
   let mp4;
+  let avisoArquivo = null;
   try {
     await media.cortarClipe({
       video: ctx.video,
@@ -925,9 +938,14 @@ async function renderizarClipe(ctx, c) {
       }
     }
 
-    mp4 = await substituirArquivoSeguro(mp4Tmp, mp4Destino);
+    const salvo = await substituirArquivoSeguro(mp4Tmp, mp4Destino, avisar);
+    mp4 = salvo.caminho;
+    avisoArquivo = salvo.aviso || null;
   } catch (e) {
     try { fs.unlinkSync(mp4Tmp); } catch (_) {}
+    if (e && /4294967283|EACCES|EBUSY|EPERM|Permission denied/i.test(String(e.message || e.code || ''))) {
+      throw new Error('O vídeo está aberto em outro player (Media Player, VLC ou editor). Feche o vídeo lá e tente novamente.');
+    }
     throw e;
   }
 
@@ -946,6 +964,7 @@ async function renderizarClipe(ctx, c) {
     base: baseFinal,
     formatoUsado: formatoDoClipe,
     observacao,
+    avisoArquivo: avisoArquivo || undefined,
     miniatura: fs.existsSync(miniatura) ? miniatura : null,
     tamanhoMb: Math.round((fs.statSync(mp4).size / 1048576) * 10) / 10,
   });
